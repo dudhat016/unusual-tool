@@ -6,6 +6,8 @@ import { UploadZone } from '../common/UploadZone';
 import { ImagePreview } from '../common/ImagePreview';
 import { UniversalBatchEngine } from '../../engine/batch/UniversalBatchEngine';
 import { UniversalBatchQueue } from '../common/UniversalBatchQueue';
+import { Slider } from '../ui/Slider';
+import { Button } from '../ui/Button';
 import {
   RefreshCw,
   Download,
@@ -174,37 +176,32 @@ export const ConvertToolView: React.FC<ConvertToolViewProps> = ({ tool }) => {
           {/* Mode Switcher when multiple images exist */}
           {files.length > 1 && (
             <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-2 dark:border-slate-800 dark:bg-slate-900 shadow-2xs">
-              <div className="flex items-center gap-2">
-                <button
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl">
+                <Button
+                  variant={activeViewTab === 'batch' ? 'primary' : 'ghost'}
+                  size="sm"
+                  leftIcon={Layers}
                   onClick={() => setActiveViewTab('batch')}
-                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    activeViewTab === 'batch'
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-                  }`}
                 >
-                  <Layers className="h-4 w-4" />
-                  <span>Batch Queue ({files.length} images)</span>
-                </button>
-                <button
+                  Batch Queue ({files.length} images)
+                </Button>
+                <Button
+                  variant={activeViewTab === 'single' ? 'primary' : 'ghost'}
+                  size="sm"
+                  leftIcon={SlidersHorizontal}
                   onClick={() => setActiveViewTab('single')}
-                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    activeViewTab === 'single'
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-                  }`}
                 >
-                  <SlidersHorizontal className="h-4 w-4" />
-                  <span>Single Inspector ({activeFileIndex + 1}/{files.length})</span>
-                </button>
+                  Single Inspector ({activeFileIndex + 1}/{files.length})
+                </Button>
               </div>
               <div className="flex items-center gap-2 pr-2">
-                <button
+                <Button
+                  variant="ghost"
+                  size="xs"
                   onClick={handleClearAll}
-                  className="text-xs font-semibold text-rose-500 hover:text-rose-600"
                 >
                   Clear All
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -222,39 +219,28 @@ export const ConvertToolView: React.FC<ConvertToolViewProps> = ({ tool }) => {
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
               {formatsList.map((fmt) => (
-                <button
+                <Button
                   key={fmt.id}
+                  variant={targetFormat === fmt.id ? 'primary' : 'outline'}
+                  size="sm"
                   onClick={() => setTargetFormat(fmt.id)}
-                  className={`flex flex-col items-start p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                    targetFormat === fmt.id
-                      ? 'border-blue-600 bg-blue-50/70 text-blue-900 dark:border-blue-500 dark:bg-blue-950/70 dark:text-blue-200 ring-2 ring-blue-500/20 shadow-xs'
-                      : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
-                  }`}
                 >
-                  <div className="flex items-center justify-between w-full">
-                    <span className="font-bold text-sm tracking-wide">{fmt.label}</span>
-                    {targetFormat === fmt.id && <Check className="h-4 w-4 text-blue-600 dark:text-blue-400" />}
-                  </div>
-                  <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 line-clamp-1">{fmt.sub}</span>
-                </button>
+                  {fmt.label}
+                </Button>
               ))}
             </div>
 
             {/* Quality Slider (for lossy formats) */}
             {(targetFormat === 'image/jpeg' || targetFormat === 'image/webp' || targetFormat === 'image/avif') && (
-              <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-                <div className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  <span>Target Quality</span>
-                  <span className="font-mono text-blue-600 font-bold">{Math.round(quality * 100)}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="0.1"
-                  max="1.0"
-                  step="0.05"
-                  value={quality}
-                  onChange={(e) => setQuality(parseFloat(e.target.value))}
-                  className="w-full accent-blue-600 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg cursor-pointer"
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+                <Slider
+                  label="Target Quality"
+                  min={10}
+                  max={100}
+                  step={5}
+                  value={Math.round(quality * 100)}
+                  unit="%"
+                  onChange={(v) => setQuality(v / 100)}
                 />
               </div>
             )}
@@ -295,23 +281,17 @@ export const ConvertToolView: React.FC<ConvertToolViewProps> = ({ tool }) => {
                     </div>
                   </div>
 
-                  <button
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    fullWidth
+                    isLoading={isProcessing}
+                    leftIcon={Zap}
+                    disabled={!currentFile}
                     onClick={handleConvertSingle}
-                    disabled={isProcessing || !currentFile}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 text-sm font-bold text-white hover:bg-blue-700 shadow-md shadow-blue-500/20 active:scale-[0.99] disabled:opacity-50 transition-all cursor-pointer"
                   >
-                    {isProcessing ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 animate-spin" />
-                        <span>{progressMsg || 'Converting in memory...'}</span>
-                      </>
-                    ) : (
-                      <>
-                        <Zap className="h-4 w-4" />
-                        <span>Convert Single Image</span>
-                      </>
-                    )}
-                  </button>
+                    Convert Single Image
+                  </Button>
                 </div>
               </div>
 

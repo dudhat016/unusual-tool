@@ -9,15 +9,15 @@ export const TOOLS_REGISTRY: ToolDefinition[] = [
   ...PDF_TOOLS_REGISTRY,
   // 0. Free Online Notepad
   {
-    id: 'online-notepad',
-    slug: 'online-notepad',
+    id: 'free-online-notepad',
+    slug: 'free-online-notepad',
     name: 'Free Online Notepad',
     shortDescription: 'Free browser-based notepad with rich text, autosave, multiple notes, and instant exports.',
     fullDescription: 'Private, distraction-free online text editor. Write, format with rich text, auto-save to browser storage, and export to TXT, Markdown, HTML, PDF, or Word with complete privacy and zero server uploads.',
     category: 'ocr',
     processingType: 'browser',
     icon: 'FileText',
-    route: '/online-notepad',
+    route: '/free-online-notepad',
     supportsBatch: false,
     requiresAuth: false,
     creditCost: 0,
@@ -49,7 +49,7 @@ export const TOOLS_REGISTRY: ToolDefinition[] = [
       title: 'Free Online Notepad – Write, Format & Save Notes Online',
       description: 'Private free online notepad with rich text formatting, autosave, multiple notes manager, word counter, and instant PDF, Word, & TXT export.',
       keywords: ['online notepad', 'free online notepad', 'online text editor', 'notepad online', 'quick notes online', 'browser notepad', 'private notes online'],
-      canonicalSlug: 'online-notepad'
+      canonicalSlug: 'free-online-notepad'
     }
   },
 

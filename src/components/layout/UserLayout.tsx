@@ -51,25 +51,25 @@ export const UserLayout: React.FC<UserLayoutProps> = ({
     { sectionTitle: 'MY WORKSPACE' },
     {
       label: 'Overview',
-      path: '/dashboard?tab=overview',
+      path: '/dashboard',
       icon: TrendingUp,
       exact: true,
     },
     {
       label: 'AI Usage Stats',
-      path: '/dashboard?tab=usage',
+      path: '/dashboard/usage',
       icon: Zap,
     },
     {
       label: 'Credits Ledger',
-      path: '/dashboard?tab=credits',
+      path: '/dashboard/credits',
       icon: CreditCard,
       badge: `${creditBalance} AI`,
       badgeVariant: creditBalance > 20 ? 'primary' : 'warning',
     },
     {
       label: 'Processing History',
-      path: '/dashboard?tab=history',
+      path: '/dashboard/history',
       icon: History,
       badge: history?.length > 0 ? history.length : undefined,
     },
@@ -77,13 +77,13 @@ export const UserLayout: React.FC<UserLayoutProps> = ({
     { sectionTitle: 'SAVED & FAVORITES' },
     {
       label: 'Favorite Tools',
-      path: '/dashboard?tab=favorites',
+      path: '/dashboard/favorites',
       icon: Heart,
       badge: favorites?.length > 0 ? favorites.length : undefined,
     },
     {
       label: 'Saved Tool Presets',
-      path: '/dashboard?tab=presets',
+      path: '/dashboard/presets',
       icon: Bookmark,
       badge: presets?.length > 0 ? presets.length : undefined,
     },
@@ -91,12 +91,12 @@ export const UserLayout: React.FC<UserLayoutProps> = ({
     { sectionTitle: 'ACCOUNT & BILLING' },
     {
       label: 'Subscription Plan',
-      path: '/dashboard?tab=subscription',
+      path: '/dashboard/subscription',
       icon: Crown,
     },
     {
       label: 'Account Settings',
-      path: '/dashboard?tab=settings',
+      path: '/dashboard/settings',
       icon: Settings,
     },
   ];
@@ -115,28 +115,23 @@ export const UserLayout: React.FC<UserLayoutProps> = ({
   }
 
   const handleNavClick = (path: string) => {
-    if (path.includes('tab=')) {
-      const tabParam = path.split('tab=')[1];
-      onTabChange(tabParam);
-    } else {
-      navigate(path);
-    }
+    navigate(path);
   };
 
   const userFooterWidget = (
     <div className="space-y-3">
       {/* Credit Balance Meter Card */}
-      <div className="p-3 rounded-xl bg-purple-500/10 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800/40">
+      <div className="p-3 rounded-xl bg-primary/10 border border-primary/20">
         <div className="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white mb-1.5">
           <span className="flex items-center gap-1">
-            <Zap className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 fill-purple-600" />
+            <Zap className="w-3.5 h-3.5 text-primary fill-primary" />
             AI Credits
           </span>
-          <span className="text-purple-600 dark:text-purple-400 font-extrabold">{creditBalance} left</span>
+          <span className="text-primary font-extrabold">{creditBalance} left</span>
         </div>
         <div className="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
           <div
-            className="bg-gradient-to-r from-purple-600 to-indigo-500 h-full rounded-full transition-all duration-300"
+            className="bg-primary h-full rounded-full transition-all duration-300"
             style={{ width: `${Math.min(100, Math.max(5, (creditBalance / 100) * 100))}%` }}
           />
         </div>
@@ -156,7 +151,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({
   return (
     <div className="min-h-screen flex bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans transition-colors">
       {/* Desktop Sidebar */}
-      <div className="hidden lg:block">
+      <div className="hidden lg:block sticky top-0 h-screen shrink-0 z-30">
         <Sidebar
           items={userNavItems}
           collapsed={collapsed}
@@ -199,9 +194,9 @@ export const UserLayout: React.FC<UserLayoutProps> = ({
       </AnimatePresence>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
+      <div className="flex-1 flex flex-col min-w-0 min-h-screen">
         {/* Top Header Navbar */}
-        <header className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between px-4 sm:px-6">
+        <header className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between px-4 sm:px-6 shrink-0">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsMobileOpen(true)}
@@ -211,7 +206,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({
             </button>
 
             <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-              <User className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+              <User className="w-4 h-4 text-primary" />
               <span className="font-semibold">User Dashboard</span>
               <span>/</span>
               <span className="font-bold text-slate-900 dark:text-white capitalize">
@@ -222,7 +217,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({
 
           <div className="flex items-center gap-3">
             {/* Plan Badge */}
-            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-200 dark:border-purple-800/40 text-purple-700 dark:text-purple-300 text-xs font-bold">
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold">
               <Crown className="w-3.5 h-3.5" />
               <span>{activePlanConfig?.name || 'Free Tier'}</span>
             </div>
@@ -230,16 +225,16 @@ export const UserLayout: React.FC<UserLayoutProps> = ({
             {/* Upgrade Button */}
             <button
               onClick={() => onTabChange('subscription')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold shadow-sm transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold shadow-sm transition-all"
             >
-              <Sparkles className="w-3.5 h-3.5 fill-white" />
+              <Sparkles className="w-3.5 h-3.5 fill-primary-foreground" />
               <span>Upgrade Plan</span>
             </button>
           </div>
         </header>
 
         {/* Inner Page View */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 animate-fade-in">{children}</main>
+        <main className="flex-1 w-full max-w-[1400px] mx-auto p-4 sm:p-6 lg:p-8 animate-fade-in">{children}</main>
       </div>
     </div>
   );

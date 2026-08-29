@@ -7,9 +7,9 @@ import {
 } from '../types/seo';
 import { TOOLS_REGISTRY, getToolByRoute, getToolBySlug } from './tools';
 import { CATEGORIES_REGISTRY, getCategoryBySlug } from './categoryData';
-import { GUIDES_REGISTRY, getGuideBySlug } from './guidesData';
 import { EXACT_TARGET_SIZE_ITEMS } from './targetSizeTools';
 import { POPULAR_CONVERTER_PAIRS } from './converterTools';
+import { BlogService } from '../services/BlogService';
 
 export const SITE_DOMAIN = 'https://aetherpix.studio';
 export const SITE_NAME = 'AetherPix Studio';
@@ -718,7 +718,15 @@ export function getAllIndexableCategoryRoutes(): string[] {
  * Returns all canonical guide routes
  */
 export function getAllIndexableGuideRoutes(): string[] {
-  return GUIDES_REGISTRY.map((g) => `/${g.slug}`);
+  return [];
+}
+
+/**
+ * Returns all canonical blog article routes
+ */
+export function getAllIndexableBlogRoutes(): string[] {
+  const published = BlogService.getPublishedPosts();
+  return ['/blog', ...published.map((p) => `/blog/${p.slug}`)];
 }
 
 /**
@@ -737,6 +745,7 @@ export function getAllIndexableRoutes(): string[] {
     ...getAllIndexableCategoryRoutes(),
     ...getAllIndexableToolRoutes(),
     ...getAllIndexableGuideRoutes(),
+    ...getAllIndexableBlogRoutes(),
     ...getAllIndexableTrustRoutes(),
   ];
 }
@@ -755,15 +764,15 @@ export function getAllNoindexRoutes(): string[] {
 }
 
 /**
- * Dynamic Breadcrumb Generator
+ * Returns JSON-LD BreadcrumbList schemas
  */
 export function getBreadcrumbsForRoute(route: string): SeoBreadcrumbItem[] {
   const clean = route.replace(/\/+$/, '') || '/';
-  if (clean === '/') {
-    return [{ name: 'Home', url: '/' }];
-  }
+  const breadcrumbs: SeoBreadcrumbItem[] = [
+    { name: 'Home', url: '/' }
+  ];
 
-  const breadcrumbs: SeoBreadcrumbItem[] = [{ name: 'Home', url: '/' }];
+  if (clean === '/') return breadcrumbs;
 
   // 1. Check if Category Page
   const cat = getCategoryBySlug(clean);
@@ -772,11 +781,11 @@ export function getBreadcrumbsForRoute(route: string): SeoBreadcrumbItem[] {
     return breadcrumbs;
   }
 
-  // 2. Check if Guide Page
-  const guide = getGuideBySlug(clean);
-  if (guide) {
-    breadcrumbs.push({ name: 'Guides & Tutorials', url: '/guides/how-to-compress-an-image' });
-    breadcrumbs.push({ name: guide.title, url: `/${guide.slug}` });
+  // 2. Check if Blog Article Page
+  const blogPost = BlogService.getPostBySlug(clean);
+  if (blogPost) {
+    breadcrumbs.push({ name: 'Blog & Tutorials', url: '/blog' });
+    breadcrumbs.push({ name: blogPost.title, url: `/blog/${blogPost.slug}` });
     return breadcrumbs;
   }
 
@@ -903,40 +912,41 @@ export function generateJsonLd(route: string, baseUrl: string = SITE_DOMAIN): Re
     }
   }
 
-  // B. Guide Page
-  const guide = getGuideBySlug(clean);
-  if (guide) {
+  // B. Blog Article Page
+  const articleObj = BlogService.getPostBySlug(clean);
+
+  if (articleObj) {
     schemas.push({
       '@context': 'https://schema.org',
       '@type': 'Article',
-      headline: guide.title,
-      description: guide.metaDescription,
+      headline: articleObj.title,
+      description: articleObj.excerpt,
       mainEntityOfPage: fullUrl,
-      datePublished: guide.publishedDate,
-      dateModified: guide.updatedDate,
+      datePublished: articleObj.publishedDate,
+      dateModified: articleObj.updatedDate,
       author: {
-        '@type': 'Organization',
-        name: guide.author.name
+        '@type': 'Person',
+        name: articleObj.author?.name || 'AetherPix Editorial Team',
       },
       publisher: {
         '@type': 'Organization',
         name: SITE_NAME,
-        url: baseUrl
-      }
+        url: baseUrl,
+      },
     });
 
-    if (guide.faq && guide.faq.length > 0) {
+    if (articleObj.faqs && articleObj.faqs.length > 0) {
       schemas.push({
         '@context': 'https://schema.org',
         '@type': 'FAQPage',
-        mainEntity: guide.faq.map((item) => ({
+        mainEntity: articleObj.faqs.map((item) => ({
           '@type': 'Question',
           name: item.question,
           acceptedAnswer: {
             '@type': 'Answer',
-            text: item.answer
-          }
-        }))
+            text: item.answer,
+          },
+        })),
       });
     }
   }
@@ -992,9 +1002,9 @@ export function generateSitemapXml(baseUrl: string = SITE_DOMAIN): string {
       } else if (route.startsWith('/image-') || route === '/youtube-tools') {
         priority = '0.9';
         changefreq = 'daily';
-      } else if (route.startsWith('/guides/')) {
+      } else if (route.startsWith('/guides/') || route.startsWith('/blog')) {
         priority = '0.8';
-        changefreq = 'monthly';
+        changefreq = 'weekly';
       } else if (route.startsWith('/compress') || route.startsWith('/resize') || route.startsWith('/convert')) {
         priority = '0.85';
         changefreq = 'weekly';
@@ -1012,6 +1022,73 @@ export function generateSitemapXml(baseUrl: string = SITE_DOMAIN): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urlEntries}
+</urlset>`;
+}
+
+/**
+ * Generates dynamic sitemap-index.xml (Master Sitemap Index Feed)
+ */
+export function generateSitemapIndexXml(baseUrl: string = SITE_DOMAIN): string {
+  const today = new Date().toISOString().split('T')[0];
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap>
+    <loc>${baseUrl}/sitemap-tools.xml</loc>
+    <lastmod>${today}</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>${baseUrl}/sitemap-blog.xml</loc>
+    <lastmod>${today}</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>${baseUrl}/sitemap-images.xml</loc>
+    <lastmod>${today}</lastmod>
+  </sitemap>
+</sitemapindex>`;
+}
+
+/**
+ * Generates dynamic sitemap-blog.xml for articles and tutorial pages
+ */
+export function generateBlogSitemapXml(baseUrl: string = SITE_DOMAIN): string {
+  const blogRoutes = getAllIndexableBlogRoutes();
+  const today = new Date().toISOString().split('T')[0];
+
+  const entries = blogRoutes
+    .map((route) => `  <url>
+    <loc>${baseUrl}${route}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>`)
+    .join('\n');
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${entries}
+</urlset>`;
+}
+
+/**
+ * Generates dynamic sitemap-tools.xml for image tools & converters
+ */
+export function generateToolsSitemapXml(baseUrl: string = SITE_DOMAIN): string {
+  const toolRoutes = [...getAllIndexableCategoryRoutes(), ...getAllIndexableToolRoutes()];
+  const today = new Date().toISOString().split('T')[0];
+
+  const entries = toolRoutes
+    .map((route) => `  <url>
+    <loc>${baseUrl}${route}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>`)
+    .join('\n');
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${entries}
 </urlset>`;
 }
 
@@ -1125,7 +1202,7 @@ export function runInternalSeoAudit(): SeoAuditReport {
       canonical = '/';
     } else {
       const cat = getCategoryBySlug(route);
-      const guide = getGuideBySlug(route);
+      const blogPost = BlogService.getPostBySlug(route);
       const tool = getSeoForRoute(route);
 
       if (cat) {
@@ -1133,11 +1210,11 @@ export function runInternalSeoAudit(): SeoAuditReport {
         desc = cat.metaDescription;
         h1 = cat.h1;
         canonical = `/${cat.slug}`;
-      } else if (guide) {
-        title = guide.title;
-        desc = guide.metaDescription;
-        h1 = guide.h1;
-        canonical = `/${guide.slug}`;
+      } else if (blogPost) {
+        title = blogPost.title;
+        desc = blogPost.excerpt;
+        h1 = blogPost.title;
+        canonical = `/blog/${blogPost.slug}`;
       } else if (tool) {
         title = tool.title;
         desc = tool.metaDescription;
@@ -1263,7 +1340,7 @@ export function runInternalSeoAudit(): SeoAuditReport {
     noindexRoutesCount: noindexRoutes.length,
     totalToolsCount: getAllIndexableToolRoutes().length,
     totalCategoriesCount: CATEGORIES_REGISTRY.length,
-    totalGuidesCount: GUIDES_REGISTRY.length,
+    totalGuidesCount: BlogService.getPublishedPosts().length,
     sitemapUrlCount: indexableRoutes.length,
     missingTitlesCount: missingTitles,
     duplicateTitlesCount: duplicateTitles,

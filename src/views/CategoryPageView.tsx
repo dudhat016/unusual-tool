@@ -5,7 +5,7 @@ import { getBreadcrumbsForRoute } from '../config/seoRegistry';
 import { TOOLS_REGISTRY } from '../config/tools';
 import { ToolCard } from '../components/common/ToolCard';
 import { Sparkles, CheckCircle, HelpCircle, ChevronDown, Layers, ArrowRight } from 'lucide-react';
-import { TopicalClusterLinks } from '../components/common/TopicalClusterLinks';
+import { DynamicFaqAccordion } from '../components/common/DynamicFaqAccordion';
 
 interface CategoryPageViewProps {
   category: CategorySeoEntry;
@@ -13,7 +13,6 @@ interface CategoryPageViewProps {
 
 export const CategoryPageView: React.FC<CategoryPageViewProps> = ({ category }) => {
   const breadcrumbs = getBreadcrumbsForRoute(`/${category.slug}`);
-  const [openFaqIndex, setOpenFaqIndex] = React.useState<number | null>(0);
 
   // Match tools belonging to this category
   const matchingTools = TOOLS_REGISTRY.filter((tool) => {
@@ -84,44 +83,8 @@ export const CategoryPageView: React.FC<CategoryPageViewProps> = ({ category }) 
 
       {/* FAQs Section */}
       {category.faq && category.faq.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <HelpCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Frequently Asked Questions</h2>
-          </div>
-
-          <div className="divide-y divide-slate-200 rounded-2xl border border-slate-200/80 bg-white dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900 shadow-2xs">
-            {category.faq.map((faqItem, idx) => {
-              const isOpen = openFaqIndex === idx;
-              return (
-                <div key={idx} className="p-4 sm:p-5">
-                  <button
-                    onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
-                    className="flex w-full items-center justify-between text-left text-sm font-semibold text-slate-900 dark:text-white"
-                  >
-                    <span>{faqItem.question}</span>
-                    <ChevronDown
-                      className={`h-4 w-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180 text-blue-600' : ''}`}
-                    />
-                  </button>
-                  {isOpen && (
-                    <div className="mt-3 text-xs leading-relaxed text-slate-600 dark:text-slate-300 pr-6">
-                      {faqItem.answer}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <DynamicFaqAccordion faqs={category.faq} toolName={category.name} />
       )}
-
-      {/* Cluster Navigation */}
-      <TopicalClusterLinks
-        currentCategorySlug={category.slug}
-        isCompressor={category.id === 'image-compressor-tools'}
-        isConverter={category.id === 'image-converter-tools'}
-      />
     </div>
   );
 };

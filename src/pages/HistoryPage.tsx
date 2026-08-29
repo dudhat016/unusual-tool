@@ -53,13 +53,13 @@ export const HistoryPage: React.FC = () => {
           <div>
             <div className="font-bold text-slate-900 dark:text-white truncate max-w-xs">{row.originalName}</div>
             <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="rounded-md bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 px-1.5 py-0.2 text-[10px] font-bold">
+              <span className="rounded-md bg-primary/10 text-primary px-1.5 py-0.2 text-[10px] font-bold">
                 {row.toolName}
               </span>
               {row.processorType === 'ai' ? (
-                <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400">AI</span>
+                <span className="text-[10px] font-bold text-primary">AI</span>
               ) : (
-                <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400">WASM</span>
+                <span className="text-[10px] font-bold text-primary">WASM</span>
               )}
             </div>
           </div>
@@ -129,7 +129,7 @@ export const HistoryPage: React.FC = () => {
             <a
               href={row.blobDataUrl}
               download={row.downloadName}
-              className="p-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white shadow-xs transition-colors cursor-pointer"
+              className="p-1.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-colors cursor-pointer"
               title="Download file"
             >
               <Download className="h-3.5 w-3.5" />
@@ -154,7 +154,7 @@ export const HistoryPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-6 dark:border-slate-800">
         <div>
           <div className="flex items-center gap-2">
-            <Clock className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+            <Clock className="h-6 w-6 text-primary" />
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
               Processing History
             </h1>
@@ -173,7 +173,7 @@ export const HistoryPage: React.FC = () => {
                   onClick={() => setViewMode('table')}
                   className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                     viewMode === 'table'
-                      ? 'bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400'
+                      ? 'bg-primary/10 text-primary'
                       : 'text-slate-400 hover:text-slate-600'
                   }`}
                   title="Table View"
@@ -185,7 +185,7 @@ export const HistoryPage: React.FC = () => {
                   onClick={() => setViewMode('cards')}
                   className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                     viewMode === 'cards'
-                      ? 'bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400'
+                      ? 'bg-primary/10 text-primary'
                       : 'text-slate-400 hover:text-slate-600'
                   }`}
                   title="Cards View"
@@ -276,15 +276,15 @@ export const HistoryPage: React.FC = () => {
                   />
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="rounded-md bg-purple-50 px-2 py-0.5 text-[10px] font-bold text-purple-700 dark:bg-purple-950 dark:text-purple-300">
+                      <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
                         {item.toolName}
                       </span>
                       {item.processorType === 'ai' ? (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/60 px-1.5 py-0.5 rounded">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
                           <Sparkles className="w-3 h-3" /> AI
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-1.5 py-0.5 rounded">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
                           <Cpu className="w-3 h-3" /> Browser
                         </span>
                       )}
@@ -319,7 +319,7 @@ export const HistoryPage: React.FC = () => {
                   <a
                     href={item.blobDataUrl}
                     download={item.downloadName}
-                    className="flex items-center gap-1.5 rounded-xl bg-purple-600 px-4 py-2 text-xs font-bold text-white hover:bg-purple-500 shadow-sm transition-colors cursor-pointer"
+                    className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90 shadow-sm transition-colors cursor-pointer"
                   >
                     <Download className="h-3.5 w-3.5" />
                     <span>Download</span>
@@ -347,7 +347,7 @@ export const HistoryPage: React.FC = () => {
           </div>
           <button
             onClick={() => navigate('/')}
-            className="rounded-xl bg-purple-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-purple-500 transition-colors cursor-pointer"
+            className="rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer"
           >
             Explore Image Tools
           </button>

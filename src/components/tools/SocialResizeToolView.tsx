@@ -6,6 +6,7 @@ import { UploadZone } from '../common/UploadZone';
 import { ImagePreview } from '../common/ImagePreview';
 import { UniversalBatchEngine } from '../../engine/batch/UniversalBatchEngine';
 import { UniversalBatchQueue } from '../common/UniversalBatchQueue';
+import { Button } from '../ui/Button';
 import {
   Share2,
   RefreshCw,
@@ -236,41 +237,31 @@ export const SocialResizeToolView: React.FC<SocialResizeToolViewProps> = ({ tool
                       { id: 'contain', label: 'Solid Fit' },
                       { id: 'cover', label: 'Crop Fill' },
                     ].map((mode) => (
-                      <button
+                      <Button
                         key={mode.id}
-                        type="button"
+                        variant={options.fitMode === mode.id ? 'primary' : 'outline'}
+                        size="sm"
                         onClick={() => setOptions((prev) => ({ ...prev, fitMode: mode.id as any }))}
-                        className={`p-2 text-xs font-semibold rounded-xl border transition-colors ${
-                          options.fitMode === mode.id
-                            ? 'border-blue-600 bg-blue-50 text-blue-700 dark:border-blue-500 dark:bg-blue-950 dark:text-blue-300'
-                            : 'border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800'
-                        }`}
                       >
                         {mode.label}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </div>
 
                 {/* Single Image Action Button */}
                 {viewMode === 'single' && (
-                  <button
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    fullWidth
+                    isLoading={isProcessing}
+                    leftIcon={Share2}
+                    disabled={!currentFile}
                     onClick={handleSingleApply}
-                    disabled={isProcessing || !currentFile}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 text-sm font-bold text-white hover:bg-blue-700 shadow-md shadow-blue-500/20 active:scale-[0.99] disabled:opacity-50 transition-all cursor-pointer"
                   >
-                    {isProcessing ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 animate-spin" />
-                        <span>Rendering Preset...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Share2 className="h-4 w-4" />
-                        <span>Format for Social Media</span>
-                      </>
-                    )}
-                  </button>
+                    Format for Social Media
+                  </Button>
                 )}
               </div>
             </div>

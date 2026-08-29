@@ -6,6 +6,9 @@ import { UploadZone } from '../common/UploadZone';
 import { ImagePreview } from '../common/ImagePreview';
 import { UniversalBatchEngine } from '../../engine/batch/UniversalBatchEngine';
 import { UniversalBatchQueue } from '../common/UniversalBatchQueue';
+import { Slider } from '../ui/Slider';
+import { Input } from '../ui/Input';
+import { Button } from '../ui/Button';
 import {
   Square,
   RefreshCw,
@@ -206,57 +209,39 @@ export const BorderToolView: React.FC<BorderToolViewProps> = ({ tool }) => {
                   </div>
                 </div>
 
-                {/* Border Width Slider */}
-                <div>
-                  <div className="flex justify-between text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    <span>Border Thickness</span>
-                    <span className="font-mono">{options.borderWidth}px</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="4"
-                    max="100"
-                    value={options.borderWidth}
-                    onChange={(e) => setOptions((prev) => ({ ...prev, borderWidth: parseInt(e.target.value) }))}
-                    className="w-full accent-blue-600"
-                  />
-                </div>
+                <Slider
+                  label="Border Thickness"
+                  min={4}
+                  max={100}
+                  step={1}
+                  value={options.borderWidth}
+                  unit="px"
+                  onChange={(v) => setOptions((prev) => ({ ...prev, borderWidth: v }))}
+                />
 
-                {/* Polaroid Caption Input if Polaroid */}
                 {options.style === 'polaroid' && (
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      Bottom Caption
-                    </label>
-                    <input
-                      type="text"
-                      value={options.captionText || ''}
-                      onChange={(e) => setOptions((prev) => ({ ...prev, captionText: e.target.value }))}
-                      placeholder="Caption text..."
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                    />
-                  </div>
+                  <Input
+                    label="Bottom Caption"
+                    type="text"
+                    value={options.captionText || ''}
+                    onChange={(e) => setOptions((prev) => ({ ...prev, captionText: e.target.value }))}
+                    placeholder="Caption text..."
+                  />
                 )}
 
                 {/* Single Image Action Button */}
                 {viewMode === 'single' && (
-                  <button
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    fullWidth
+                    isLoading={isProcessing}
+                    leftIcon={Square}
+                    disabled={!currentFile}
                     onClick={handleSingleApply}
-                    disabled={isProcessing || !currentFile}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 text-sm font-bold text-white hover:bg-blue-700 shadow-md shadow-blue-500/20 active:scale-[0.99] disabled:opacity-50 transition-all cursor-pointer"
                   >
-                    {isProcessing ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 animate-spin" />
-                        <span>Rendering Frame...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Square className="h-4 w-4" />
-                        <span>Apply Frame & Border</span>
-                      </>
-                    )}
-                  </button>
+                    Apply Frame & Border
+                  </Button>
                 )}
               </div>
             </div>

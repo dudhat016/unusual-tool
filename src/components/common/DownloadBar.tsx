@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import { UniversalProcessResult } from '../../types';
 import { formatFileSize } from '../../engine/imageEngine';
+import { Slider } from '../ui/Slider';
+import { Input } from '../ui/Input';
 
 interface DownloadBarProps {
   result: UniversalProcessResult;
@@ -165,7 +167,7 @@ export const DownloadBar: React.FC<DownloadBarProps> = ({
                   <Layers className="w-3.5 h-3.5" /> Server Engine
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 px-2 py-0.5 rounded-md">
+                <span className="inline-flex items-center gap-1 text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-md">
                   <Cpu className="w-3.5 h-3.5" /> Browser Canvas
                 </span>
               )}
@@ -240,7 +242,7 @@ export const DownloadBar: React.FC<DownloadBarProps> = ({
 
         <button
           onClick={handleDirectDownload}
-          className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold shadow-md shadow-blue-500/20 active:scale-[0.99] transition-all"
+          className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold shadow-md shadow-primary/20 active:scale-[0.99] transition-all cursor-pointer"
         >
           <Download className="w-4 h-4" />
           <span>Download Result ({formatFileSize(result.resultSize)})</span>
@@ -257,24 +259,19 @@ export const DownloadBar: React.FC<DownloadBarProps> = ({
               </h3>
               <button
                 onClick={() => setShowCustomModal(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm font-semibold"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm font-semibold cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
             {/* Filename */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                File Name
-              </label>
-              <input
-                type="text"
-                value={customName}
-                onChange={(e) => setCustomName(e.target.value)}
-                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+            <Input
+              label="File Name"
+              type="text"
+              value={customName}
+              onChange={(e) => setCustomName(e.target.value)}
+            />
 
             {/* Format choice */}
             <div className="space-y-1.5">
@@ -286,9 +283,9 @@ export const DownloadBar: React.FC<DownloadBarProps> = ({
                   <button
                     key={fmt}
                     onClick={() => setCustomFormat(fmt)}
-                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
                       customFormat === fmt
-                        ? 'border-blue-600 bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 ring-1 ring-blue-600'
+                        ? 'border-primary bg-primary/10 text-primary ring-1 ring-primary'
                         : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300'
                     }`}
                   >
@@ -301,20 +298,14 @@ export const DownloadBar: React.FC<DownloadBarProps> = ({
             {/* Quality slider for JPEG/WebP */}
             {customFormat !== 'image/png' && (
               <div className="space-y-2">
-                <div className="flex justify-between text-xs font-semibold">
-                  <span className="text-slate-700 dark:text-slate-300">Quality</span>
-                  <span className="text-blue-600 dark:text-blue-400 font-bold">
-                    {Math.round(customQuality * 100)}%
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min="0.1"
-                  max="1.0"
-                  step="0.05"
-                  value={customQuality}
-                  onChange={(e) => setCustomQuality(parseFloat(e.target.value))}
-                  className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                <Slider
+                  label="Quality"
+                  min={10}
+                  max={100}
+                  step={5}
+                  value={Math.round(customQuality * 100)}
+                  unit="%"
+                  onChange={(v) => setCustomQuality(v / 100)}
                 />
               </div>
             )}
@@ -323,14 +314,14 @@ export const DownloadBar: React.FC<DownloadBarProps> = ({
             <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
               <button
                 onClick={() => setShowCustomModal(false)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleCustomExport}
                 disabled={isExporting}
-                className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all disabled:opacity-50"
+                className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>{isExporting ? 'Exporting...' : 'Export & Save'}</span>

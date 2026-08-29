@@ -40,7 +40,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
               ? 'bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400'
               : variant === 'warning'
               ? 'bg-amber-100 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400'
-              : 'bg-indigo-100 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400'
+              : 'bg-primary/10 text-primary'
           }`}
         >
           <Icon

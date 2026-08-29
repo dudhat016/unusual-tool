@@ -6,6 +6,10 @@ import { UploadZone } from '../common/UploadZone';
 import { ImagePreview } from '../common/ImagePreview';
 import { UniversalBatchEngine } from '../../engine/batch/UniversalBatchEngine';
 import { UniversalBatchQueue } from '../common/UniversalBatchQueue';
+import { Slider } from '../ui/Slider';
+import { NumberInput } from '../ui/NumberInput';
+import { Button } from '../ui/Button';
+import { Checkbox } from '../ui/Checkbox';
 import { Lock, Unlock, RefreshCw, Layers, Check, SlidersHorizontal } from 'lucide-react';
 
 export const ResizeToolView: React.FC = () => {
@@ -230,45 +234,31 @@ export const ResizeToolView: React.FC = () => {
                 </div>
 
                 {options.mode === 'percentage' ? (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs font-medium text-slate-700 dark:text-slate-300">
-                      <span>Batch Scaling Factor</span>
-                      <span className="font-mono text-blue-600 font-bold">{options.percentage}%</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="5"
-                      max="200"
-                      step="5"
-                      value={options.percentage}
-                      onChange={(e) => setOptions((prev) => ({ ...prev, percentage: parseInt(e.target.value) }))}
-                      className="w-full accent-blue-600 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg cursor-pointer"
-                    />
-                  </div>
+                  <Slider
+                    label="Batch Scaling Factor"
+                    min={5}
+                    max={200}
+                    step={5}
+                    value={options.percentage}
+                    unit="%"
+                    onChange={(v) => setOptions((prev) => ({ ...prev, percentage: v }))}
+                  />
                 ) : (
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Target Width (px)</label>
-                      <input
-                        type="number"
-                        min="1"
-                        max="12000"
-                        value={options.width}
-                        onChange={(e) => handleWidthChange(parseInt(e.target.value) || 1)}
-                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-mono text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Target Height (px)</label>
-                      <input
-                        type="number"
-                        min="1"
-                        max="12000"
-                        value={options.height}
-                        onChange={(e) => handleHeightChange(parseInt(e.target.value) || 1)}
-                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-mono text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                      />
-                    </div>
+                    <NumberInput
+                      label="Target Width (px)"
+                      min={1}
+                      max={12000}
+                      value={options.width}
+                      onChange={(v) => handleWidthChange(v || 1)}
+                    />
+                    <NumberInput
+                      label="Target Height (px)"
+                      min={1}
+                      max={12000}
+                      value={options.height}
+                      onChange={(v) => handleHeightChange(v || 1)}
+                    />
                   </div>
                 )}
               </div>
@@ -317,53 +307,34 @@ export const ResizeToolView: React.FC = () => {
                   {options.mode === 'pixels' && (
                     <div className="space-y-4">
                       <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                            Width (px)
-                          </label>
-                          <input
-                            type="number"
-                            min="1"
-                            max="12000"
-                            value={options.width}
-                            onChange={(e) => handleWidthChange(parseInt(e.target.value) || 1)}
-                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-mono text-slate-900 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                            Height (px)
-                          </label>
-                          <input
-                            type="number"
-                            min="1"
-                            max="12000"
-                            value={options.height}
-                            onChange={(e) => handleHeightChange(parseInt(e.target.value) || 1)}
-                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-mono text-slate-900 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                          />
-                        </div>
+                        <NumberInput
+                          label="Width (px)"
+                          min={1}
+                          max={12000}
+                          value={options.width}
+                          onChange={(v) => handleWidthChange(v || 1)}
+                        />
+                        <NumberInput
+                          label="Height (px)"
+                          min={1}
+                          max={12000}
+                          value={options.height}
+                          onChange={(v) => handleHeightChange(v || 1)}
+                        />
                       </div>
 
                       {/* Lock Aspect Ratio Toggle */}
                       <div className="flex items-center justify-between pt-1">
-                        <button
-                          type="button"
-                          onClick={() =>
+                        <Checkbox
+                          checked={options.lockAspectRatio}
+                          onChange={(e) =>
                             setOptions((prev) => ({
                               ...prev,
-                              lockAspectRatio: !prev.lockAspectRatio,
+                              lockAspectRatio: e.target.checked,
                             }))
                           }
-                          className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer"
-                        >
-                          {options.lockAspectRatio ? (
-                            <Lock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                          ) : (
-                            <Unlock className="h-4 w-4 text-slate-400" />
-                          )}
-                          <span>Lock Aspect Ratio ({aspectRatio ? aspectRatio.toFixed(2) : '1.00'})</span>
-                        </button>
+                          label={`Lock Aspect Ratio (${aspectRatio ? aspectRatio.toFixed(2) : '1.00'})`}
+                        />
 
                         <button
                           type="button"
@@ -386,18 +357,14 @@ export const ResizeToolView: React.FC = () => {
 
                   {options.mode === 'percentage' && (
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between text-xs font-medium text-slate-700 dark:text-slate-300">
-                        <span>Scale Percentage</span>
-                        <span className="font-mono text-blue-600 font-bold">{options.percentage}%</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="5"
-                        max="200"
-                        step="5"
+                      <Slider
+                        label="Scale Percentage"
+                        min={5}
+                        max={200}
+                        step={5}
                         value={options.percentage}
-                        onChange={(e) => setOptions((prev) => ({ ...prev, percentage: parseInt(e.target.value) }))}
-                        className="w-full accent-blue-600 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg cursor-pointer"
+                        unit="%"
+                        onChange={(v) => setOptions((prev) => ({ ...prev, percentage: v }))}
                       />
                       <div className="flex justify-between text-[10px] text-slate-400">
                         <span>25% (Thumb)</span>
@@ -433,30 +400,18 @@ export const ResizeToolView: React.FC = () => {
                       </div>
 
                       <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                            Width ({options.unit || 'cm'})
-                          </label>
-                          <input
-                            type="number"
-                            step="0.1"
-                            value={options.width}
-                            onChange={(e) => setOptions((prev) => ({ ...prev, width: parseFloat(e.target.value) || 1 }))}
-                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-mono text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                            Height ({options.unit || 'cm'})
-                          </label>
-                          <input
-                            type="number"
-                            step="0.1"
-                            value={options.height}
-                            onChange={(e) => setOptions((prev) => ({ ...prev, height: parseFloat(e.target.value) || 1 }))}
-                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-mono text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                          />
-                        </div>
+                        <NumberInput
+                          label={`Width (${options.unit || 'cm'})`}
+                          step={0.1}
+                          value={options.width}
+                          onChange={(v) => setOptions((prev) => ({ ...prev, width: v || 1 }))}
+                        />
+                        <NumberInput
+                          label={`Height (${options.unit || 'cm'})`}
+                          step={0.1}
+                          value={options.height}
+                          onChange={(v) => setOptions((prev) => ({ ...prev, height: v || 1 }))}
+                        />
                       </div>
                     </div>
                   )}
@@ -517,40 +472,30 @@ export const ResizeToolView: React.FC = () => {
                     </label>
                     <div className="grid grid-cols-3 gap-2">
                       {(['image/jpeg', 'image/png', 'image/webp'] as const).map((fmt) => (
-                        <button
+                        <Button
                           key={fmt}
-                          type="button"
+                          variant={options.format === fmt ? 'primary' : 'outline'}
+                          size="sm"
                           onClick={() => setOptions((prev) => ({ ...prev, format: fmt }))}
-                          className={`py-2 text-xs font-semibold rounded-xl border transition-colors cursor-pointer ${
-                            options.format === fmt
-                              ? 'border-blue-600 bg-blue-50 text-blue-700 dark:border-blue-500 dark:bg-blue-950 dark:text-blue-300'
-                              : 'border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
-                          }`}
                         >
                           {fmt === 'image/jpeg' ? 'JPEG' : fmt === 'image/png' ? 'PNG' : 'WEBP'}
-                        </button>
+                        </Button>
                       ))}
                     </div>
                   </div>
 
                   {/* Process Button */}
-                  <button
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    fullWidth
+                    isLoading={isProcessing}
+                    leftIcon={RefreshCw}
+                    disabled={!currentFile}
                     onClick={handleProcess}
-                    disabled={isProcessing || !currentFile}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 text-sm font-bold text-white hover:bg-blue-700 shadow-md shadow-blue-500/20 active:scale-[0.99] disabled:opacity-50 transition-all cursor-pointer"
                   >
-                    {isProcessing ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 animate-spin" />
-                        <span>Processing In Browser...</span>
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="h-4 w-4" />
-                        <span>Resize Image Now</span>
-                      </>
-                    )}
-                  </button>
+                    Resize Image Now
+                  </Button>
                 </div>
               </div>
 

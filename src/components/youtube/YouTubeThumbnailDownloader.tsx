@@ -1,23 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { useApp } from '../../context/AppContext';
-import { parseYouTubeUrl } from '../../utils/youtubeUrlParser';
-import { YouTubeService } from '../../services/youtubeService';
-import { YouTubeThumbnailInfo } from '../../types/youtube';
 import {
+  AlertCircle,
+  Check,
+  CheckCircle2,
+  Copy,
   Download,
   ExternalLink,
-  Copy,
-  Check,
-  Search,
-  Sparkles,
-  AlertCircle,
-  CheckCircle2,
-  Image as ImageIcon,
   Layers,
-  ArrowRight,
   RefreshCw,
-  Video,
+  Search,
+  Video
 } from 'lucide-react';
+import React, { useState } from 'react';
+import { useApp } from '../../context/AppContext';
+import { YouTubeService } from '../../services/youtubeService';
+import { YouTubeThumbnailInfo } from '../../types/youtube';
+import { parseYouTubeUrl } from '../../utils/youtubeUrlParser';
+import { Input } from '../ui/Input';
 
 export const YouTubeThumbnailDownloader: React.FC = () => {
   const { showToast, addToHistory } = useApp();
@@ -124,7 +122,7 @@ export const YouTubeThumbnailDownloader: React.FC = () => {
         {/* Input Bar */}
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <input
+            <Input
               type="text"
               value={urlInput}
               onChange={(e) => {
@@ -135,7 +133,6 @@ export const YouTubeThumbnailDownloader: React.FC = () => {
                 if (e.key === 'Enter') handleProcessUrl(urlInput);
               }}
               placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
-              className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/80 px-4 py-3.5 text-sm font-mono text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-none transition-all"
             />
             {urlInput && (
               <button

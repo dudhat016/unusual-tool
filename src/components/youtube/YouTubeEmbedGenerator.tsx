@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
+import { Switch } from '../ui/Switch';
+import { Input, NumberInput } from '../ui';
 import {
   parseYouTubeUrl,
   generateIframeCode,
@@ -136,18 +138,13 @@ export const YouTubeEmbedGenerator: React.FC = () => {
           </p>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            YouTube Video URL
-          </label>
-          <input
+          <Input
+            label="YouTube Video URL"
             type="text"
             value={urlInput}
             onChange={(e) => setUrlInput(e.target.value)}
             placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
-            className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/80 px-4 py-3.5 text-sm font-mono text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition-all"
           />
-        </div>
       </div>
 
       {/* Main Two-Column Studio Layout */}
@@ -214,24 +211,16 @@ export const YouTubeEmbedGenerator: React.FC = () => {
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-3 pt-2">
-                <div>
-                  <label className="text-[11px] font-medium text-slate-500 block mb-1">Width (px)</label>
-                  <input
-                    type="number"
-                    value={customWidth}
-                    onChange={(e) => setCustomWidth(parseInt(e.target.value, 10) || 560)}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-2.5 text-xs font-mono font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="text-[11px] font-medium text-slate-500 block mb-1">Height (px)</label>
-                  <input
-                    type="number"
-                    value={customHeight}
-                    onChange={(e) => setCustomHeight(parseInt(e.target.value, 10) || 315)}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-2.5 text-xs font-mono font-bold"
-                  />
-                </div>
+                <NumberInput
+                  label="Width (px)"
+                  value={customWidth}
+                  onChange={(v) => setCustomWidth(v || 560)}
+                />
+                <NumberInput
+                  label="Height (px)"
+                  value={customHeight}
+                  onChange={(v) => setCustomHeight(v || 315)}
+                />
               </div>
             )}
           </div>
@@ -242,26 +231,20 @@ export const YouTubeEmbedGenerator: React.FC = () => {
               Playback Timing
             </label>
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-[11px] font-medium text-slate-500 block mb-1">Start Time (MM:SS)</label>
-                <input
-                  type="text"
-                  value={startTimeStr}
-                  onChange={(e) => setStartTimeStr(e.target.value)}
-                  placeholder="e.g. 01:30 or 90"
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-2.5 text-xs font-mono"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] font-medium text-slate-500 block mb-1">End Time (MM:SS)</label>
-                <input
-                  type="text"
-                  value={endTimeStr}
-                  onChange={(e) => setEndTimeStr(e.target.value)}
-                  placeholder="e.g. 03:45"
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-2.5 text-xs font-mono"
-                />
-              </div>
+              <Input
+                label="Start Time (MM:SS)"
+                type="text"
+                value={startTimeStr}
+                onChange={(e) => setStartTimeStr(e.target.value)}
+                placeholder="e.g. 01:30 or 90"
+              />
+              <Input
+                label="End Time (MM:SS)"
+                type="text"
+                value={endTimeStr}
+                onChange={(e) => setEndTimeStr(e.target.value)}
+                placeholder="e.g. 03:45"
+              />
             </div>
           </div>
 
@@ -272,86 +255,62 @@ export const YouTubeEmbedGenerator: React.FC = () => {
             </label>
 
             <div className="space-y-2.5 text-xs">
-              <label className="flex items-center justify-between cursor-pointer p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                <div>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">Privacy-Enhanced Mode</span>
-                  <p className="text-[11px] text-slate-400">Uses youtube-nocookie.com (GDPR compliant)</p>
-                </div>
-                <input
-                  type="checkbox"
+              <div className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                <Switch
                   checked={privacyEnhanced}
-                  onChange={(e) => setPrivacyEnhanced(e.target.checked)}
-                  className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                  onChange={(c) => setPrivacyEnhanced(c)}
+                  label="Privacy-Enhanced Mode"
+                  description="Uses youtube-nocookie.com (GDPR compliant)"
                 />
-              </label>
+              </div>
 
-              <label className="flex items-center justify-between cursor-pointer p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                <div>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">Autoplay (Auto-Muted)</span>
-                  <p className="text-[11px] text-slate-400">Starts automatically when player mounts</p>
-                </div>
-                <input
-                  type="checkbox"
+              <div className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                <Switch
                   checked={autoplay}
-                  onChange={(e) => {
-                    setAutoplay(e.target.checked);
-                    if (e.target.checked) setMute(true);
+                  onChange={(c) => {
+                    setAutoplay(c);
+                    if (c) setMute(true);
                   }}
-                  className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                  label="Autoplay (Auto-Muted)"
+                  description="Starts automatically when player mounts"
                 />
-              </label>
+              </div>
 
-              <label className="flex items-center justify-between cursor-pointer p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                <div>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">Mute Audio</span>
-                  <p className="text-[11px] text-slate-400">Initializes player in muted state</p>
-                </div>
-                <input
-                  type="checkbox"
+              <div className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                <Switch
                   checked={mute}
-                  onChange={(e) => setMute(e.target.checked)}
-                  className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                  onChange={(c) => setMute(c)}
+                  label="Mute Audio"
+                  description="Initializes player in muted state"
                 />
-              </label>
+              </div>
 
-              <label className="flex items-center justify-between cursor-pointer p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                <div>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">Show Player Controls</span>
-                  <p className="text-[11px] text-slate-400">Progress bar, volume, and quality settings</p>
-                </div>
-                <input
-                  type="checkbox"
+              <div className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                <Switch
                   checked={controls}
-                  onChange={(e) => setControls(e.target.checked)}
-                  className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                  onChange={(c) => setControls(c)}
+                  label="Show Player Controls"
+                  description="Progress bar, volume, and quality settings"
                 />
-              </label>
+              </div>
 
-              <label className="flex items-center justify-between cursor-pointer p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                <div>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">Loop Video</span>
-                  <p className="text-[11px] text-slate-400">Repeats continuously upon ending</p>
-                </div>
-                <input
-                  type="checkbox"
+              <div className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                <Switch
                   checked={loop}
-                  onChange={(e) => setLoop(e.target.checked)}
-                  className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                  onChange={(c) => setLoop(c)}
+                  label="Loop Video"
+                  description="Repeats continuously upon ending"
                 />
-              </label>
+              </div>
 
-              <label className="flex items-center justify-between cursor-pointer p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                <div>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">Allow Fullscreen</span>
-                  <p className="text-[11px] text-slate-400">Enables fullscreen expand button</p>
-                </div>
-                <input
-                  type="checkbox"
+              <div className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                <Switch
                   checked={fullscreen}
-                  onChange={(e) => setFullscreen(e.target.checked)}
-                  className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                  onChange={(c) => setFullscreen(c)}
+                  label="Allow Fullscreen"
+                  description="Enables fullscreen expand button"
                 />
-              </label>
+              </div>
             </div>
           </div>
         </div>

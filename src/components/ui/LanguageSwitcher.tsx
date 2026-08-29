@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation, SupportedLanguage } from '../../i18n';
 import { Icon } from './Icon';
+import { useApp } from '../../context/AppContext';
 
 export interface LanguageSwitcherProps {
   variant?: 'dropdown' | 'compact' | 'segmented';
@@ -11,10 +12,24 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
   variant = 'dropdown',
   className = '',
 }) => {
+  const { navigate, currentPath } = useApp();
   const { language, languageInfo, supportedLanguages, setLanguage, t, getCompletionRate } =
     useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const handleSelectLanguage = (langCode: SupportedLanguage) => {
+    setLanguage(langCode);
+    setIsOpen(false);
+
+    const cleanPathNoLocale = (currentPath || window.location.pathname)
+      .split('?')[0]
+      .replace(/^\/(en|hi|es|fr|de|pt|it|ja|ko|zh|ar)/i, '') || '/';
+
+    const targetUrl = `/${langCode}${cleanPathNoLocale === '/' ? '' : cleanPathNoLocale}`;
+
+    navigate(targetUrl);
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -58,13 +73,10 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
                   <button
                     key={item.code}
                     type="button"
-                    onClick={() => {
-                      setLanguage(item.code as SupportedLanguage);
-                      setIsOpen(false);
-                    }}
+                    onClick={() => handleSelectLanguage(item.code as SupportedLanguage)}
                     className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-xl transition-colors cursor-pointer text-left rtl:text-right ${
                       isSelected
-                        ? 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 font-bold'
+                        ? 'bg-primary/10 text-primary font-bold'
                         : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                     }`}
                   >
@@ -83,7 +95,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
                         {completion}%
                       </span>
                       {isSelected && (
-                        <Icon name="Check" size={14} className="text-indigo-600 dark:text-indigo-400" />
+                        <Icon name="Check" size={14} className="text-primary" />
                       )}
                     </div>
                   </button>
@@ -129,25 +141,22 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
                 <button
                   key={item.code}
                   type="button"
-                  onClick={() => {
-                    setLanguage(item.code as SupportedLanguage);
-                    setIsOpen(false);
-                  }}
+                  onClick={() => handleSelectLanguage(item.code as SupportedLanguage)}
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all cursor-pointer ${
                     isSelected
-                      ? 'bg-indigo-600 text-white font-bold shadow-xs'
+                      ? 'bg-primary text-primary-foreground font-bold shadow-xs'
                       : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-lg leading-none">{item.flag}</span>
                     <div className="text-left rtl:text-right">
-                      <div className={isSelected ? 'text-white' : 'text-slate-900 dark:text-slate-100'}>
+                      <div className={isSelected ? 'text-primary-foreground' : 'text-slate-900 dark:text-slate-100'}>
                         {item.nativeName}
                       </div>
                       <div
                         className={`text-[10px] ${
-                          isSelected ? 'text-indigo-200' : 'text-slate-400'
+                          isSelected ? 'opacity-80' : 'text-slate-400'
                         }`}
                       >
                         {item.name} {item.dir === 'rtl' ? '• RTL' : ''}
@@ -158,12 +167,12 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
                   <div className="flex items-center gap-2">
                     <span
                       className={`text-[10px] font-mono ${
-                        isSelected ? 'text-indigo-200' : 'text-slate-400'
+                        isSelected ? 'opacity-80' : 'text-slate-400'
                       }`}
                     >
                       {completion}%
                     </span>
-                    {isSelected && <Icon name="Check" size={14} className="text-white" />}
+                    {isSelected && <Icon name="Check" size={14} className="text-primary-foreground" />}
                   </div>
                 </button>
               );

@@ -37,7 +37,7 @@ export const Slider: React.FC<SliderProps> = ({
             </span>
           )}
           {showValueBadge && (
-            <span className="font-mono font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 border border-slate-200 dark:border-slate-700">
+            <span className="font-mono font-bold px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20">
               {value}
               {unit}
             </span>
@@ -54,9 +54,9 @@ export const Slider: React.FC<SliderProps> = ({
           value={value}
           disabled={disabled}
           onChange={(e) => onChange(parseFloat(e.target.value))}
-          className="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-600 dark:accent-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-40 disabled:cursor-not-allowed"
           style={{
-            background: `linear-gradient(to right, #4f46e5 ${percentage}%, #e2e8f0 ${percentage}%)`,
+            background: `linear-gradient(to right, hsl(var(--primary)) ${percentage}%, rgba(148, 163, 184, 0.25) ${percentage}%)`,
           }}
         />
       </div>

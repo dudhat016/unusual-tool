@@ -788,7 +788,7 @@ export const OnlineNotepadView: React.FC = () => {
             </div>
 
             <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2">
-              <div className="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
                 <Download className="w-4 h-4" />
               </div>
               <h3 className="font-bold text-sm text-slate-900 dark:text-white">Multi-Format Export</h3>

@@ -33,6 +33,8 @@ import { ToolDefinition } from '../../types';
 import { PdfEngine, PdfInspectionResult, PdfPageInfo, parsePageRangeString } from '../../engine/pdf/PdfEngine';
 import { formatFileSize } from '../../engine/imageEngine';
 import { useApp } from '../../context/AppContext';
+import { Select, CustomSelect, Input, Slider, NumberInput, Textarea, IconButton } from '../ui';
+import { Button } from '../ui/Button';
 
 interface PdfToolViewProps {
   tool: ToolDefinition;
@@ -266,7 +268,7 @@ export const PdfToolView: React.FC<PdfToolViewProps> = ({ tool }) => {
         const mergedBytes = await PdfEngine.mergePdfs(files, (curr, total) => {
           setProcessingProgress(Math.round((curr / total) * 90));
         });
-        const blob = new Blob([mergedBytes], { type: 'application/pdf' });
+        const blob = new Blob([mergedBytes as unknown as BlobPart], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
         setResultBlob(blob);
         setResultUrl(url);
@@ -302,7 +304,7 @@ export const PdfToolView: React.FC<PdfToolViewProps> = ({ tool }) => {
             statusText: `Extracted ${splitFiles.length} separate parts`,
           });
         } else if (splitFiles.length > 0) {
-          const blob = new Blob([splitFiles[0].bytes], { type: 'application/pdf' });
+          const blob = new Blob([splitFiles[0].bytes as unknown as BlobPart], { type: 'application/pdf' });
           const url = URL.createObjectURL(blob);
           setResultBlob(blob);
           setResultUrl(url);
@@ -314,7 +316,7 @@ export const PdfToolView: React.FC<PdfToolViewProps> = ({ tool }) => {
       else if (tool.id === 'rotate-pdf' || tool.route === '/rotate-pdf') {
         setStatusMessage('Rotating PDF pages...');
         const rotatedBytes = await PdfEngine.rotatePdf(primaryFile, rotateAngle, rotateTarget, selectedPages);
-        const blob = new Blob([rotatedBytes], { type: 'application/pdf' });
+        const blob = new Blob([rotatedBytes as unknown as BlobPart], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
         setResultBlob(blob);
         setResultUrl(url);
@@ -334,7 +336,7 @@ export const PdfToolView: React.FC<PdfToolViewProps> = ({ tool }) => {
           },
           (p) => setProcessingProgress(p)
         );
-        const blob = new Blob([res.bytes], { type: 'application/pdf' });
+        const blob = new Blob([res.bytes as unknown as BlobPart], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
         setResultBlob(blob);
         setResultUrl(url);
@@ -420,7 +422,7 @@ export const PdfToolView: React.FC<PdfToolViewProps> = ({ tool }) => {
           imageFit: 'contain',
           quality: 0.9,
         });
-        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const blob = new Blob([pdfBytes as unknown as BlobPart], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
         setResultBlob(blob);
         setResultUrl(url);
@@ -445,7 +447,7 @@ export const PdfToolView: React.FC<PdfToolViewProps> = ({ tool }) => {
           position: watermarkPosition as any,
           pages: 'all',
         });
-        const blob = new Blob([watermarkedBytes], { type: 'application/pdf' });
+        const blob = new Blob([watermarkedBytes as unknown as BlobPart], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
         setResultBlob(blob);
         setResultUrl(url);
@@ -460,7 +462,7 @@ export const PdfToolView: React.FC<PdfToolViewProps> = ({ tool }) => {
           format: pageNumberFormat,
           pages: 'all',
         });
-        const blob = new Blob([numberedBytes], { type: 'application/pdf' });
+        const blob = new Blob([numberedBytes as unknown as BlobPart], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
         setResultBlob(blob);
         setResultUrl(url);
@@ -481,7 +483,7 @@ export const PdfToolView: React.FC<PdfToolViewProps> = ({ tool }) => {
         }
         setStatusMessage('Encrypting document streams...');
         const encBytes = await PdfEngine.protectPdf(primaryFile, passwordInput);
-        const blob = new Blob([encBytes], { type: 'application/pdf' });
+        const blob = new Blob([encBytes as unknown as BlobPart], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
         setResultBlob(blob);
         setResultUrl(url);
@@ -492,7 +494,7 @@ export const PdfToolView: React.FC<PdfToolViewProps> = ({ tool }) => {
       else if (tool.id === 'unlock-pdf' || tool.route === '/unlock-pdf') {
         setStatusMessage('Removing password protection...');
         const decBytes = await PdfEngine.unlockPdf(primaryFile, passwordInput);
-        const blob = new Blob([decBytes], { type: 'application/pdf' });
+        const blob = new Blob([decBytes as unknown as BlobPart], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
         setResultBlob(blob);
         setResultUrl(url);
@@ -520,7 +522,7 @@ export const PdfToolView: React.FC<PdfToolViewProps> = ({ tool }) => {
 
         if (sigBlob) {
           const signedBytes = await PdfEngine.signPdf(primaryFile, sigBlob, 0, 70, 80, 160, 70);
-          const blob = new Blob([signedBytes], { type: 'application/pdf' });
+          const blob = new Blob([signedBytes as unknown as BlobPart], { type: 'application/pdf' });
           const url = URL.createObjectURL(blob);
           setResultBlob(blob);
           setResultUrl(url);
@@ -550,7 +552,7 @@ export const PdfToolView: React.FC<PdfToolViewProps> = ({ tool }) => {
           subject: metaSubject,
           stripAll: isStrip,
         });
-        const blob = new Blob([metaBytes], { type: 'application/pdf' });
+        const blob = new Blob([metaBytes as unknown as BlobPart], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
         setResultBlob(blob);
         setResultUrl(url);
@@ -561,7 +563,7 @@ export const PdfToolView: React.FC<PdfToolViewProps> = ({ tool }) => {
       else {
         setStatusMessage('Processing PDF...');
         const res = await PdfEngine.compressPdf(primaryFile);
-        const blob = new Blob([res.bytes], { type: 'application/pdf' });
+        const blob = new Blob([res.bytes as unknown as BlobPart], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
         setResultBlob(blob);
         setResultUrl(url);
@@ -649,23 +651,24 @@ export const PdfToolView: React.FC<PdfToolViewProps> = ({ tool }) => {
             </div>
 
             <div className="flex items-center gap-2">
-              <button
+              <Button
+                variant="secondary"
+                size="xs"
                 onClick={() => fileInputRef.current?.click()}
-                className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
               >
                 Add More Files
-              </button>
-              <button
+              </Button>
+              <IconButton
+                icon={Trash2}
+                aria-label="Clear all"
+                size="sm"
+                variant="ghost"
                 onClick={() => {
                   setFiles([]);
                   setResultBlob(null);
                   setResultUrl(null);
                 }}
-                className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
-                title="Clear all"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+              />
               <input
                 ref={fileInputRef}
                 type="file"
@@ -816,11 +819,11 @@ export const PdfToolView: React.FC<PdfToolViewProps> = ({ tool }) => {
                         </button>
                       ))}
                       <div className="flex items-center gap-1.5 ml-auto">
-                        <input
-                          type="number"
+                        <NumberInput
                           value={targetKb}
-                          onChange={(e) => setTargetKb(Math.max(10, parseInt(e.target.value) || 100))}
-                          className="w-20 px-2.5 py-1 text-xs font-bold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
+                          min={10}
+                          onChange={(v) => setTargetKb(Math.max(10, v || 100))}
+                          className="w-24"
                         />
                         <span className="text-xs text-slate-500 font-bold">KB</span>
                       </div>
@@ -859,18 +862,13 @@ export const PdfToolView: React.FC<PdfToolViewProps> = ({ tool }) => {
                 </div>
 
                 {splitMode === 'ranges' && (
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                      Page Ranges (comma-separated):
-                    </label>
-                    <input
-                      type="text"
-                      value={pageRangesStr}
-                      onChange={(e) => setPageRangesStr(e.target.value)}
-                      placeholder="e.g. 1-2, 3-5, 8"
-                      className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-medium"
-                    />
-                  </div>
+                  <Input
+                    label="Page Ranges (comma-separated):"
+                    type="text"
+                    value={pageRangesStr}
+                    onChange={(e) => setPageRangesStr(e.target.value)}
+                    placeholder="e.g. 1-2, 3-5, 8"
+                  />
                 )}
               </div>
             )}
@@ -924,95 +922,78 @@ export const PdfToolView: React.FC<PdfToolViewProps> = ({ tool }) => {
             {/* IMAGES TO PDF CONTROLS */}
             {(tool.id === 'images-to-pdf' || tool.id === 'jpg-to-pdf' || tool.id === 'png-to-pdf') && (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Page Format:</label>
-                  <select
-                    value={imageToPdfSize}
-                    onChange={(e) => setImageToPdfSize(e.target.value as any)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-semibold"
-                  >
-                    <option value="A4">A4 Standard (210 x 297 mm)</option>
-                    <option value="Letter">US Letter (8.5 x 11 in)</option>
-                    <option value="fit-image">Fit to Image Dimensions</option>
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Orientation:</label>
-                  <select
-                    value={imageToPdfOrientation}
-                    onChange={(e) => setImageToPdfOrientation(e.target.value as any)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-semibold"
-                  >
-                    <option value="portrait">Portrait</option>
-                    <option value="landscape">Landscape</option>
-                    <option value="auto">Auto Match Photo</option>
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Margins:</label>
-                  <select
-                    value={imageToPdfMargin}
-                    onChange={(e) => setImageToPdfMargin(e.target.value as any)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-semibold"
-                  >
-                    <option value="none">No Margin (Full Bleed)</option>
-                    <option value="small">Small Margin (0.25 in)</option>
-                    <option value="large">Large Margin (0.5 in)</option>
-                  </select>
-                </div>
+                <CustomSelect
+                  label="Page Format:"
+                  value={imageToPdfSize}
+                  onChange={(val) => setImageToPdfSize(val)}
+                  options={[
+                    { value: 'A4', label: 'A4 Standard (210 x 297 mm)' },
+                    { value: 'Letter', label: 'US Letter (8.5 x 11 in)' },
+                    { value: 'fit-image', label: 'Fit to Image Dimensions' },
+                  ]}
+                />
+                <CustomSelect
+                  label="Orientation:"
+                  value={imageToPdfOrientation}
+                  onChange={(val) => setImageToPdfOrientation(val)}
+                  options={[
+                    { value: 'portrait', label: 'Portrait' },
+                    { value: 'landscape', label: 'Landscape' },
+                    { value: 'auto', label: 'Auto Match Photo' },
+                  ]}
+                />
+                <CustomSelect
+                  label="Margins:"
+                  value={imageToPdfMargin}
+                  onChange={(val) => setImageToPdfMargin(val)}
+                  options={[
+                    { value: 'none', label: 'No Margin (Full Bleed)' },
+                    { value: 'small', label: 'Small Margin (0.25 in)' },
+                    { value: 'large', label: 'Large Margin (0.5 in)' },
+                  ]}
+                />
               </div>
             )}
 
             {/* WATERMARK CONTROLS */}
             {(tool.id === 'watermark-pdf' || tool.route === '/watermark-pdf') && (
               <div className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Watermark Text:</label>
-                  <input
-                    type="text"
-                    value={watermarkText}
-                    onChange={(e) => setWatermarkText(e.target.value)}
-                    className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-semibold"
+                <Input
+                  label="Watermark Text"
+                  type="text"
+                  value={watermarkText}
+                  onChange={(e) => setWatermarkText(e.target.value)}
+                />
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                  <Slider
+                    label="Watermark Opacity"
+                    min={10}
+                    max={100}
+                    step={5}
+                    value={Math.round(watermarkOpacity * 100)}
+                    unit="%"
+                    onChange={(v) => setWatermarkOpacity(v / 100)}
                   />
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Opacity ({Math.round(watermarkOpacity * 100)}%):</label>
-                    <input
-                      type="range"
-                      min="0.1"
-                      max="1.0"
-                      step="0.05"
-                      value={watermarkOpacity}
-                      onChange={(e) => setWatermarkOpacity(parseFloat(e.target.value))}
-                      className="w-full mt-2 accent-blue-600"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Angle ({watermarkRotation}°):</label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="360"
-                      step="15"
-                      value={watermarkRotation}
-                      onChange={(e) => setWatermarkRotation(parseInt(e.target.value))}
-                      className="w-full mt-2 accent-blue-600"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Position:</label>
-                    <select
-                      value={watermarkPosition}
-                      onChange={(e) => setWatermarkPosition(e.target.value as any)}
-                      className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-semibold mt-1"
-                    >
-                      <option value="diagonal">Diagonal Center</option>
-                      <option value="center">Center</option>
-                      <option value="tile">Full Page Tile Pattern</option>
-                      <option value="bottom-right">Bottom Right Corner</option>
-                    </select>
-                  </div>
+                  <Slider
+                    label="Rotation Angle"
+                    min={0}
+                    max={360}
+                    step={15}
+                    value={watermarkRotation}
+                    unit="°"
+                    onChange={(v) => setWatermarkRotation(v)}
+                  />
+                  <CustomSelect
+                    label="Position:"
+                    value={watermarkPosition}
+                    onChange={(val) => setWatermarkPosition(val)}
+                    options={[
+                      { value: 'diagonal', label: 'Diagonal Center' },
+                      { value: 'center', label: 'Center' },
+                      { value: 'tile', label: 'Full Page Tile Pattern' },
+                      { value: 'bottom-right', label: 'Bottom Right Corner' },
+                    ]}
+                  />
                 </div>
               </div>
             )}
@@ -1020,56 +1001,46 @@ export const PdfToolView: React.FC<PdfToolViewProps> = ({ tool }) => {
             {/* PAGE NUMBERS CONTROLS */}
             {(tool.id === 'add-page-numbers-to-pdf' || tool.route === '/add-page-numbers-to-pdf') && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Position:</label>
-                  <select
-                    value={pageNumberPos}
-                    onChange={(e) => setPageNumberPos(e.target.value as any)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-semibold"
-                  >
-                    <option value="bottom-center">Bottom Center (Standard)</option>
-                    <option value="bottom-right">Bottom Right</option>
-                    <option value="top-right">Top Right</option>
-                    <option value="bottom-left">Bottom Left</option>
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Numbering Format:</label>
-                  <select
-                    value={pageNumberFormat}
-                    onChange={(e) => setPageNumberFormat(e.target.value as any)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-semibold"
-                  >
-                    <option value="page_of_total">Page X of Y (e.g. Page 1 of 12)</option>
-                    <option value="number">Single Number (e.g. 1, 2, 3)</option>
-                  </select>
-                </div>
+                <CustomSelect
+                  label="Position:"
+                  value={pageNumberPos}
+                  onChange={(val) => setPageNumberPos(val)}
+                  options={[
+                    { value: 'bottom-center', label: 'Bottom Center (Standard)' },
+                    { value: 'bottom-right', label: 'Bottom Right' },
+                    { value: 'top-right', label: 'Top Right' },
+                    { value: 'bottom-left', label: 'Bottom Left' },
+                  ]}
+                />
+                <CustomSelect
+                  label="Numbering Format:"
+                  value={pageNumberFormat}
+                  onChange={(val) => setPageNumberFormat(val)}
+                  options={[
+                    { value: 'page_of_total', label: 'Page X of Y (e.g. Page 1 of 12)' },
+                    { value: 'number', label: 'Single Number (e.g. 1, 2, 3)' },
+                  ]}
+                />
               </div>
             )}
 
             {/* PASSWORD SECURITY CONTROLS */}
             {(tool.id === 'protect-pdf' || tool.route === '/protect-pdf') && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Set Password:</label>
-                  <input
-                    type="password"
-                    value={passwordInput}
-                    onChange={(e) => setPasswordInput(e.target.value)}
-                    placeholder="Enter secure password"
-                    className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-medium"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Confirm Password:</label>
-                  <input
-                    type="password"
-                    value={passwordConfirm}
-                    onChange={(e) => setPasswordConfirm(e.target.value)}
-                    placeholder="Re-enter password"
-                    className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-medium"
-                  />
-                </div>
+                <Input
+                  label="Set Password:"
+                  type="password"
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  placeholder="Enter secure password"
+                />
+                <Input
+                  label="Confirm Password:"
+                  type="password"
+                  value={passwordConfirm}
+                  onChange={(e) => setPasswordConfirm(e.target.value)}
+                  placeholder="Re-enter password"
+                />
               </div>
             )}
 
@@ -1118,11 +1089,11 @@ export const PdfToolView: React.FC<PdfToolViewProps> = ({ tool }) => {
                     </button>
                   </div>
                 ) : (
-                  <input
+                  <Input
                     type="text"
                     value={typedSig}
                     onChange={(e) => setTypedSig(e.target.value)}
-                    className="w-full px-4 py-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-2xl font-serif italic"
+                    placeholder="Type signature..."
                   />
                 )}
               </div>
@@ -1131,55 +1102,39 @@ export const PdfToolView: React.FC<PdfToolViewProps> = ({ tool }) => {
             {/* METADATA CONTROLS */}
             {(tool.id === 'pdf-metadata' || tool.route === '/pdf-metadata') && (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Title:</label>
-                  <input
-                    type="text"
-                    value={metaTitle}
-                    onChange={(e) => setMetaTitle(e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Author:</label>
-                  <input
-                    type="text"
-                    value={metaAuthor}
-                    onChange={(e) => setMetaAuthor(e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Subject:</label>
-                  <input
-                    type="text"
-                    value={metaSubject}
-                    onChange={(e) => setMetaSubject(e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
-                  />
-                </div>
+                <Input
+                  label="Title:"
+                  type="text"
+                  value={metaTitle}
+                  onChange={(e) => setMetaTitle(e.target.value)}
+                />
+                <Input
+                  label="Author:"
+                  type="text"
+                  value={metaAuthor}
+                  onChange={(e) => setMetaAuthor(e.target.value)}
+                />
+                <Input
+                  label="Subject:"
+                  type="text"
+                  value={metaSubject}
+                  onChange={(e) => setMetaSubject(e.target.value)}
+                />
               </div>
             )}
 
             {/* ACTION EXECUTE BUTTON */}
             <div className="pt-2">
-              <button
+              <Button
+                variant="primary"
+                size="lg"
+                fullWidth
+                isLoading={isProcessing}
+                leftIcon={CheckCircle2}
                 onClick={handleExecute}
-                disabled={isProcessing}
-                className="w-full py-4 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black text-base flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 transition-all active:scale-[0.99] disabled:opacity-50 cursor-pointer"
               >
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span>{statusMessage || 'Processing...'}</span>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="h-5 w-5" />
-                    <span>Process {tool.name}</span>
-                  </>
-                )}
-              </button>
+                {isProcessing ? (statusMessage || 'Processing...') : `Process ${tool.name}`}
+              </Button>
 
               {isProcessing && (
                 <div className="mt-3 space-y-1.5">
@@ -1294,11 +1249,10 @@ export const PdfToolView: React.FC<PdfToolViewProps> = ({ tool }) => {
                       <Copy className="h-3.5 w-3.5" /> Copy Text
                     </button>
                   </div>
-                  <textarea
+                  <Textarea
                     readOnly
                     value={extractedText}
                     rows={8}
-                    className="w-full p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-mono text-slate-700 dark:text-slate-300"
                   />
                 </div>
               )}

@@ -6,6 +6,8 @@ import { UploadZone } from '../common/UploadZone';
 import { ImagePreview } from '../common/ImagePreview';
 import { UniversalBatchEngine } from '../../engine/batch/UniversalBatchEngine';
 import { UniversalBatchQueue } from '../common/UniversalBatchQueue';
+import { Button } from '../ui/Button';
+import { Slider } from '../ui/Slider';
 import {
   Sparkles,
   RefreshCw,
@@ -209,41 +211,36 @@ export const AIToolGenericView: React.FC<AIToolGenericViewProps> = ({ tool }) =>
             <div className="flex items-center gap-2">
               {files.length > 1 && (
                 <div className="flex items-center rounded-xl bg-slate-100 dark:bg-slate-800 p-1">
-                  <button
+                  <Button
+                    variant={viewMode === 'batch' ? 'primary' : 'ghost'}
+                    size="xs"
+                    leftIcon={Layers}
                     onClick={() => setViewMode('batch')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                      viewMode === 'batch'
-                        ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                    }`}
                   >
-                    <Layers className="h-3.5 w-3.5" />
-                    <span>Batch Queue ({files.length})</span>
-                  </button>
-                  <button
+                    Batch Queue ({files.length})
+                  </Button>
+                  <Button
+                    variant={viewMode === 'single' ? 'primary' : 'ghost'}
+                    size="xs"
+                    leftIcon={Eye}
                     onClick={() => setViewMode('single')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                      viewMode === 'single'
-                        ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                    }`}
                   >
-                    <Eye className="h-3.5 w-3.5" />
-                    <span>Single Inspector</span>
-                  </button>
+                    Single Inspector
+                  </Button>
                 </div>
               )}
 
-              <button
+              <Button
+                variant="ghost"
+                size="xs"
                 onClick={() => {
                   batchEngine.clear();
                   setFiles([]);
                   setResult(null);
                 }}
-                className="text-xs font-semibold text-rose-500 hover:text-rose-600 px-3 py-1.5"
               >
                 Clear All
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -269,21 +266,14 @@ export const AIToolGenericView: React.FC<AIToolGenericViewProps> = ({ tool }) =>
                     </label>
                     <div className="grid grid-cols-2 gap-3">
                       {(['2x', '4x'] as const).map((factor) => (
-                        <button
+                        <Button
                           key={factor}
-                          type="button"
+                          variant={upscaleFactor === factor ? 'primary' : 'outline'}
+                          size="md"
                           onClick={() => setUpscaleFactor(factor)}
-                          className={`p-4 rounded-xl border text-center transition-colors ${
-                            upscaleFactor === factor
-                              ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-500 dark:bg-indigo-950 dark:text-indigo-300 ring-2 ring-indigo-500/20'
-                              : 'border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800'
-                          }`}
                         >
-                          <p className="text-base font-extrabold">{factor} Super-Res</p>
-                          <p className="text-[11px] text-slate-400">
-                            {factor === '2x' ? '200% resolution' : '400% Ultra-HD 4K'}
-                          </p>
-                        </button>
+                          {factor} Super-Res
+                        </Button>
                       ))}
                     </div>
                     {currentFile && (
@@ -297,17 +287,13 @@ export const AIToolGenericView: React.FC<AIToolGenericViewProps> = ({ tool }) =>
 
                 {tool.slug === 'background-remover' && (
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between text-xs font-medium text-slate-700 dark:text-slate-300">
-                      <span>Edge Sensitivity / Tolerance</span>
-                      <span className="font-mono text-indigo-600 font-bold">{bgThreshold}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="15"
-                      max="90"
+                    <Slider
+                      label="Edge Sensitivity / Tolerance"
+                      min={15}
+                      max={90}
+                      step={1}
                       value={bgThreshold}
-                      onChange={(e) => setBgThreshold(parseInt(e.target.value))}
-                      className="w-full accent-indigo-600"
+                      onChange={(v) => setBgThreshold(v)}
                     />
                     <div className="flex justify-between text-[10px] text-slate-400">
                       <span>Crisp Subject Edges</span>
@@ -319,17 +305,14 @@ export const AIToolGenericView: React.FC<AIToolGenericViewProps> = ({ tool }) =>
 
                 {tool.slug === 'object-remover' && (
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between text-xs font-medium text-slate-700 dark:text-slate-300">
-                      <span>Highlighter Brush Size</span>
-                      <span className="font-mono text-indigo-600 font-bold">{brushSize}px</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="5"
-                      max="80"
+                    <Slider
+                      label="Highlighter Brush Size"
+                      min={5}
+                      max={80}
+                      step={1}
                       value={brushSize}
-                      onChange={(e) => setBrushSize(parseInt(e.target.value))}
-                      className="w-full accent-indigo-600"
+                      unit="px"
+                      onChange={(v) => setBrushSize(v)}
                     />
                     <p className="text-[11px] text-slate-500">
                       Paint over unwanted items, watermarks, or objects.
@@ -364,23 +347,17 @@ export const AIToolGenericView: React.FC<AIToolGenericViewProps> = ({ tool }) =>
 
                 {/* Action Button for Single Mode */}
                 {viewMode === 'single' && (
-                  <button
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    fullWidth
+                    isLoading={isProcessing}
+                    leftIcon={Sparkles}
+                    disabled={!currentFile}
                     onClick={handleRunAI}
-                    disabled={isProcessing || !currentFile}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 py-3.5 text-sm font-bold text-white hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-indigo-500/20 active:scale-[0.99] disabled:opacity-50 transition-all cursor-pointer"
                   >
-                    {isProcessing ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 animate-spin" />
-                        <span>Running Neural Transformation...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-4 w-4" />
-                        <span>Run {tool.name}</span>
-                      </>
-                    )}
-                  </button>
+                    Run {tool.name}
+                  </Button>
                 )}
               </div>
             </div>

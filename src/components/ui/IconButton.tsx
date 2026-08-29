@@ -18,6 +18,7 @@ const iconSizeStyles: Record<ButtonSize, string> = {
   md: 'p-2 w-10 h-10 rounded-xl',
   lg: 'p-2.5 w-12 h-12 rounded-xl',
   xl: 'p-3 w-14 h-14 rounded-2xl',
+  icon: 'p-2 w-10 h-10 rounded-xl',
 };
 
 const iconPixelSizes: Record<ButtonSize, number> = {
@@ -26,6 +27,7 @@ const iconPixelSizes: Record<ButtonSize, number> = {
   md: 18,
   lg: 22,
   xl: 26,
+  icon: 18,
 };
 
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
@@ -49,13 +51,14 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
       <button
         ref={ref}
         type={type}
-        aria-label={ariaLabel}
+        aria-label={ariaLabel || 'Button'}
+        aria-busy={loading ? 'true' : undefined}
         disabled={isDisabled}
         className={`inline-flex items-center justify-center transition-all duration-150 select-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 ${
           iconSizeStyles[size]
         } ${
           variant === 'primary'
-            ? 'bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-600'
+            ? 'bg-primary hover:bg-primary/90 text-primary-foreground'
             : variant === 'secondary'
             ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200'
             : variant === 'outline'
@@ -69,10 +72,15 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
         {loading ? (
           <Spinner size={size === 'xs' || size === 'sm' ? 'xs' : 'sm'} />
         ) : typeof icon === 'string' ? (
-          <Icon name={icon} size={iconPixelSizes[size]} />
-        ) : (
-          icon
-        )}
+          <Icon name={icon} size={iconPixelSizes[size]} aria-hidden="true" />
+        ) : React.isValidElement(icon) ? (
+          React.cloneElement(icon as React.ReactElement<any>, { 'aria-hidden': 'true' })
+        ) : typeof icon === 'function' || (typeof icon === 'object' && icon !== null) ? (
+          React.createElement(icon as React.ComponentType<{ className?: string; 'aria-hidden'?: string }>, {
+            className: 'w-4 h-4 shrink-0',
+            'aria-hidden': 'true',
+          })
+        ) : null}
       </button>
     );
   }

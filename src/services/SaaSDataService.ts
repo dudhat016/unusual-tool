@@ -1,41 +1,36 @@
 import {
+  collection,
   doc,
   getDoc,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  runTransaction,
   setDoc,
   updateDoc,
-  collection,
-  addDoc,
-  query,
-  where,
-  orderBy,
-  limit,
-  getDocs,
-  serverTimestamp,
-  runTransaction,
-  deleteDoc,
+  where
 } from 'firebase/firestore';
+import { DEFAULT_AD_SLOTS } from '../config/adSlots';
+import { DEFAULT_FEATURE_FLAGS } from '../config/featureFlags';
 import { db } from '../config/firebase';
-import {
-  UserProfile,
-  CreditLedgerRecord,
-  TransactionType,
-  ProcessingJobRecord,
-  PlanTier,
-  PlanConfig,
-  SavedPreset,
-  SystemErrorLog,
-} from '../types/saas';
-import {
-  ToolAdminConfig,
-  FeatureFlag,
-  SystemSettings,
-  AdminAuditLog,
-} from '../types/admin';
-import { AdSlotConfig } from '../types/ads';
 import { DEFAULT_PLANS } from '../config/plans';
 import { DEFAULT_SYSTEM_SETTINGS } from '../config/systemSettings';
-import { DEFAULT_FEATURE_FLAGS } from '../config/featureFlags';
-import { DEFAULT_AD_SLOTS } from '../config/adSlots';
+import {
+  AdminAuditLog,
+  FeatureFlag,
+  SystemSettings
+} from '../types/admin';
+import { AdSlotConfig } from '../types/ads';
+import {
+  CreditLedgerRecord,
+  PlanTier,
+  ProcessingJobRecord,
+  SavedPreset,
+  SystemErrorLog,
+  TransactionType,
+  UserProfile
+} from '../types/saas';
 
 export class SaaSDataService {
   private static getTodayString(): string {
@@ -357,8 +352,8 @@ export class SaaSDataService {
       if (snap.exists()) {
         return { ...DEFAULT_SYSTEM_SETTINGS, ...snap.data() } as SystemSettings;
       }
-    } catch (e) {
-      console.warn('Using default system settings', e);
+    } catch {
+      // Use default local system settings
     }
     return DEFAULT_SYSTEM_SETTINGS;
   }

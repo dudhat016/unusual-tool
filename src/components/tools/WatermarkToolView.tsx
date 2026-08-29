@@ -6,6 +6,9 @@ import { UploadZone } from '../common/UploadZone';
 import { ImagePreview } from '../common/ImagePreview';
 import { UniversalBatchEngine } from '../../engine/batch/UniversalBatchEngine';
 import { UniversalBatchQueue } from '../common/UniversalBatchQueue';
+import { Slider } from '../ui/Slider';
+import { Input } from '../ui/Input';
+import { Button } from '../ui/Button';
 import {
   Stamp,
   RefreshCw,
@@ -180,19 +183,13 @@ export const WatermarkToolView: React.FC<WatermarkToolViewProps> = ({ tool }) =>
                   </span>
                 </div>
 
-                {/* Watermark Text Input */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Watermark Text
-                  </label>
-                  <input
-                    type="text"
-                    value={options.text || ''}
-                    onChange={(e) => setOptions((prev) => ({ ...prev, text: e.target.value }))}
-                    placeholder="© 2025 Brand Name"
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                  />
-                </div>
+                <Input
+                  label="Watermark Text"
+                  type="text"
+                  value={options.text || ''}
+                  onChange={(e) => setOptions((prev) => ({ ...prev, text: e.target.value }))}
+                  placeholder="© 2025 Brand Name"
+                />
 
                 {/* Position Matrix */}
                 <div className="space-y-2">
@@ -208,79 +205,58 @@ export const WatermarkToolView: React.FC<WatermarkToolViewProps> = ({ tool }) =>
                       { id: 'tile', label: 'Tile Grid' },
                       { id: 'bottom-right', label: 'Bottom Right' },
                     ].map((pos) => (
-                      <button
+                      <Button
                         key={pos.id}
-                        type="button"
+                        variant={options.position === pos.id ? 'primary' : 'outline'}
+                        size="sm"
                         onClick={() =>
                           setOptions((prev) => ({
                             ...prev,
                             position: pos.id as any,
                           }))
                         }
-                        className={`p-2 rounded-xl border text-xs font-semibold transition-colors ${
-                          options.position === pos.id
-                            ? 'border-blue-600 bg-blue-50 text-blue-700 dark:border-blue-500 dark:bg-blue-950 dark:text-blue-300'
-                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
-                        }`}
                       >
                         {pos.label}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </div>
 
                 {/* Opacity Slider */}
-                <div>
-                  <div className="flex justify-between text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    <span>Opacity</span>
-                    <span className="font-mono">{Math.round((options.opacity || 0.6) * 100)}%</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0.1"
-                    max="1.0"
-                    step="0.05"
-                    value={options.opacity || 0.6}
-                    onChange={(e) => setOptions((prev) => ({ ...prev, opacity: parseFloat(e.target.value) }))}
-                    className="w-full accent-blue-600"
-                  />
-                </div>
+                <Slider
+                  label="Opacity"
+                  min={10}
+                  max={100}
+                  step={5}
+                  value={Math.round((options.opacity || 0.6) * 100)}
+                  unit="%"
+                  onChange={(v) => setOptions((prev) => ({ ...prev, opacity: v / 100 }))}
+                />
 
                 {/* Font Size Slider */}
-                <div>
-                  <div className="flex justify-between text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    <span>Font Size</span>
-                    <span className="font-mono">{options.fontSize || 32}px</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="12"
-                    max="90"
-                    value={options.fontSize || 32}
-                    onChange={(e) => setOptions((prev) => ({ ...prev, fontSize: parseInt(e.target.value) }))}
-                    className="w-full accent-blue-600"
-                  />
-                </div>
+                <Slider
+                  label="Font Size"
+                  min={12}
+                  max={90}
+                  step={1}
+                  value={options.fontSize || 32}
+                  unit="px"
+                  onChange={(v) => setOptions((prev) => ({ ...prev, fontSize: v }))}
+                />
 
                 {/* Single Image Action Button */}
                 {viewMode === 'single' && (
-                  <button
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    fullWidth
+                    isLoading={isProcessing}
+                    leftIcon={Stamp}
+                    disabled={!currentFile}
                     onClick={handleSingleApply}
-                    disabled={isProcessing || !currentFile}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 text-sm font-bold text-white hover:bg-blue-700 shadow-md shadow-blue-500/20 active:scale-[0.99] disabled:opacity-50 transition-all cursor-pointer"
                   >
-                    {isProcessing ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 animate-spin" />
-                        <span>Stamping Watermark...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Stamp className="h-4 w-4" />
-                        <span>Stamp Watermark</span>
-                      </>
-                    )}
-                  </button>
+                    Stamp Watermark
+                  </Button>
                 )}
               </div>
             </div>

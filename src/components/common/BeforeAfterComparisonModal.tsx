@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, ZoomIn, ZoomOut, RotateCcw, Download, Sparkles, SlidersHorizontal, ArrowLeftRight } from 'lucide-react';
 import { formatFileSize } from '../../engine/imageEngine';
+import { Button, IconButton } from '../ui';
 
 interface BeforeAfterComparisonModalProps {
   isOpen: boolean;
@@ -125,75 +126,71 @@ export const BeforeAfterComparisonModal: React.FC<BeforeAfterComparisonModalProp
 
           <div className="flex items-center gap-2">
             {/* View Mode Switcher */}
-            <div className="hidden sm:flex rounded-lg border border-slate-700 bg-slate-800/80 p-0.5 text-xs">
-              <button
+            <div className="hidden sm:flex rounded-lg border border-slate-700 bg-slate-800/80 p-0.5 text-xs gap-1">
+              <Button
+                variant={viewMode === 'slider' ? 'primary' : 'ghost'}
+                size="xs"
                 onClick={() => setViewMode('slider')}
-                className={`px-2.5 py-1 rounded-md transition-colors ${
-                  viewMode === 'slider'
-                    ? 'bg-blue-600 font-semibold text-white'
-                    : 'text-slate-400 hover:text-white'
-                }`}
               >
                 Split Slider
-              </button>
-              <button
+              </Button>
+              <Button
+                variant={viewMode === 'side-by-side' ? 'primary' : 'ghost'}
+                size="xs"
                 onClick={() => setViewMode('side-by-side')}
-                className={`px-2.5 py-1 rounded-md transition-colors ${
-                  viewMode === 'side-by-side'
-                    ? 'bg-blue-600 font-semibold text-white'
-                    : 'text-slate-400 hover:text-white'
-                }`}
               >
                 Side-by-Side
-              </button>
+              </Button>
             </div>
 
             {/* Zoom Controls */}
             <div className="flex items-center gap-1 border-l border-slate-800 pl-2">
-              <button
+              <IconButton
+                icon={ZoomOut}
+                aria-label="Zoom Out"
+                size="xs"
+                variant="ghost"
                 onClick={() => setZoom((z) => Math.max(1, z - 0.25))}
-                className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
-                title="Zoom Out"
-              >
-                <ZoomOut className="h-4 w-4" />
-              </button>
+              />
               <span className="text-xs font-mono text-slate-300 w-10 text-center">
                 {Math.round(zoom * 100)}%
               </span>
-              <button
+              <IconButton
+                icon={ZoomIn}
+                aria-label="Zoom In"
+                size="xs"
+                variant="ghost"
                 onClick={() => setZoom((z) => Math.min(3, z + 0.25))}
-                className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
-                title="Zoom In"
-              >
-                <ZoomIn className="h-4 w-4" />
-              </button>
-              <button
+              />
+              <IconButton
+                icon={RotateCcw}
+                aria-label="Reset View"
+                size="xs"
+                variant="ghost"
                 onClick={resetTransform}
-                className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
-                title="Reset View"
-              >
-                <RotateCcw className="h-4 w-4" />
-              </button>
+              />
             </div>
 
             {downloadUrl && (
-              <a
+              <Button
+                as="a"
                 href={downloadUrl}
                 download={resultName || `processed_${originalName}`}
-                className="hidden sm:flex items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition-colors"
+                variant="primary"
+                size="xs"
+                leftIcon={Download}
               >
-                <Download className="h-3.5 w-3.5" />
-                <span>Download</span>
-              </a>
+                Download
+              </Button>
             )}
 
-            <button
-              onClick={onClose}
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+            <IconButton
+              icon={X}
               aria-label="Close modal"
-            >
-              <X className="h-5 w-5" />
-            </button>
+              size="sm"
+              variant="ghost"
+              onClick={onClose}
+            />
           </div>
         </div>
 
@@ -239,7 +236,7 @@ export const BeforeAfterComparisonModal: React.FC<BeforeAfterComparisonModalProp
                 onMouseDown={handleMouseDownSlider}
               >
                 <div className="h-full w-0.5 bg-white shadow-lg" />
-                <div className="absolute flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-blue-600 text-white shadow-lg">
+                <div className="absolute flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-primary text-primary-foreground shadow-lg">
                   <ArrowLeftRight className="h-4 w-4" />
                 </div>
               </div>
@@ -248,7 +245,7 @@ export const BeforeAfterComparisonModal: React.FC<BeforeAfterComparisonModalProp
               <span className="absolute bottom-3 left-3 z-10 rounded-md bg-black/70 px-2 py-1 text-[11px] font-semibold text-white backdrop-blur-xs">
                 Original ({formatFileSize(originalSize)})
               </span>
-              <span className="absolute bottom-3 right-3 z-10 rounded-md bg-blue-600/80 px-2 py-1 text-[11px] font-semibold text-white backdrop-blur-xs">
+              <span className="absolute bottom-3 right-3 z-10 rounded-md bg-primary/90 px-2 py-1 text-[11px] font-semibold text-primary-foreground backdrop-blur-xs">
                 Processed ({formatFileSize(resultSize)})
               </span>
             </div>

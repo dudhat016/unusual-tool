@@ -58,13 +58,13 @@ export const Tabs: React.FC<TabsProps> = ({
               variant === 'underline'
                 ? `border-b-2 -mb-px ${
                     isActive
-                      ? 'border-indigo-600 dark:border-indigo-500 text-indigo-600 dark:text-indigo-400 font-bold'
+                      ? 'border-primary text-primary font-bold'
                       : 'border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                   }`
                 : variant === 'pills'
                 ? `rounded-xl ${
                     isActive
-                      ? 'bg-indigo-600 text-white shadow-xs'
+                      ? 'bg-primary text-primary-foreground shadow-xs'
                       : 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300'
                   }`
                 : `rounded-xl ${
@@ -87,7 +87,7 @@ export const Tabs: React.FC<TabsProps> = ({
                   isActive
                     ? variant === 'pills'
                       ? 'bg-white/20 text-white'
-                      : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300'
+                      : 'bg-primary/10 text-primary'
                     : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
                 }`}
               >

@@ -11,15 +11,14 @@ import { AdminTrafficTab } from '../components/admin/AdminTrafficTab';
 import { AdminFlagsTab } from '../components/admin/AdminFlagsTab';
 import { AdminAuditTab } from '../components/admin/AdminAuditTab';
 import { AdminTranslationsTab } from '../components/admin/AdminTranslationsTab';
+import { AdminBlogsTab } from '../components/admin/AdminBlogsTab';
+import { SeoAdminView } from '../views/SeoAdminView';
+import { UIKitCatalogView } from '../views/UIKitCatalogView';
 import { AdminLayout } from '../components/layout/AdminLayout';
 import { Lock, RefreshCw, Compass } from 'lucide-react';
 
 export const AdminPage: React.FC = () => {
-  const { user, isAdmin, navigate, showToast, systemSettings, updateSystemSettings } = useApp();
-
-  const [activeTab, setActiveTab] = useState<
-    'overview' | 'users' | 'tools' | 'plans' | 'ads' | 'traffic' | 'flags' | 'translations' | 'audit'
-  >('overview');
+  const { user, isAdmin, navigate, showToast, systemSettings, updateSystemSettings, currentPath } = useApp();
 
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [jobs, setJobs] = useState<ProcessingJobRecord[]>([]);
@@ -27,19 +26,38 @@ export const AdminPage: React.FC = () => {
   const [logs, setLogs] = useState<SystemErrorLog[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Sync tab with URL query param
-  useEffect(() => {
+  // Derive active tab from URL route path (e.g. /admin/users -> 'users') or query param
+  const getActiveTabFromRoute = (): 'overview' | 'users' | 'tools' | 'plans' | 'ads' | 'traffic' | 'flags' | 'translations' | 'audit' | 'seo' | 'blogs' | 'ui-kit' => {
+    const raw = (currentPath || window.location.pathname).split('?')[0].replace(/\/$/, '');
+    const cleanPath = raw.replace(/^\/(en|hi|es|fr|de|pt|it|ja|ko|zh|ar)/i, '') || '/';
+    const segments = cleanPath.split('/').filter(Boolean);
+    const subRoute = segments[1] || '';
+
+    const validTabs = ['overview', 'users', 'tools', 'plans', 'ads', 'traffic', 'flags', 'translations', 'audit', 'seo', 'blogs', 'ui-kit'];
+
+    if (subRoute && validTabs.includes(subRoute)) {
+      return subRoute as any;
+    }
+
+    // Fallback query param tab check for legacy links
     const params = new URLSearchParams(window.location.search);
     const tabParam = params.get('tab');
-    if (
-      tabParam &&
-      ['overview', 'users', 'tools', 'plans', 'ads', 'traffic', 'flags', 'translations', 'audit'].includes(
-        tabParam
-      )
-    ) {
-      setActiveTab(tabParam as any);
+    if (tabParam && validTabs.includes(tabParam)) {
+      return tabParam as any;
     }
-  }, []);
+
+    return 'overview';
+  };
+
+  const activeTab = getActiveTabFromRoute();
+
+  const handleTabChange = (tab: string) => {
+    if (tab === 'overview') {
+      navigate('/admin');
+    } else {
+      navigate(`/admin/${tab}`);
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -79,7 +97,7 @@ export const AdminPage: React.FC = () => {
         </p>
         <button
           onClick={() => navigate('/')}
-          className="px-4 py-2 rounded-xl bg-purple-600 text-white text-xs font-bold shadow-md shadow-purple-600/25 hover:bg-purple-500 transition-colors"
+          className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-md shadow-primary/25 hover:bg-primary/90 transition-colors"
         >
           Return Home
         </button>
@@ -90,18 +108,13 @@ export const AdminPage: React.FC = () => {
   return (
     <AdminLayout
       activeTab={activeTab}
-      onTabChange={(tab) => {
-        setActiveTab(tab);
-        const url = new URL(window.location.href);
-        url.searchParams.set('tab', tab);
-        window.history.pushState({}, '', url.toString());
-      }}
+      onTabChange={handleTabChange}
       userCount={users.length}
       errorLogCount={logs.length}
     >
       <div className="space-y-6">
         {/* Top Header Controls Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-3xl border border-purple-200 dark:border-purple-900/40 bg-gradient-to-r from-purple-500/10 via-indigo-500/5 to-slate-900/5 dark:from-purple-950/40 dark:via-indigo-950/20 dark:to-slate-900/60">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-3xl border border-primary/20 bg-primary/5 dark:bg-slate-900/60">
           <div>
             <h2 className="text-lg font-extrabold text-slate-900 dark:text-white capitalize">
               {activeTab === 'overview'
@@ -116,7 +129,7 @@ export const AdminPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={() => navigate('/admin/seo')}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 text-xs font-bold hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition-colors cursor-pointer"
             >
               <Compass className="h-3.5 w-3.5" />
               <span>SEO Diagnostic Hub</span>
@@ -165,6 +178,12 @@ export const AdminPage: React.FC = () => {
         {activeTab === 'translations' && <AdminTranslationsTab />}
 
         {activeTab === 'audit' && <AdminAuditTab ledger={ledger} errorLogs={logs} />}
+
+        {activeTab === 'seo' && <SeoAdminView />}
+
+        {activeTab === 'blogs' && <AdminBlogsTab showToast={showToast} />}
+
+        {activeTab === 'ui-kit' && <UIKitCatalogView />}
       </div>
     </AdminLayout>
   );

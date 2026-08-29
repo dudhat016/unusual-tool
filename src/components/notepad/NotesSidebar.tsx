@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Note } from '../../types/notepad';
+import { Input } from '../ui/Input';
 import {
   Plus,
   Search,
@@ -167,12 +168,11 @@ export const NotesSidebar: React.FC<NotesSidebarProps> = ({
         {/* Search input */}
         <div className="relative">
           <Search className="w-3.5 h-3.5 text-slate-400 absolute start-2.5 top-1/2 -translate-y-1/2" />
-          <input
+          <Input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search notes..."
-            className="w-full ps-8 pe-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 border-none text-xs text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:ring-1 focus:ring-purple-500"
           />
         </div>
 
@@ -278,7 +278,7 @@ export const NotesSidebar: React.FC<NotesSidebarProps> = ({
                       className="flex items-center gap-1 w-full"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <input
+                      <Input
                         type="text"
                         value={editTitleValue}
                         onChange={(e) => setEditTitleValue(e.target.value)}
@@ -287,7 +287,6 @@ export const NotesSidebar: React.FC<NotesSidebarProps> = ({
                           if (e.key === 'Escape') setEditingNoteId(null);
                         }}
                         autoFocus
-                        className="w-full text-xs font-bold px-1.5 py-0.5 rounded border border-purple-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none"
                       />
                       <button
                         type="button"

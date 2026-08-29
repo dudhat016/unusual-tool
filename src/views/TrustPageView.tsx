@@ -1,7 +1,6 @@
 import React from 'react';
 import { Breadcrumbs } from '../components/common/Breadcrumbs';
 import { ShieldCheck, Lock, Cpu, CheckCircle, Mail, HelpCircle, FileText, Globe } from 'lucide-react';
-import { TopicalClusterLinks } from '../components/common/TopicalClusterLinks';
 
 interface TrustPageViewProps {
   pageType: 'about' | 'privacy' | 'terms' | 'security' | 'contact' | 'faq';
@@ -45,13 +44,13 @@ export const TrustPageView: React.FC<TrustPageViewProps> = ({ pageType }) => {
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Hardware-accelerated sub-millisecond conversions.</p>
           </div>
           <div className="p-5 rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-            <Lock className="h-6 w-6 text-indigo-500 mb-2" />
+            <Lock className="h-6 w-6 text-primary mb-2" />
             <h3 className="font-bold text-slate-900 dark:text-white text-sm">No Accounts Required</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Instant free access with no logins or subscriptions.</p>
           </div>
         </div>
 
-        <TopicalClusterLinks />
+
       </div>
     );
   }
@@ -84,7 +83,7 @@ export const TrustPageView: React.FC<TrustPageViewProps> = ({ pageType }) => {
           </p>
         </section>
 
-        <TopicalClusterLinks />
+
       </div>
     );
   }
@@ -123,7 +122,7 @@ export const TrustPageView: React.FC<TrustPageViewProps> = ({ pageType }) => {
           </ul>
         </section>
 
-        <TopicalClusterLinks />
+
       </div>
     );
   }
@@ -150,7 +149,7 @@ export const TrustPageView: React.FC<TrustPageViewProps> = ({ pageType }) => {
           <p>All services are provided &quot;as is&quot; without warranty of any kind. We are not liable for accidental data corruption or browser memory crashes.</p>
         </section>
 
-        <TopicalClusterLinks />
+
       </div>
     );
   }
@@ -181,7 +180,7 @@ export const TrustPageView: React.FC<TrustPageViewProps> = ({ pageType }) => {
           </p>
         </div>
 
-        <TopicalClusterLinks />
+
       </div>
     );
   }

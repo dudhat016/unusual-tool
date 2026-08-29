@@ -5,6 +5,7 @@ import { useApp } from '../../context/AppContext';
 import { UploadZone } from '../common/UploadZone';
 import { UniversalBatchEngine } from '../../engine/batch/UniversalBatchEngine';
 import { UniversalBatchQueue } from '../common/UniversalBatchQueue';
+import { Textarea } from '../ui/Textarea';
 import {
   FileText,
   Copy,
@@ -247,18 +248,17 @@ export const OCRToolView: React.FC<OCRToolViewProps> = ({ tool }) => {
                       </button>
                       <button
                         onClick={handleDownloadTxt}
-                        className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                        className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
                       >
                         <Download className="h-3.5 w-3.5" />
                         <span>Download .txt</span>
                       </button>
                     </div>
                   </div>
-                  <textarea
+                  <Textarea
                     value={extractedText}
                     onChange={(e) => setExtractedText(e.target.value)}
                     rows={12}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 p-4 font-mono text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 focus:outline-hidden"
                   />
                 </div>
               ) : currentFile ? (

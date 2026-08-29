@@ -57,12 +57,12 @@ export const RadioGroup: React.FC<RadioGroupProps> = ({
               <div
                 className={`w-5 h-5 rounded-full border transition-all flex items-center justify-center ${
                   isSelected
-                    ? 'border-indigo-600 dark:border-indigo-500 bg-white dark:bg-slate-900'
+                    ? 'border-primary bg-white dark:bg-slate-900'
                     : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 group-hover:border-slate-400'
                 }`}
               >
                 {isSelected && (
-                  <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 dark:bg-indigo-500" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-primary" />
                 )}
               </div>
             </div>

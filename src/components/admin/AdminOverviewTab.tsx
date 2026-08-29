@@ -55,11 +55,11 @@ export const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
           <div className="flex items-center justify-between text-slate-400 mb-3">
             <span className="text-xs font-bold uppercase tracking-wider">Total Users</span>
-            <Users className="h-4 w-4 text-indigo-500" />
+            <Users className="h-4 w-4 text-primary" />
           </div>
           <div className="text-2xl font-black text-slate-900 dark:text-white">{totalUsers}</div>
           <div className="flex items-center gap-2 mt-2 text-[11px] font-semibold text-slate-500">
-            <span className="text-indigo-600 dark:text-indigo-400 font-bold">{proUsers + businessUsers} Premium</span>
+            <span className="text-primary font-bold">{proUsers + businessUsers} Premium</span>
             <span>•</span>
             <span>{freeUsers} Free</span>
           </div>

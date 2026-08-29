@@ -6,6 +6,7 @@ import { UploadZone } from '../common/UploadZone';
 import { ImagePreview } from '../common/ImagePreview';
 import { UniversalBatchEngine } from '../../engine/batch/UniversalBatchEngine';
 import { UniversalBatchQueue } from '../common/UniversalBatchQueue';
+import { Button } from '../ui/Button';
 import {
   Crop,
   RotateCw,
@@ -343,44 +344,32 @@ export const CropToolView: React.FC<CropToolViewProps> = ({ tool }) => {
                     Rotate & Flip
                   </label>
                   <div className="grid grid-cols-3 gap-2">
-                    <button
-                      type="button"
+                    <Button
+                      variant={rotation !== 0 ? 'primary' : 'outline'}
+                      size="sm"
+                      leftIcon={RotateCw}
                       onClick={() => setRotation((prev) => (prev + 90) % 360)}
-                      className={`flex items-center justify-center gap-1.5 py-2 text-xs font-semibold rounded-xl border transition-colors ${
-                        rotation !== 0
-                          ? 'border-blue-600 bg-blue-50 text-blue-700 dark:border-blue-500 dark:bg-blue-950 dark:text-blue-300'
-                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
-                      }`}
                     >
-                      <RotateCw className="h-3.5 w-3.5" />
-                      <span>{rotation}°</span>
-                    </button>
+                      {rotation}°
+                    </Button>
 
-                    <button
-                      type="button"
+                    <Button
+                      variant={flipH ? 'primary' : 'outline'}
+                      size="sm"
+                      leftIcon={FlipHorizontal}
                       onClick={() => setFlipH((prev) => !prev)}
-                      className={`flex items-center justify-center gap-1.5 py-2 text-xs font-semibold rounded-xl border transition-colors ${
-                        flipH
-                          ? 'border-blue-600 bg-blue-50 text-blue-700 dark:border-blue-500 dark:bg-blue-950 dark:text-blue-300'
-                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
-                      }`}
                     >
-                      <FlipHorizontal className="h-3.5 w-3.5" />
-                      <span>Flip H</span>
-                    </button>
+                      Flip H
+                    </Button>
 
-                    <button
-                      type="button"
+                    <Button
+                      variant={flipV ? 'primary' : 'outline'}
+                      size="sm"
+                      leftIcon={FlipVertical}
                       onClick={() => setFlipV((prev) => !prev)}
-                      className={`flex items-center justify-center gap-1.5 py-2 text-xs font-semibold rounded-xl border transition-colors ${
-                        flipV
-                          ? 'border-blue-600 bg-blue-50 text-blue-700 dark:border-blue-500 dark:bg-blue-950 dark:text-blue-300'
-                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
-                      }`}
                     >
-                      <FlipVertical className="h-3.5 w-3.5" />
-                      <span>Flip V</span>
-                    </button>
+                      Flip V
+                    </Button>
                   </div>
                 </div>
 
@@ -391,41 +380,31 @@ export const CropToolView: React.FC<CropToolViewProps> = ({ tool }) => {
                   </label>
                   <div className="grid grid-cols-3 gap-2">
                     {(['image/png', 'image/jpeg', 'image/webp'] as const).map((fmt) => (
-                      <button
+                      <Button
                         key={fmt}
-                        type="button"
+                        variant={exportFormat === fmt ? 'primary' : 'outline'}
+                        size="sm"
                         onClick={() => setExportFormat(fmt)}
-                        className={`py-2 text-xs font-semibold rounded-xl border transition-colors ${
-                          exportFormat === fmt
-                            ? 'border-blue-600 bg-blue-50 text-blue-700 dark:border-blue-500 dark:bg-blue-950 dark:text-blue-300'
-                            : 'border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
-                        }`}
                       >
                         {fmt === 'image/png' ? 'PNG (Crisp)' : fmt === 'image/jpeg' ? 'JPEG' : 'WEBP'}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </div>
 
                 {/* Single Image Action Button (when in single view or 1 file) */}
                 {viewMode === 'single' && (
-                  <button
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    fullWidth
+                    isLoading={isProcessing}
+                    leftIcon={Crop}
+                    disabled={!currentFile}
                     onClick={handleSingleCrop}
-                    disabled={isProcessing || !currentFile}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 text-sm font-bold text-white hover:bg-blue-700 shadow-md shadow-blue-500/20 active:scale-[0.99] disabled:opacity-50 transition-all cursor-pointer"
                   >
-                    {isProcessing ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 animate-spin" />
-                        <span>Cropping Canvas...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Crop className="h-4 w-4" />
-                        <span>Apply Crop ({cropRect.width}×{cropRect.height}px)</span>
-                      </>
-                    )}
-                  </button>
+                    Apply Crop ({cropRect.width}×{cropRect.height}px)
+                  </Button>
                 )}
               </div>
             </div>

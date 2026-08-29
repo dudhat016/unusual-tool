@@ -95,14 +95,14 @@ export const WritingStatsBar: React.FC<WritingStatsBarProps> = ({ stats, compact
             </div>
 
             <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 p-3.5 text-center">
-              <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400 font-mono">
+              <span className="text-2xl font-black text-primary font-mono">
                 {stats.paragraphs.toLocaleString()}
               </span>
               <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 mt-1">Paragraphs</p>
             </div>
 
             <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 p-3.5 text-center">
-              <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400 font-mono">
+              <span className="text-2xl font-black text-primary font-mono">
                 {stats.sentences.toLocaleString()}
               </span>
               <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 mt-1">Sentences</p>

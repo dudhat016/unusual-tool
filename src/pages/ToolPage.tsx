@@ -1,46 +1,62 @@
-import React from 'react';
-import { ToolDefinition } from '../types';
-import { ToolHeaderSEO } from '../components/common/ToolHeaderSEO';
-import { ToolFAQSection } from '../components/common/ToolFAQSection';
-import { RelatedTools } from '../components/common/RelatedTools';
+import React, { useEffect, useState } from 'react';
 import { Breadcrumbs } from '../components/common/Breadcrumbs';
-import { ToolSpecsTable } from '../components/common/ToolSpecsTable';
-import { TopicalClusterLinks } from '../components/common/TopicalClusterLinks';
-import { getSeoForRoute, getBreadcrumbsForRoute } from '../config/seoRegistry';
+import { ContentRenderer } from '../components/common/ContentRenderer';
+import { DynamicFaqAccordion } from '../components/common/DynamicFaqAccordion';
+import { RelatedTools } from '../components/common/RelatedTools';
+import { SeoStructuredData } from '../components/common/SeoStructuredData';
+import { TableOfContents } from '../components/common/TableOfContents';
+import { ToolHeaderSEO } from '../components/common/ToolHeaderSEO';
+import { getBreadcrumbsForRoute, getSeoForRoute } from '../config/seoRegistry';
+import { ToolContentService } from '../services/ToolContentService';
+import { ToolDefinition } from '../types';
+import { ToolDetailContent } from '../types/toolCms';
 
 // Tool Views
-import { ResizeToolView } from '../components/tools/ResizeToolView';
-import { CompressToolView } from '../components/tools/CompressToolView';
-import { CropToolView } from '../components/tools/CropToolView';
-import { ConvertToolView } from '../components/tools/ConvertToolView';
-import { PassportPhotoToolView } from '../components/tools/PassportPhotoToolView';
-import { EffectsToolView } from '../components/tools/EffectsToolView';
-import { BorderToolView } from '../components/tools/BorderToolView';
-import { SocialResizeToolView } from '../components/tools/SocialResizeToolView';
-import { MetadataToolView } from '../components/tools/MetadataToolView';
-import { ColorPickerToolView } from '../components/tools/ColorPickerToolView';
-import { WatermarkToolView } from '../components/tools/WatermarkToolView';
-import { OCRToolView } from '../components/tools/OCRToolView';
 import { AIToolGenericView } from '../components/tools/AIToolGenericView';
+import { BorderToolView } from '../components/tools/BorderToolView';
+import { ColorPickerToolView } from '../components/tools/ColorPickerToolView';
+import { CompressToolView } from '../components/tools/CompressToolView';
+import { ConvertToolView } from '../components/tools/ConvertToolView';
+import { CropToolView } from '../components/tools/CropToolView';
+import { EffectsToolView } from '../components/tools/EffectsToolView';
+import { MetadataToolView } from '../components/tools/MetadataToolView';
+import { OCRToolView } from '../components/tools/OCRToolView';
+import { PassportPhotoToolView } from '../components/tools/PassportPhotoToolView';
 import { PdfToolView } from '../components/tools/PdfToolView';
+import { ResizeToolView } from '../components/tools/ResizeToolView';
+import { SocialResizeToolView } from '../components/tools/SocialResizeToolView';
+import { WatermarkToolView } from '../components/tools/WatermarkToolView';
 import { OnlineNotepadView } from '../views/OnlineNotepadView';
 
 // YouTube Suite Components
-import { YouTubeToolsHub } from '../components/youtube/YouTubeToolsHub';
+import { YouTubeChannelIdFinder } from '../components/youtube/YouTubeChannelIdFinder';
+import { YouTubeEmbedGenerator } from '../components/youtube/YouTubeEmbedGenerator';
+import { YouTubeTagExtractor } from '../components/youtube/YouTubeTagExtractor';
 import { YouTubeThumbnailDownloader } from '../components/youtube/YouTubeThumbnailDownloader';
 import { YouTubeThumbnailPreviewer } from '../components/youtube/YouTubeThumbnailPreviewer';
 import { YouTubeTimestampGenerator } from '../components/youtube/YouTubeTimestampGenerator';
-import { YouTubeEmbedGenerator } from '../components/youtube/YouTubeEmbedGenerator';
-import { YouTubeChannelIdFinder } from '../components/youtube/YouTubeChannelIdFinder';
-import { YouTubeTagExtractor } from '../components/youtube/YouTubeTagExtractor';
+import { YouTubeToolsHub } from '../components/youtube/YouTubeToolsHub';
 
 interface ToolPageProps {
   tool: ToolDefinition;
 }
 
 export const ToolPage: React.FC<ToolPageProps> = ({ tool }) => {
+  const currentLanguage = 'en';
+  const [cmsContent, setCmsContent] = useState<ToolDetailContent | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    ToolContentService.getToolContent(tool.id, currentLanguage || 'en').then((data) => {
+      if (isMounted) setCmsContent(data);
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [tool.id, currentLanguage]);
+
   // Check for Online Notepad
-  if (tool.id === 'online-notepad' || tool.slug === 'online-notepad' || tool.route === '/online-notepad') {
+  if (tool.id === 'free-online-notepad' || tool.slug === 'free-online-notepad' || tool.route === '/free-online-notepad' || tool.id === 'online-notepad') {
     return <OnlineNotepadView />;
   }
 
@@ -50,7 +66,7 @@ export const ToolPage: React.FC<ToolPageProps> = ({ tool }) => {
   }
 
   const renderToolComponent = () => {
-    // 0. PDF Suite Tools (Convert, Compress, Merge, Split, Protect, etc.)
+    // PDF Suite Tools
     if (
       tool.category === 'pdf' ||
       tool.category?.startsWith('pdf-') ||
@@ -94,7 +110,7 @@ export const ToolPage: React.FC<ToolPageProps> = ({ tool }) => {
       return <YouTubeTagExtractor />;
     }
 
-    // 1. Compression / Target Size Tools
+    // Compression / Target Size Tools
     if (
       tool.category === 'compress' ||
       tool.id === 'compress-image' ||
@@ -106,7 +122,7 @@ export const ToolPage: React.FC<ToolPageProps> = ({ tool }) => {
       return <CompressToolView tool={tool} />;
     }
 
-    // 2. Format Converter
+    // Format Converter
     if (
       tool.category === 'convert' ||
       tool.id === 'convert-image' ||
@@ -119,7 +135,7 @@ export const ToolPage: React.FC<ToolPageProps> = ({ tool }) => {
       return <ConvertToolView tool={tool} />;
     }
 
-    // 3. Crop & Cut
+    // Crop & Cut
     if (
       tool.category === 'crop' ||
       tool.id === 'crop-image' ||
@@ -129,7 +145,7 @@ export const ToolPage: React.FC<ToolPageProps> = ({ tool }) => {
       return <CropToolView />;
     }
 
-    // 4. Passport & ID Photo Maker
+    // Passport & ID Photo Maker
     if (
       tool.category === 'passport' ||
       tool.id === 'passport-photo-maker' ||
@@ -139,7 +155,7 @@ export const ToolPage: React.FC<ToolPageProps> = ({ tool }) => {
       return <PassportPhotoToolView />;
     }
 
-    // 5. Social Media Resizer
+    // Social Media Resizer
     if (
       tool.category === 'social' ||
       tool.id === 'social-resizer' ||
@@ -149,7 +165,7 @@ export const ToolPage: React.FC<ToolPageProps> = ({ tool }) => {
       return <SocialResizeToolView />;
     }
 
-    // 6. Border & Frame Maker
+    // Border & Frame Maker
     if (
       tool.id === 'border-maker' ||
       tool.slug === 'border' ||
@@ -158,7 +174,7 @@ export const ToolPage: React.FC<ToolPageProps> = ({ tool }) => {
       return <BorderToolView />;
     }
 
-    // 7. Watermark & Logo Overlay
+    // Watermark & Logo Overlay
     if (
       tool.id === 'watermark-image' ||
       tool.slug === 'watermark' ||
@@ -167,7 +183,7 @@ export const ToolPage: React.FC<ToolPageProps> = ({ tool }) => {
       return <WatermarkToolView />;
     }
 
-    // 8. Photo Effects & Filters
+    // Photo Effects & Filters
     if (
       (tool.category === 'effects' && tool.id !== 'color-picker' && tool.slug !== 'color-picker') ||
       tool.id === 'photo-effects' ||
@@ -177,7 +193,7 @@ export const ToolPage: React.FC<ToolPageProps> = ({ tool }) => {
       return <EffectsToolView />;
     }
 
-    // 9. Color Palette Picker
+    // Color Palette Picker
     if (
       tool.id === 'color-picker' ||
       tool.slug === 'color-picker'
@@ -185,7 +201,7 @@ export const ToolPage: React.FC<ToolPageProps> = ({ tool }) => {
       return <ColorPickerToolView />;
     }
 
-    // 10. EXIF Metadata Viewer & Stripper
+    // EXIF Metadata Viewer & Stripper
     if (
       tool.category === 'metadata' ||
       tool.id === 'metadata-tool' ||
@@ -195,7 +211,7 @@ export const ToolPage: React.FC<ToolPageProps> = ({ tool }) => {
       return <MetadataToolView />;
     }
 
-    // 11. OCR / Image to Text
+    // OCR / Image to Text
     if (
       tool.category === 'ocr' ||
       tool.id === 'ocr-image-to-text' ||
@@ -206,7 +222,7 @@ export const ToolPage: React.FC<ToolPageProps> = ({ tool }) => {
       return <OCRToolView />;
     }
 
-    // 12. AI Tools (Background Remover, Enhancer, Upscaler, Object Remover, Unblur)
+    // AI Tools
     if (
       tool.category === 'ai' ||
       tool.isAi ||
@@ -224,16 +240,6 @@ export const ToolPage: React.FC<ToolPageProps> = ({ tool }) => {
       return <AIToolGenericView tool={tool} />;
     }
 
-    // 14. Resize Image
-    if (
-      tool.category === 'resize' ||
-      tool.id === 'resize-image' ||
-      tool.slug === 'resize' ||
-      tool.slug === 'resize-image'
-    ) {
-      return <ResizeToolView />;
-    }
-
     // Default fallback
     return <ResizeToolView />;
   };
@@ -246,40 +252,40 @@ export const ToolPage: React.FC<ToolPageProps> = ({ tool }) => {
   const isConverter = tool.category === 'convert' || tool.id.includes('convert');
 
   return (
-    <div className="space-y-8 py-6 max-w-6xl mx-auto">
+    <div className="space-y-8 py-6 max-w-6xl mx-auto px-4 sm:px-6">
+      {/* Dynamic JSON-LD Structured Data Schema */}
+      {cmsContent && <SeoStructuredData tool={tool} content={cmsContent} />}
+
       {/* Breadcrumb Navigation */}
       <Breadcrumbs items={breadcrumbs} />
 
       {/* SEO Title & Description Header */}
-      <ToolHeaderSEO tool={tool} />
+      <ToolHeaderSEO tool={tool} content={cmsContent} />
 
-      {/* Main Interactive Tool Workspace */}
-      <div className="min-h-[460px]">{renderToolComponent()}</div>
+      {/* LAYER 1: Main Interactive Tool Workspace */}
+      <div>{renderToolComponent()}</div>
 
-      {/* Factual Technical Specifications & Architecture */}
-      {seoData && (
-        <ToolSpecsTable
-          toolName={tool.name}
-          specs={seoData.formatSpecs}
-          categoryName={seoData.categoryName}
-        />
+      {/* LAYER 2: SEO/AEO Rich Content Layer */}
+      {cmsContent && cmsContent.status === 'published' && (
+        <div className="pt-6 space-y-8">
+          {/* Table of Contents (Top) */}
+          {cmsContent.tocEnabled && (
+            <div className="w-full">
+              <TableOfContents html={cmsContent.contentHtml} />
+            </div>
+          )}
+
+          {/* Long-Form Rich Content Body (Bottom) */}
+          <div className="w-full">
+            <ContentRenderer html={cmsContent.contentHtml} />
+          </div>
+
+          {/* Dynamic FAQ Accordion */}
+          {cmsContent.faqs && cmsContent.faqs.length > 0 && (
+            <DynamicFaqAccordion faqs={cmsContent.faqs} toolName={tool.name} />
+          )}
+        </div>
       )}
-
-      {/* How To & FAQs Section */}
-      <ToolFAQSection
-        toolName={tool.name}
-        howToSteps={tool.howToSteps}
-        faqs={tool.faqs}
-        features={tool.features}
-      />
-
-      {/* Topical Cluster Navigation & Internal Linking */}
-      <TopicalClusterLinks
-        currentCategorySlug={seoData?.categorySlug}
-        currentToolId={tool.id}
-        isCompressor={isCompressor}
-        isConverter={isConverter}
-      />
 
       {/* Related Tools for Discovery */}
       <RelatedTools currentToolId={tool.id} category={tool.category} />

@@ -1,23 +1,21 @@
+import {
+  AlertCircle,
+  AtSign,
+  Check,
+  Copy,
+  ExternalLink,
+  Film,
+  RefreshCw,
+  Search,
+  User,
+  Users
+} from 'lucide-react';
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { parseYouTubeUrl } from '../../utils/youtubeUrlParser';
 import { YouTubeService } from '../../services/youtubeService';
 import { YouTubeChannelResult } from '../../types/youtube';
-import {
-  Search,
-  AtSign,
-  Copy,
-  Check,
-  ExternalLink,
-  User,
-  Users,
-  Film,
-  Sparkles,
-  AlertCircle,
-  RefreshCw,
-  CheckCircle2,
-  Share2,
-} from 'lucide-react';
+import { parseYouTubeUrl } from '../../utils/youtubeUrlParser';
+import { Input } from '../ui/Input';
 
 export const YouTubeChannelIdFinder: React.FC = () => {
   const { showToast, addToHistory } = useApp();
@@ -123,7 +121,7 @@ export const YouTubeChannelIdFinder: React.FC = () => {
         {/* Input Bar */}
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <input
+            <Input
               type="text"
               value={inputVal}
               onChange={(e) => {
@@ -133,8 +131,7 @@ export const YouTubeChannelIdFinder: React.FC = () => {
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleFindChannel(inputVal);
               }}
-              placeholder="e.g. https://www.youtube.com/@mkbhd or @veritasium"
-              className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/80 px-4 py-3.5 text-sm font-mono text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none transition-all"
+              placeholder="Enter channel handle, custom URL, video link, or channel ID..."
             />
             {inputVal && (
               <button
@@ -281,11 +278,10 @@ export const YouTubeChannelIdFinder: React.FC = () => {
                 <span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400">Standard API Format</span>
               </div>
               <div className="flex items-center gap-2">
-                <input
+                <Input
                   type="text"
                   readOnly
                   value={channelData.channelId}
-                  className="flex-1 font-mono text-sm sm:text-base font-bold text-emerald-950 dark:text-emerald-100 bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800 rounded-xl px-4 py-3 select-all focus:outline-none shadow-xs"
                 />
                 <button
                   onClick={() => handleCopy(channelData.channelId, 'id')}
@@ -303,11 +299,10 @@ export const YouTubeChannelIdFinder: React.FC = () => {
                 Canonical Channel URL
               </span>
               <div className="flex items-center gap-2">
-                <input
+                <Input
                   type="text"
                   readOnly
                   value={channelData.url}
-                  className="flex-1 font-mono text-xs text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 select-all focus:outline-none"
                 />
                 <button
                   onClick={() => handleCopy(channelData.url, 'url')}

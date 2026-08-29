@@ -3,6 +3,8 @@ import { useApp } from '../context/AppContext';
 import { formatFileSize } from '../engine/imageEngine';
 import { DEFAULT_PLANS } from '../config/plans';
 import { UserLayout } from '../components/layout/UserLayout';
+import { DynamicIcon } from '../components/common/DynamicIcon';
+import { DataTable, DataTableColumn, Input, Button } from '../components/ui';
 import {
   User,
   Zap,
@@ -46,32 +48,49 @@ export const DashboardPage: React.FC = () => {
     showToast,
     savePreset,
     isAdmin,
+    currentPath,
   } = useApp();
-
-  const [activeTab, setActiveTab] = useState<
-    'overview' | 'usage' | 'credits' | 'history' | 'favorites' | 'presets' | 'subscription' | 'settings'
-  >('overview');
 
   const creditBalance = typeof credits === 'number' ? credits : Math.max(0, (credits?.total ?? 0) - (credits?.used ?? 0));
 
-  // URL tab sync
-  useEffect(() => {
+  // Derive active tab from URL route path (e.g. /en/pricing -> 'subscription', /dashboard/credits -> 'credits')
+  const getActiveTabFromRoute = (): 'overview' | 'usage' | 'credits' | 'history' | 'favorites' | 'presets' | 'subscription' | 'settings' => {
+    const raw = (currentPath || window.location.pathname).split('?')[0].replace(/\/$/, '');
+    const cleanPath = raw.replace(/^\/(en|hi|es|fr|de|pt|it|ja|ko|zh|ar)/i, '') || '/';
+
+    const segments = cleanPath.split('/').filter(Boolean);
+    const subRoute = segments[1] || '';
+
+    const validTabs = ['overview', 'usage', 'credits', 'history', 'favorites', 'presets', 'subscription', 'settings'];
+
+    if (subRoute && validTabs.includes(subRoute)) {
+      return subRoute as any;
+    }
+
+    // Fallback query param tab check for legacy links
     const params = new URLSearchParams(window.location.search);
     const tabParam = params.get('tab');
-    if (
-      tabParam &&
-      ['overview', 'usage', 'credits', 'history', 'favorites', 'presets', 'subscription', 'settings'].includes(
-        tabParam
-      )
-    ) {
-      setActiveTab(tabParam as any);
+    if (tabParam && validTabs.includes(tabParam)) {
+      return tabParam as any;
     }
-  }, []);
+
+    return 'overview';
+  };
+
+  const activeTab = getActiveTabFromRoute();
+
+  const handleTabChange = (tab: string) => {
+    if (tab === 'overview') {
+      navigate('/dashboard');
+    } else {
+      navigate(`/dashboard/${tab}`);
+    }
+  };
 
   if (!user) {
     return (
-      <div className="max-w-xl mx-auto my-12 p-8 rounded-3xl border border-purple-200 dark:border-purple-900/40 bg-white dark:bg-slate-900 text-center space-y-6 shadow-xl">
-        <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/25">
+      <div className="max-w-xl mx-auto my-12 p-8 rounded-3xl border border-primary/20 bg-white dark:bg-slate-900 text-center space-y-6 shadow-xl">
+        <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25">
           <User className="h-8 w-8" />
         </div>
         <div className="space-y-2">
@@ -85,13 +104,13 @@ export const DashboardPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
           <button
             onClick={() => openAuthModal('signin')}
-            className="w-full sm:w-auto px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-sm font-bold shadow-md shadow-purple-500/20 transition-all"
+            className="w-full sm:w-auto px-6 py-3 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-bold shadow-md shadow-primary/20 transition-all cursor-pointer"
           >
             Sign In with Email / Google
           </button>
           <button
             onClick={() => openAuthModal('signup')}
-            className="w-full sm:w-auto px-6 py-3 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-semibold transition-all"
+            className="w-full sm:w-auto px-6 py-3 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-semibold transition-all cursor-pointer"
           >
             Create Free Account
           </button>
@@ -121,26 +140,21 @@ export const DashboardPage: React.FC = () => {
   return (
     <UserLayout
       activeTab={activeTab}
-      onTabChange={(tab) => {
-        setActiveTab(tab);
-        const url = new URL(window.location.href);
-        url.searchParams.set('tab', tab);
-        window.history.pushState({}, '', url.toString());
-      }}
+      onTabChange={handleTabChange}
     >
       <div className="space-y-8">
         {/* User Profile Header Card */}
-        <div className="rounded-3xl border border-purple-200 dark:border-purple-900/40 bg-white dark:bg-slate-900 p-6 sm:p-8 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div className="rounded-3xl border border-primary/20 bg-white dark:bg-slate-900 p-6 sm:p-8 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
             <div className="relative">
               {user.photoURL ? (
                 <img
                   src={user.photoURL}
                   alt="Profile"
-                  className="h-16 w-16 rounded-2xl object-cover border-2 border-purple-500"
+                  className="h-16 w-16 rounded-2xl object-cover border-2 border-primary"
                 />
               ) : (
-                <div className="h-16 w-16 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white text-2xl font-black shadow-md">
+                <div className="h-16 w-16 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground text-2xl font-black shadow-md">
                   {(user.displayName || user.email || 'U')[0].toUpperCase()}
                 </div>
               )}
@@ -155,11 +169,11 @@ export const DashboardPage: React.FC = () => {
                 <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
                   {user.displayName || user.email?.split('@')[0]}
                 </h1>
-                <span className="rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-[10px] uppercase font-extrabold px-2.5 py-0.5 tracking-wider">
+                <span className="rounded-full bg-primary text-primary-foreground text-[10px] uppercase font-extrabold px-2.5 py-0.5 tracking-wider">
                   {activePlanConfig.name}
                 </span>
                 {isAdmin && (
-                  <span className="rounded-full bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-800 text-[10px] uppercase font-extrabold px-2 py-0.5">
+                  <span className="rounded-full bg-primary/10 text-primary border border-primary/20 text-[10px] uppercase font-extrabold px-2 py-0.5">
                     Admin
                   </span>
                 )}
@@ -174,8 +188,8 @@ export const DashboardPage: React.FC = () => {
           {/* Quick Balance & Actions */}
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-start md:justify-end">
             <div className="rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 p-3.5 flex items-center gap-3">
-              <div className="h-9 w-9 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
-                <Zap className="h-5 w-5 fill-purple-600" />
+              <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                <Zap className="h-5 w-5 fill-primary text-primary" />
               </div>
               <div>
                 <span className="text-[10px] uppercase font-bold text-slate-400 block">Ledger Balance</span>
@@ -186,8 +200,8 @@ export const DashboardPage: React.FC = () => {
             </div>
 
             <button
-              onClick={() => setActiveTab('subscription')}
-              className="px-4 py-3 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md shadow-purple-500/20 transition-all flex items-center gap-1.5"
+              onClick={() => handleTabChange('subscription')}
+              className="px-4 py-3 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs shadow-md shadow-primary/20 transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <CreditCard className="h-4 w-4" />
               <span>Manage Plan</span>
@@ -206,45 +220,54 @@ export const DashboardPage: React.FC = () => {
                 </p>
               </div>
               <div className="p-5 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-1">
-                <span className="text-xs font-bold text-slate-400 uppercase">Monthly Processed</span>
+                <span className="text-xs font-bold text-slate-400 uppercase">Monthly Total</span>
                 <p className="text-2xl font-black text-slate-900 dark:text-white font-mono">
-                  {userUsage.monthProcessedCount} / {activePlanConfig.dailyImagesLimit * 30}
+                  {userUsage.monthProcessedCount}
                 </p>
               </div>
               <div className="p-5 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-1">
-                <span className="text-xs font-bold text-slate-400 uppercase">Saved Presets</span>
+                <span className="text-xs font-bold text-slate-400 uppercase">AI Executions</span>
                 <p className="text-2xl font-black text-slate-900 dark:text-white font-mono">
-                  {presetsList.length}
+                  {userUsage.monthAiCount}
                 </p>
               </div>
               <div className="p-5 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-1">
-                <span className="text-xs font-bold text-slate-400 uppercase">Favorite Tools</span>
+                <span className="text-xs font-bold text-slate-400 uppercase">Total Lifetime</span>
                 <p className="text-2xl font-black text-slate-900 dark:text-white font-mono">
-                  {favoritesList.length}
+                  {userUsage.totalProcessedCount}
                 </p>
               </div>
             </div>
 
-            {/* Favorite Tools Grid */}
+            {/* Favorite Quick Links */}
             <div className="p-6 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-4">
-              <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                <Heart className="w-5 h-5 text-rose-500 fill-rose-500" /> Favorite Tools Shortcuts
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                  Pinned Favorite Tools
+                </h3>
+                <button
+                  onClick={() => navigate('/tools')}
+                  className="text-xs font-bold text-primary hover:underline"
+                >
+                  Browse Catalog
+                </button>
+              </div>
+
               {favoriteTools.length === 0 ? (
-                <p className="text-xs text-slate-400 py-4">No tools saved as favorite yet. Click the heart icon on any tool card to pin it here.</p>
+                <p className="text-xs text-slate-400 py-4 text-center">No pinned tools yet. Click heart on any tool card to pin here.</p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                   {favoriteTools.map((t) => (
                     <button
                       key={t.id}
                       onClick={() => navigate(`/${t.slug}`)}
-                      className="flex items-center gap-3 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-purple-500/50 hover:bg-purple-500/5 text-left transition-all group"
+                      className="flex items-center gap-3 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-primary/50 hover:bg-primary/5 text-left transition-all group cursor-pointer"
                     >
-                      <div className="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
-                        {React.createElement(t.icon, { className: 'w-5 h-5' })}
+                      <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                        <DynamicIcon name={t.icon} className="w-5 h-5" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-purple-600 dark:group-hover:text-purple-400">
+                        <p className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-primary">
                           {t.name}
                         </p>
                         <span className="text-[10px] text-slate-400 uppercase font-semibold">{t.category}</span>
@@ -269,7 +292,7 @@ export const DashboardPage: React.FC = () => {
                     key={plan.id}
                     className={`p-6 rounded-3xl border ${
                       isCurrent
-                        ? 'border-purple-500 bg-purple-500/5 dark:bg-purple-950/20 shadow-lg shadow-purple-500/10'
+                        ? 'border-primary bg-primary/5 shadow-lg shadow-primary/10'
                         : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'
                     } flex flex-col justify-between space-y-6`}
                   >
@@ -277,7 +300,7 @@ export const DashboardPage: React.FC = () => {
                       <div className="flex items-center justify-between">
                         <h4 className="text-lg font-black text-slate-900 dark:text-white">{plan.name}</h4>
                         {isCurrent && (
-                          <span className="px-2.5 py-0.5 rounded-full bg-purple-600 text-white text-[10px] font-extrabold uppercase">
+                          <span className="px-2.5 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-extrabold uppercase">
                             Active Plan
                           </span>
                         )}
@@ -314,7 +337,7 @@ export const DashboardPage: React.FC = () => {
                       className={`w-full py-3 rounded-2xl text-xs font-bold transition-all ${
                         isCurrent
                           ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-default'
-                          : 'bg-purple-600 hover:bg-purple-500 text-white shadow-md shadow-purple-600/25'
+                          : 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-md shadow-primary/25 cursor-pointer'
                       }`}
                     >
                       {isCurrent ? 'Current Tier' : `Switch to ${plan.name}`}
@@ -328,35 +351,53 @@ export const DashboardPage: React.FC = () => {
 
         {/* History Tab View */}
         {activeTab === 'history' && (
-          <div className="p-6 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-4">
+          <div className="space-y-4">
             <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Recent Job History</h3>
-            {historyList.length === 0 ? (
-              <p className="text-xs text-slate-400 py-6 text-center">No processing history recorded yet.</p>
-            ) : (
-              <div className="space-y-2">
-                {historyList.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold">
-                        <History className="w-4 h-4" />
+            <DataTable
+              data={historyList}
+              keyExtractor={(item, index) => item.id || `hist-${index}`}
+              searchPlaceholder="Search processing history by tool..."
+              exportFileName="aetherpix_user_history"
+              defaultPageSize={10}
+              columns={[
+                {
+                  id: 'tool',
+                  header: 'TOOL',
+                  accessorKey: 'toolName',
+                  sortable: true,
+                  cell: ({ row }) => (
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold">
+                        <History className="w-3.5 h-3.5" />
                       </div>
-                      <div>
-                        <p className="font-bold text-slate-900 dark:text-white">{item.toolName}</p>
-                        <span className="text-[10px] text-slate-400">
-                          {new Date(item.timestamp).toLocaleString()}
-                        </span>
-                      </div>
+                      <span className="font-extrabold text-slate-900 dark:text-white">{row.toolName}</span>
                     </div>
-                    <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 font-bold text-[10px]">
+                  ),
+                },
+                {
+                  id: 'date',
+                  header: 'DATE & TIME',
+                  accessorKey: 'timestamp',
+                  sortable: true,
+                  cell: ({ row }) => (
+                    <span className="font-mono text-xs text-slate-500 dark:text-slate-400">
+                      {new Date(row.timestamp).toLocaleString()}
+                    </span>
+                  ),
+                },
+                {
+                  id: 'status',
+                  header: 'STATUS',
+                  align: 'right',
+                  sortable: false,
+                  cell: () => (
+                    <span className="px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black text-[10px] uppercase">
                       Completed
                     </span>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ),
+                },
+              ]}
+            />
           </div>
         )}
 
@@ -364,30 +405,25 @@ export const DashboardPage: React.FC = () => {
         {activeTab === 'settings' && (
           <div className="p-6 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-6 max-w-2xl">
             <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Account Preferences</h3>
-            <div className="space-y-4 text-xs">
-              <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Display Name</label>
-                <input
-                  type="text"
-                  defaultValue={user.displayName || ''}
-                  className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
-                />
-              </div>
-              <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Email Address</label>
-                <input
-                  type="email"
-                  disabled
-                  defaultValue={user.email || ''}
-                  className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/60 text-slate-500 cursor-not-allowed font-mono"
-                />
-              </div>
-              <button
+            <div className="space-y-4">
+              <Input
+                label="Display Name"
+                type="text"
+                defaultValue={user.displayName || ''}
+              />
+              <Input
+                label="Email Address"
+                type="email"
+                disabled
+                defaultValue={user.email || ''}
+              />
+              <Button
                 onClick={() => showToast('Account preferences updated', 'success')}
-                className="px-5 py-2.5 rounded-xl bg-purple-600 text-white font-bold text-xs hover:bg-purple-500 shadow-md shadow-purple-600/25 transition-all"
+                variant="primary"
+                size="md"
               >
-                Save Changes
-              </button>
+                Save Preferences
+              </Button>
             </div>
           </div>
         )}

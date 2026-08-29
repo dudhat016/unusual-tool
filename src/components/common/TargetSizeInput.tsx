@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Minimize2, Info, Check, Sparkles, Sliders, ChevronDown } from 'lucide-react';
 import { formatFileSize } from '../../engine/imageEngine';
+import { NumberInput } from '../ui/NumberInput';
+import { Select, Slider } from '../ui';
 
 export interface TargetSizeValue {
   value: number; // numeric value in selected unit
@@ -107,7 +109,7 @@ export const TargetSizeInput: React.FC<TargetSizeInputProps> = ({
       {/* Header with Title and Mode Badge */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <Minimize2 className="h-4 w-4" />
           </div>
           <div>
@@ -136,34 +138,31 @@ export const TargetSizeInput: React.FC<TargetSizeInputProps> = ({
           <span className="absolute left-3.5 text-xs font-semibold text-slate-400 dark:text-slate-500">
             Size:
           </span>
-          <input
+          <NumberInput
             id="target-size-number-input"
-            type="number"
-            min="1"
+            min={1}
             max={unit === 'MB' ? 100 : unit === 'Bytes' ? 104857600 : 100000}
             step={unit === 'MB' ? 0.1 : 1}
             value={inputValue}
             disabled={disabled}
-            onChange={(e) => handleValueChange(parseFloat(e.target.value) || 1)}
-            className="w-full rounded-xl border border-slate-200 bg-slate-50/70 pl-14 pr-4 py-2.5 text-sm font-mono font-bold text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800/80 dark:text-white dark:focus:bg-slate-800 transition-all shadow-2xs"
+            onChange={(v) => handleValueChange(v || 1)}
             placeholder="e.g. 100"
           />
         </div>
 
         {/* Unit Selector Dropdown */}
-        <div className="relative shrink-0">
-          <select
+        <div className="shrink-0 w-full sm:w-36">
+          <Select
             id="target-size-unit-select"
             value={unit}
             disabled={disabled}
             onChange={(e) => handleUnitChange(e.target.value as 'KB' | 'MB' | 'Bytes')}
-            className="w-full sm:w-28 appearance-none rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-2.5 pr-8 text-xs font-bold text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800/80 dark:text-white dark:focus:bg-slate-800 transition-all cursor-pointer shadow-2xs"
-          >
-            <option value="KB">KB (Kilobytes)</option>
-            <option value="MB">MB (Megabytes)</option>
-            <option value="Bytes">Bytes (Exact)</option>
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+            options={[
+              { value: 'KB', label: 'KB (Kilobytes)' },
+              { value: 'MB', label: 'MB (Megabytes)' },
+              { value: 'Bytes', label: 'Bytes (Exact)' },
+            ]}
+          />
         </div>
 
         {/* Quick Stepper Buttons */}
@@ -192,25 +191,15 @@ export const TargetSizeInput: React.FC<TargetSizeInputProps> = ({
       {/* Slider for smooth visual adjustment */}
       {showSlider && (
         <div className="space-y-1.5 pt-1">
-          <div className="flex items-center justify-between text-[11px] font-medium text-slate-500 dark:text-slate-400">
-            <span>5 KB (Tightest)</span>
-            <span className="font-mono font-bold text-blue-600 dark:text-blue-400">
-              {targetKb >= 1000 ? `${(targetKb / 1000).toFixed(1)} MB` : `${Math.round(targetKb)} KB`}
-            </span>
-            <span>2 MB (Web Quality)</span>
-          </div>
-          <input
-            type="range"
-            min="5"
-            max="2000"
-            step="5"
+          <Slider
+            min={5}
+            max={2000}
+            step={5}
             value={Math.min(2000, Math.max(5, targetKb))}
             disabled={disabled}
-            onChange={(e) => {
-              const kb = parseInt(e.target.value, 10);
-              handlePresetSelect(kb);
-            }}
-            className="w-full accent-blue-600 cursor-pointer h-1.5 bg-slate-200 rounded-lg appearance-none dark:bg-slate-700"
+            unit={targetKb >= 1000 ? ' MB' : ' KB'}
+            showValueBadge={true}
+            onChange={(v) => handlePresetSelect(v)}
           />
         </div>
       )}
@@ -232,10 +221,10 @@ export const TargetSizeInput: React.FC<TargetSizeInputProps> = ({
                   type="button"
                   disabled={disabled}
                   onClick={() => handlePresetSelect(sizeKb)}
-                  className={`px-2.5 py-1 text-xs font-semibold rounded-lg border transition-all ${
+                  className={`px-2.5 py-1 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
                     isSelected
-                      ? 'border-blue-600 bg-blue-50 text-blue-700 dark:border-blue-500 dark:bg-blue-950 dark:text-blue-300 ring-2 ring-blue-500/20 font-bold'
-                      : 'border-slate-200/80 bg-white text-slate-600 hover:border-blue-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800/70 dark:text-slate-300 dark:hover:bg-slate-800'
+                      ? 'border-primary bg-primary/10 text-primary ring-2 ring-primary/20 font-bold'
+                      : 'border-slate-200/80 bg-white text-slate-600 hover:border-primary/50 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800/70 dark:text-slate-300 dark:hover:bg-slate-800'
                   }`}
                 >
                   {labelText}
@@ -254,7 +243,7 @@ export const TargetSizeInput: React.FC<TargetSizeInputProps> = ({
               Original: <strong className="text-slate-900 dark:text-white">{formatFileSize(originalSizeBytes)}</strong>
             </span>
             <span className="text-slate-600 dark:text-slate-400">
-              Target: <strong className="text-blue-600 dark:text-blue-400">{formatFileSize(calculatedBytes)}</strong>
+              Target: <strong className="text-primary">{formatFileSize(calculatedBytes)}</strong>
             </span>
           </div>
 

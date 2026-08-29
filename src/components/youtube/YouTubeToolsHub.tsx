@@ -18,7 +18,8 @@ import {
   ChevronDown,
 } from 'lucide-react';
 
-import { TopicalClusterLinks } from '../common/TopicalClusterLinks';
+import { DynamicFaqAccordion } from '../common/DynamicFaqAccordion';
+import { Link } from '../common/Link';
 
 export const YouTubeToolsHub: React.FC = () => {
   const { navigate } = useApp();
@@ -150,9 +151,9 @@ export const YouTubeToolsHub: React.FC = () => {
           {youtubeTools.map((tool) => {
             const Icon = tool.icon;
             return (
-              <div
+              <Link
                 key={tool.id}
-                onClick={() => navigate(tool.route)}
+                href={tool.route}
                 className="group relative flex flex-col justify-between rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-7 shadow-lg hover:shadow-xl hover:border-red-400/80 dark:hover:border-red-900 transition-all cursor-pointer overflow-hidden"
               >
                 <div className="space-y-4">
@@ -184,41 +185,17 @@ export const YouTubeToolsHub: React.FC = () => {
                   <span>Open Tool</span>
                   <ArrowRight className="h-4 w-4" />
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>
       </section>
 
       {/* FAQs Section */}
-      <section className="max-w-4xl mx-auto space-y-6 pt-8 border-t border-slate-200/80 dark:border-slate-800">
-        <div className="text-center space-y-2">
-          <h2 className="text-2xl font-black text-slate-900 dark:text-white">
-            Frequently Asked Questions
-          </h2>
-          <p className="text-sm text-slate-500">Everything you need to know about our YouTube utility suite.</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {faqs.map((f, i) => (
-            <div
-              key={`yt-faq-${i}`}
-              className="p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2"
-            >
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <HelpCircle className="h-4 w-4 text-red-600 shrink-0" />
-                <span>{f.q}</span>
-              </h4>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{f.a}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Cluster Internal Navigation Links */}
-      <TopicalClusterLinks
-        currentCategorySlug="youtube-tools"
-        currentToolId="youtube-tools"
+      <DynamicFaqAccordion
+        faqs={faqs}
+        subtitle="Everything you need to know about our YouTube utility suite."
+        className="max-w-4xl mx-auto pt-8 border-t border-slate-200/80 dark:border-slate-800"
       />
     </div>
   );

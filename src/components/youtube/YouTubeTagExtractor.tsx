@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { parseYouTubeUrl } from '../../utils/youtubeUrlParser';
+import { Input } from '../ui/Input';
 import { YouTubeService } from '../../services/youtubeService';
 import { YouTubeTagResult } from '../../types/youtube';
 import {
@@ -170,7 +171,7 @@ export const YouTubeTagExtractor: React.FC = () => {
         {/* Input Bar */}
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <input
+            <Input
               type="text"
               value={urlInput}
               onChange={(e) => {
@@ -180,8 +181,7 @@ export const YouTubeTagExtractor: React.FC = () => {
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleExtractTags(urlInput);
               }}
-              placeholder="Paste YouTube Video URL (e.g. https://www.youtube.com/watch?v=...)"
-              className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/80 px-4 py-3.5 text-sm font-mono text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 focus:outline-none transition-all"
+              placeholder="https://www.youtube.com/watch?v=... or paste Video ID"
             />
             {urlInput && (
               <button
@@ -318,12 +318,11 @@ export const YouTubeTagExtractor: React.FC = () => {
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
                 <div className="relative flex-1 max-w-sm">
                   <Search className="h-4 w-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
+                  <Input
                     type="text"
                     value={searchFilter}
                     onChange={(e) => setSearchFilter(e.target.value)}
                     placeholder="Filter tags..."
-                    className="w-full pl-9 pr-4 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:border-rose-500 font-medium"
                   />
                 </div>
 

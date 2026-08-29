@@ -6,6 +6,7 @@ import { UploadZone } from '../common/UploadZone';
 import { ImagePreview } from '../common/ImagePreview';
 import { UniversalBatchEngine } from '../../engine/batch/UniversalBatchEngine';
 import { UniversalBatchQueue } from '../common/UniversalBatchQueue';
+import { Button } from '../ui/Button';
 import {
   Info,
   ShieldAlert,
@@ -209,23 +210,17 @@ export const MetadataToolView: React.FC<MetadataToolViewProps> = ({ tool }) => {
 
                 {/* Single Image Action Button */}
                 {viewMode === 'single' && (
-                  <button
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    fullWidth
+                    isLoading={isStripping}
+                    leftIcon={Trash2}
+                    disabled={!currentFile}
                     onClick={handleSingleStrip}
-                    disabled={isStripping || !currentFile}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 text-sm font-bold text-white hover:bg-blue-700 shadow-md shadow-blue-500/20 active:scale-[0.99] disabled:opacity-50 transition-all cursor-pointer"
                   >
-                    {isStripping ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 animate-spin" />
-                        <span>Stripping EXIF/GPS...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Trash2 className="h-4 w-4" />
-                        <span>Strip All EXIF Data</span>
-                      </>
-                    )}
-                  </button>
+                    Strip All EXIF Data
+                  </Button>
                 )}
               </div>
             </div>

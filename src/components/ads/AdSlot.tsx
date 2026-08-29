@@ -44,7 +44,7 @@ export const AdSlot: React.FC<AdSlotProps> = ({ placement, toolId, className = '
         <button
           type="button"
           onClick={() => navigate('/pricing')}
-          className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline font-bold"
+          className="flex items-center gap-1 text-primary hover:underline font-bold"
         >
           <Sparkles className="h-3 w-3" />
           <span>Remove ads with Pro</span>
@@ -54,8 +54,8 @@ export const AdSlot: React.FC<AdSlotProps> = ({ placement, toolId, className = '
       {/* Ad Banner Content */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-1">
         <div className="flex items-center gap-3.5">
-          <div className="h-10 w-10 shrink-0 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center shadow-xs">
-            <Zap className="h-5 w-5" />
+          <div className="h-10 w-10 shrink-0 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-xs">
+            <Zap className="h-5 w-5 fill-primary-foreground" />
           </div>
           <div>
             <h4 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
@@ -73,7 +73,7 @@ export const AdSlot: React.FC<AdSlotProps> = ({ placement, toolId, className = '
         <div className="shrink-0 flex items-center gap-2">
           <button
             onClick={() => navigate('/pricing')}
-            className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition-all flex items-center gap-1 cursor-pointer"
+            className="px-3.5 py-1.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold shadow-xs transition-all flex items-center gap-1 cursor-pointer"
           >
             <span>Explore Plans</span>
             <ExternalLink className="h-3 w-3" />

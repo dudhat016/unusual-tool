@@ -1,12 +1,11 @@
 import React from 'react';
-import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n';
 import { Sparkles, Shield, Lock, Zap, Sliders } from 'lucide-react';
 import { LanguageSwitcher } from '../ui/LanguageSwitcher';
 import { TOOLS_REGISTRY } from '../../config/tools';
+import { Link } from './Link';
 
 export const Footer: React.FC = () => {
-  const { navigate } = useApp();
   const { t } = useTranslation();
 
   const popularTools = TOOLS_REGISTRY.filter((t) => t.isPopular).slice(0, 6);
@@ -14,11 +13,11 @@ export const Footer: React.FC = () => {
   return (
     <footer className="border-t border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400 mt-20 transition-colors">
       {/* Privacy & Trust Banner */}
-      <div className="border-b border-slate-200/80 bg-purple-50/50 py-6 dark:border-slate-800/80 dark:bg-purple-950/20">
+      <div className="border-b border-slate-200/80 bg-primary/5 py-6 dark:border-slate-800/80">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left rtl:sm:text-right">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-600 text-white shadow-sm">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
                 <Lock className="h-5 w-5" />
               </div>
               <div>
@@ -47,14 +46,14 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
           {/* Brand Column */}
           <div className="col-span-2 sm:col-span-1 md:col-span-1 space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 text-white">
+            <Link href="/" className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                 <Sparkles className="h-4 w-4" />
               </div>
               <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
-                Aether<span className="text-purple-600 dark:text-purple-400">Pix</span>
+                Aether<span className="text-primary">Pix</span>
               </span>
-            </div>
+            </Link>
             <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
               {t('common.tagline')}
             </p>
@@ -73,24 +72,24 @@ export const Footer: React.FC = () => {
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
-                <button onClick={() => navigate('/image-compressor-tools')} className="text-slate-600 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 text-left rtl:text-right">
+                <Link href="/image-compressor-tools" className="text-slate-600 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 text-left rtl:text-right block">
                   Image Compressor Hub
-                </button>
+                </Link>
               </li>
               <li>
-                <button onClick={() => navigate('/image-converter-tools')} className="text-slate-600 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 text-left rtl:text-right">
+                <Link href="/image-converter-tools" className="text-slate-600 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 text-left rtl:text-right block">
                   Image Converter Hub
-                </button>
+                </Link>
               </li>
               <li>
-                <button onClick={() => navigate('/image-resizer-tools')} className="text-slate-600 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 text-left rtl:text-right">
+                <Link href="/image-resizer-tools" className="text-slate-600 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 text-left rtl:text-right block">
                   Image Resizer Hub
-                </button>
+                </Link>
               </li>
               <li>
-                <button onClick={() => navigate('/youtube-tools')} className="text-slate-600 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 text-left rtl:text-right">
+                <Link href="/youtube-tools" className="text-slate-600 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 text-left rtl:text-right block">
                   YouTube Creator Suite
-                </button>
+                </Link>
               </li>
             </ul>
           </div>
@@ -103,12 +102,12 @@ export const Footer: React.FC = () => {
             <ul className="space-y-2 text-xs">
               {popularTools.map((t) => (
                 <li key={t.id}>
-                  <button
-                    onClick={() => navigate(t.route)}
-                    className="text-slate-600 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 transition-colors text-left rtl:text-right"
+                  <Link
+                    href={t.route}
+                    className="text-slate-600 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 transition-colors text-left rtl:text-right block"
                   >
                     {t.name}
-                  </button>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -121,24 +120,29 @@ export const Footer: React.FC = () => {
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
-                <button onClick={() => navigate('/guides/webp-vs-jpeg-vs-png-guide')} className="text-slate-600 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 text-left rtl:text-right">
+                <Link href="/blog" className="text-primary font-bold hover:underline block">
+                  Blog & Tutorials Hub →
+                </Link>
+              </li>
+              <li>
+                <Link href="/blog/webp-vs-jpeg-vs-png-guide" className="text-slate-600 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 text-left rtl:text-right block">
                   WebP vs JPEG vs PNG
-                </button>
+                </Link>
               </li>
               <li>
-                <button onClick={() => navigate('/guides/official-passport-photo-requirements-guide')} className="text-slate-600 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 text-left rtl:text-right">
+                <Link href="/blog/official-passport-photo-requirements-guide" className="text-slate-600 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 text-left rtl:text-right block">
                   Passport Photo Specs
-                </button>
+                </Link>
               </li>
               <li>
-                <button onClick={() => navigate('/guides/how-to-compress-images-without-losing-quality')} className="text-slate-600 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 text-left rtl:text-right">
+                <Link href="/blog/how-to-compress-images-without-losing-quality" className="text-slate-600 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 text-left rtl:text-right block">
                   Lossless Compression Guide
-                </button>
+                </Link>
               </li>
               <li>
-                <button onClick={() => navigate('/guides/svg-vector-vs-raster-explained')} className="text-slate-600 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 text-left rtl:text-right">
+                <Link href="/guides/svg-vector-vs-raster-explained" className="text-slate-600 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 text-left rtl:text-right block">
                   Vector vs Raster
-                </button>
+                </Link>
               </li>
             </ul>
           </div>
@@ -150,30 +154,30 @@ export const Footer: React.FC = () => {
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
-                <button onClick={() => navigate('/about')} className="text-slate-600 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 text-left rtl:text-right">
+                <Link href="/about" className="text-slate-600 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 text-left rtl:text-right block">
                   {t('common.aboutUs')}
-                </button>
+                </Link>
               </li>
               <li>
-                <button onClick={() => navigate('/privacy')} className="text-slate-600 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 text-left rtl:text-right">
+                <Link href="/privacy" className="text-slate-600 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 text-left rtl:text-right block">
                   {t('common.privacyPolicy')}
-                </button>
+                </Link>
               </li>
               <li>
-                <button onClick={() => navigate('/terms')} className="text-slate-600 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 text-left rtl:text-right">
+                <Link href="/terms" className="text-slate-600 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 text-left rtl:text-right block">
                   {t('common.termsOfService')}
-                </button>
+                </Link>
               </li>
               <li>
-                <button onClick={() => navigate('/contact')} className="text-slate-600 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 text-left rtl:text-right">
+                <Link href="/contact" className="text-slate-600 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 text-left rtl:text-right block">
                   {t('common.contactUs')}
-                </button>
+                </Link>
               </li>
               <li>
-                <button onClick={() => navigate('/ui-kit')} className="text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 font-semibold flex items-center gap-1">
+                <Link href="/ui-kit" className="text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 font-semibold flex items-center gap-1">
                   <Sliders className="h-3 w-3" />
                   <span>UI Design System Kit</span>
-                </button>
+                </Link>
               </li>
             </ul>
           </div>

@@ -235,7 +235,7 @@ export const BeforeAfterSlider: React.FC<BeforeAfterSliderProps> = ({
             </div>
 
             <div className="relative rounded-xl overflow-hidden bg-slate-900 border border-slate-800 p-2 flex flex-col items-center justify-center h-full">
-              <span className="absolute top-3 right-3 z-10 rounded-md bg-blue-600/90 px-2.5 py-1 text-[11px] font-bold tracking-wider text-white backdrop-blur-md">
+              <span className="absolute top-3 right-3 z-10 rounded-md bg-primary/90 px-2.5 py-1 text-[11px] font-bold tracking-wider text-primary-foreground backdrop-blur-md">
                 {processedLabel}
               </span>
               <img
@@ -292,7 +292,7 @@ export const BeforeAfterSlider: React.FC<BeforeAfterSliderProps> = ({
                   setIsDragging(true);
                   handleSliderMove(e.touches[0].clientX);
                 }}
-                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-900 shadow-2xl border-2 border-blue-600 pointer-events-auto cursor-ew-resize hover:scale-115 active:scale-95 transition-transform"
+                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-900 shadow-2xl border-2 border-primary pointer-events-auto cursor-ew-resize hover:scale-115 active:scale-95 transition-transform"
               >
                 <svg className="h-4 w-4 fill-current text-slate-800" viewBox="0 0 24 24">
                   <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41zM15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z" />
@@ -307,7 +307,7 @@ export const BeforeAfterSlider: React.FC<BeforeAfterSliderProps> = ({
               </span>
             </div>
             <div className="absolute top-3 right-3 pointer-events-none z-10">
-              <span className="rounded-lg bg-blue-600/90 px-3 py-1 text-[11px] font-bold tracking-wider text-white backdrop-blur-md shadow">
+              <span className="rounded-lg bg-primary/90 px-3 py-1 text-[11px] font-bold tracking-wider text-primary-foreground backdrop-blur-md shadow">
                 {processedLabel}
               </span>
             </div>

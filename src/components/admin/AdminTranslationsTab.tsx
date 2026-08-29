@@ -48,7 +48,7 @@ export const AdminTranslationsTab: React.FC = () => {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500">Active Locales</span>
-            <Icon name="Globe" size={16} className="text-indigo-600" />
+            <Icon name="Globe" size={16} className="text-primary" />
           </div>
           <p className="text-2xl font-black text-slate-900 dark:text-white mt-2">
             {supportedLanguages.length}
@@ -73,7 +73,7 @@ export const AdminTranslationsTab: React.FC = () => {
             <Icon name="Layers" size={16} className="text-blue-500" />
           </div>
           <p className="text-2xl font-black text-slate-900 dark:text-white mt-2">120+</p>
-          <span className="text-[10px] text-indigo-500">Zero Runtime HTTP Latency</span>
+          <span className="text-[10px] text-primary">Zero Runtime HTTP Latency</span>
         </Card>
       </div>
 
@@ -133,7 +133,7 @@ export const AdminTranslationsTab: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <div className="w-24 bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
                           <div
-                            className="bg-indigo-600 h-full rounded-full"
+                            className="bg-primary h-full rounded-full"
                             style={{ width: `${completion}%` }}
                           />
                         </div>

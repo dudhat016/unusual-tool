@@ -1,25 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
 import {
-  Shield,
-  Search,
-  Zap,
-  HelpCircle,
-  Bell,
-  ArrowLeft,
-  Menu,
-  CheckCircle2,
-  Users,
-  Layers,
-  CreditCard,
-  Radio,
-  Flag,
-  ShieldAlert,
   Activity,
+  ArrowLeft,
+  CheckCircle2,
+  CreditCard,
+  FileText,
+  Flag,
   Globe,
+  Layers,
+  Menu,
+  Radio,
+  Search,
+  Shield,
+  ShieldAlert,
+  Users,
+  Zap
 } from 'lucide-react';
-import { Sidebar, NavItem } from './Sidebar';
+import { AnimatePresence, motion } from 'motion/react';
+import React, { useEffect, useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { Input } from '../ui/Input';
+import { NavItem, Sidebar } from './Sidebar';
 
 export interface AdminLayoutProps {
   children: React.ReactNode;
@@ -57,41 +57,46 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
     { sectionTitle: 'OPERATIONS CONSOLE' },
     {
       label: 'Overview & Metrics',
-      path: '/admin?tab=overview',
+      path: '/admin',
       icon: Activity,
       exact: true,
     },
     {
       label: 'User Management',
-      path: '/admin?tab=users',
+      path: '/admin/users',
       icon: Users,
       badge: userCount > 0 ? userCount : undefined,
     },
     {
       label: 'Tool Catalog Config',
-      path: '/admin?tab=tools',
+      path: '/admin/tools',
       icon: Layers,
     },
     {
+      label: 'Blog & Article CMS',
+      path: '/admin/blogs',
+      icon: FileText,
+    },
+    {
       label: 'Plans & Pricing Tiers',
-      path: '/admin?tab=plans',
+      path: '/admin/plans',
       icon: CreditCard,
     },
 
     { sectionTitle: 'MONETIZATION & TRAFFIC' },
     {
       label: 'Ad Network Settings',
-      path: '/admin?tab=ads',
+      path: '/admin/ads',
       icon: Radio,
     },
     {
       label: 'Traffic Protection & Rate Limits',
-      path: '/admin?tab=traffic',
+      path: '/admin/traffic',
       icon: Zap,
     },
     {
       label: 'Feature Toggles & Rollouts',
-      path: '/admin?tab=flags',
+      path: '/admin/flags',
       icon: Flag,
     },
 
@@ -102,8 +107,13 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
       icon: Globe,
     },
     {
+      label: 'UI Kit & Design System',
+      path: '/admin/ui-kit',
+      icon: Layers,
+    },
+    {
       label: 'System Audit & Error Logs',
-      path: '/admin?tab=audit',
+      path: '/admin/audit',
       icon: ShieldAlert,
       badge: errorLogCount > 0 ? errorLogCount : undefined,
       badgeVariant: 'danger',
@@ -111,12 +121,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   ];
 
   const handleNavClick = (path: string) => {
-    if (path.includes('tab=')) {
-      const tabParam = path.split('tab=')[1];
-      onTabChange(tabParam);
-    } else {
-      navigate(path);
-    }
+    navigate(path);
   };
 
   const adminFooterWidget = (
@@ -141,7 +146,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   return (
     <div className="min-h-screen flex bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans transition-colors">
       {/* Desktop Sidebar */}
-      <div className="hidden lg:block">
+      <div className="hidden lg:block sticky top-0 h-screen shrink-0 z-30">
         <Sidebar
           items={adminNavItems}
           collapsed={collapsed}
@@ -184,9 +189,9 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
       </AnimatePresence>
 
       {/* Main Content Body */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
+      <div className="flex-1 flex flex-col min-w-0 min-h-screen">
         {/* Top Header Navbar */}
-        <header className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between px-4 sm:px-6">
+        <header className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between px-4 sm:px-6 shrink-0">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsMobileOpen(true)}
@@ -223,7 +228,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
             {/* Return to Main App Button */}
             <button
               onClick={() => navigate('/')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-sm transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold shadow-sm transition-all"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Return to Tool Studio</span>
@@ -232,7 +237,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
         </header>
 
         {/* Inner Tab Page Container */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 animate-fade-in">{children}</main>
+        <main className="flex-1 w-full max-w-[1400px] mx-auto p-4 sm:p-6 lg:p-8 animate-fade-in">{children}</main>
 
         {/* Footer */}
         <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 py-4 px-6 text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2">
@@ -265,10 +270,9 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
             >
               <div className="flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
                 <Search className="w-5 h-5 text-purple-600" />
-                <input
+                <Input
                   type="text"
                   placeholder="Quick admin command (e.g. users, tools, traffic)..."
-                  className="w-full bg-transparent text-sm text-slate-900 dark:text-white focus:outline-none"
                   autoFocus
                 />
               </div>

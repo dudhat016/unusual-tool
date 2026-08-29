@@ -1,27 +1,28 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { DEFAULT_AD_SLOTS } from '../config/adSlots';
+import { DEFAULT_FEATURE_FLAGS } from '../config/featureFlags';
 import { auth } from '../config/firebase';
-import { HistoryItem, UserCredits } from '../types';
-import {
-  UserProfile,
-  PlanConfig,
-  PlanTier,
-  CreditLedgerRecord,
-  ProcessingJobRecord,
-  SavedPreset,
-} from '../types/saas';
-import {
-  SystemSettings,
-  FeatureFlag,
-} from '../types/admin';
-import { AdSlotConfig } from '../types/ads';
 import { DEFAULT_PLANS, IPaymentProvider, MockPaymentProviderAdapter } from '../config/plans';
 import { DEFAULT_SYSTEM_SETTINGS } from '../config/systemSettings';
-import { DEFAULT_FEATURE_FLAGS } from '../config/featureFlags';
-import { DEFAULT_AD_SLOTS } from '../config/adSlots';
-import { SaaSDataService } from '../services/SaaSDataService';
 import { AbusePreventionService } from '../services/AbusePreventionService';
-import { TrafficProtectionService, RateLimitCheckResult } from '../services/TrafficProtectionService';
+import { SaaSDataService } from '../services/SaaSDataService';
+import { PRIMARY_COLOR_PRESETS } from '../components/common/CustomizerDrawer';
+import { RateLimitCheckResult, TrafficProtectionService } from '../services/TrafficProtectionService';
+import { HistoryItem, UserCredits } from '../types';
+import {
+  FeatureFlag,
+  SystemSettings,
+} from '../types/admin';
+import { AdSlotConfig } from '../types/ads';
+import {
+  CreditLedgerRecord,
+  PlanConfig,
+  PlanTier,
+  ProcessingJobRecord,
+  SavedPreset,
+  UserProfile,
+} from '../types/saas';
 
 interface Toast {
   id: string;
@@ -46,7 +47,15 @@ interface AppContextType {
   isSearchOpen: boolean;
   setIsSearchOpen: (open: boolean) => void;
   theme: 'light' | 'dark';
+  setTheme: (theme: 'light' | 'dark') => void;
   toggleTheme: () => void;
+  primaryColor: string;
+  setPrimaryColor: (color: string) => void;
+  radius: number;
+  setRadius: (r: number) => void;
+  sidebarTheme: 'default' | 'dark' | 'light' | 'gradient';
+  setSidebarTheme: (st: 'default' | 'dark' | 'light' | 'gradient') => void;
+  resetThemeConfig: () => void;
 
   // SaaS Auth & User Profile
   user: User | null;
@@ -57,6 +66,7 @@ interface AppContextType {
   setAuthModalMode: (mode: 'signin' | 'signup') => void;
   openAuthModal: (mode?: 'signin' | 'signup') => void;
   logout: () => Promise<void>;
+  loginWithLocalAuth: (email: string, displayName?: string) => void;
   isAdmin: boolean;
 
   // SaaS Credits & Ledger
@@ -137,7 +147,87 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    try {
+      const saved = localStorage.getItem('aetherpix_theme');
+      if (saved === 'dark' || saved === 'light') return saved;
+      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        return 'dark';
+      }
+    } catch {}
+    return 'dark';
+  });
+
+  const [primaryColor, setPrimaryColor] = useState<string>(() => {
+    try {
+      return localStorage.getItem('aetherpix_primary_color') || 'purple';
+    } catch {
+      return 'purple';
+    }
+  });
+
+  const [radius, setRadius] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('aetherpix_radius');
+      return saved ? parseInt(saved, 10) : 8;
+    } catch {
+      return 8;
+    }
+  });
+
+  const [sidebarTheme, setSidebarTheme] = useState<'default' | 'dark' | 'light' | 'gradient'>(() => {
+    try {
+      return (localStorage.getItem('aetherpix_sidebar_theme') as any) || 'dark';
+    } catch {
+      return 'dark';
+    }
+  });
+
+  // Dynamic DOM theme & design tokens synchronization
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+      root.style.colorScheme = 'dark';
+    } else {
+      root.classList.remove('dark');
+      root.style.colorScheme = 'light';
+    }
+
+    // Radius & Primary Color HSL sync
+    root.style.setProperty('--radius', `${radius}px`);
+    const preset = PRIMARY_COLOR_PRESETS.find((p) => p.id === primaryColor) || PRIMARY_COLOR_PRESETS[0];
+    const primaryHsl = theme === 'dark' ? preset.darkValue : preset.value;
+    const primaryHue = primaryHsl.split(' ')[0];
+    root.style.setProperty('--primary', primaryHsl);
+    root.style.setProperty('--ring', primaryHsl);
+    root.style.setProperty(
+      '--accent',
+      theme === 'dark' ? `${primaryHue} 30% 15%` : `${primaryHue} 100% 97%`
+    );
+    root.style.setProperty(
+      '--accent-foreground',
+      theme === 'dark' ? `${primaryHue} 90% 80%` : `${primaryHue} 90% 40%`
+    );
+
+    try {
+      localStorage.setItem('aetherpix_theme', theme);
+      localStorage.setItem('aetherpix_radius', String(radius));
+      localStorage.setItem('aetherpix_primary_color', primaryColor);
+      localStorage.setItem('aetherpix_sidebar_theme', sidebarTheme);
+    } catch {}
+  }, [theme, radius, primaryColor, sidebarTheme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
+  const resetThemeConfig = () => {
+    setTheme('dark');
+    setPrimaryColor('purple');
+    setRadius(8);
+    setSidebarTheme('dark');
+  };
 
   // Load global system configs and flags
   useEffect(() => {
@@ -158,11 +248,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     initSystem();
   }, []);
 
+  // DEV Admin emails list
+  const DEV_ADMIN_EMAILS = ['chintandudhat1286@gmail.com', 'unusualgamerz16@gmail.com'];
+
+  // Restore Local User Session on mount
+  useEffect(() => {
+    try {
+      const savedSession = localStorage.getItem('aetherpix_user_session');
+      if (savedSession) {
+        const profile = JSON.parse(savedSession) as UserProfile;
+        setUserProfile(profile);
+        setUser({
+          uid: profile.uid,
+          email: profile.email,
+          displayName: profile.displayName,
+        } as User);
+      }
+    } catch (e) {
+      console.warn('Error reading saved session', e);
+    }
+  }, []);
+
   // Firebase Auth State Listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser);
       if (firebaseUser) {
+        setUser(firebaseUser);
         try {
           const profile = await SaaSDataService.getOrCreateUserProfile(
             firebaseUser.uid,
@@ -176,13 +287,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           refreshJobs(firebaseUser.uid);
           refreshPresets(firebaseUser.uid);
         } catch (err) {
-          console.error('Error fetching user profile', err);
+          console.warn('Firebase profile fetch warning', err);
         }
-      } else {
-        setUserProfile(null);
-        setCreditLedger([]);
-        setProcessingJobs([]);
-        setPresets([]);
       }
     });
 
@@ -233,9 +339,54 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsAuthModalOpen(true);
   };
 
+  const loginWithLocalAuth = (emailInput: string, nameInput?: string) => {
+    const cleanEmail = emailInput.trim().toLowerCase();
+    const isAdminEmail = DEV_ADMIN_EMAILS.includes(cleanEmail);
+    const role = isAdminEmail ? 'admin' : 'user';
+
+    const mockProfile: UserProfile = {
+      uid: `user-${role}-${cleanEmail.replace(/[^a-z0-9]/g, '_')}`,
+      email: cleanEmail,
+      displayName: nameInput || (cleanEmail.includes('@') ? cleanEmail.split('@')[0] : 'User'),
+      photoURL: null,
+      role,
+      plan: role === 'admin' ? 'business' : 'free',
+      credits: role === 'admin' ? 9999 : 50,
+      usage: {
+        todayProcessedCount: 0,
+        todayAiCount: 0,
+        monthProcessedCount: 0,
+        monthAiCount: 0,
+        totalProcessedCount: 0,
+        lastActiveDate: new Date().toISOString().split('T')[0],
+        currentMonth: new Date().toISOString().substring(0, 7),
+      },
+      privacySettings: { telemetryOptIn: true, autoPurgeHistoryMinutes: 0 },
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+
+    setUserProfile(mockProfile);
+    setUser({
+      uid: mockProfile.uid,
+      email: mockProfile.email,
+      displayName: mockProfile.displayName,
+    } as User);
+
+    try {
+      localStorage.setItem('aetherpix_user_session', JSON.stringify(mockProfile));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const logout = async () => {
     setUserProfile(null);
-    await signOut(auth);
+    setUser(null);
+    try {
+      localStorage.removeItem('aetherpix_user_session');
+      await signOut(auth);
+    } catch {}
     showToast('Signed out successfully.', 'info');
   };
 
@@ -251,7 +402,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     resetsAt: userProfile?.subscription?.currentPeriodEnd || Date.now() + 30 * 24 * 3600 * 1000,
   };
 
-  const DEV_ADMIN_EMAILS = ['chintandudhat1286@gmail.com', 'unusualgamerz16@gmail.com'];
   const isAdmin =
     userProfile?.role === 'admin' ||
     (user?.email ? DEV_ADMIN_EMAILS.includes(user.email.toLowerCase()) : false);
@@ -465,10 +615,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch {}
   };
 
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
-  };
-
   return (
     <AppContext.Provider
       value={{
@@ -487,7 +633,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isSearchOpen,
         setIsSearchOpen,
         theme,
+        setTheme,
         toggleTheme,
+        primaryColor,
+        setPrimaryColor,
+        radius,
+        setRadius,
+        sidebarTheme,
+        setSidebarTheme,
+        resetThemeConfig,
         user,
         userProfile,
         isAuthModalOpen,
@@ -496,6 +650,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setAuthModalMode,
         openAuthModal,
         logout,
+        loginWithLocalAuth,
         isAdmin,
         credits,
         activePlanConfig,

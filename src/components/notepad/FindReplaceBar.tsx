@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { FindReplaceState } from '../../types/notepad';
 import { Search, Replace, ChevronUp, ChevronDown, X, CaseSensitive } from 'lucide-react';
+import { Input } from '../ui/Input';
 
 interface FindReplaceBarProps {
   state: FindReplaceState;
@@ -37,13 +38,12 @@ export const FindReplaceBar: React.FC<FindReplaceBarProps> = ({
       {/* Find input */}
       <div className="flex items-center gap-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1">
         <Search className="w-3.5 h-3.5 text-slate-400" />
-        <input
+        <Input
           ref={inputRef}
           type="text"
           value={state.findText}
           onChange={(e) => onChange({ findText: e.target.value })}
           placeholder="Find in note..."
-          className="bg-transparent border-none outline-none text-slate-900 dark:text-white w-32 sm:w-44 text-xs"
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               if (e.shiftKey) onFindPrev();
@@ -100,12 +100,11 @@ export const FindReplaceBar: React.FC<FindReplaceBarProps> = ({
       {/* Replace input */}
       <div className="flex items-center gap-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1">
         <Replace className="w-3.5 h-3.5 text-slate-400" />
-        <input
+        <Input
           type="text"
           value={state.replaceText}
           onChange={(e) => onChange({ replaceText: e.target.value })}
           placeholder="Replace with..."
-          className="bg-transparent border-none outline-none text-slate-900 dark:text-white w-32 sm:w-44 text-xs"
           onKeyDown={(e) => {
             if (e.key === 'Enter') onReplaceCurrent();
             if (e.key === 'Escape') onClose();

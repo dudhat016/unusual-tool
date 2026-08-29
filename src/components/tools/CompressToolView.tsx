@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { UploadedFileItem, UniversalProcessResult, CompressOptions, ToolDefinition } from '../../types';
+import { Checkbox } from '../ui/Checkbox';
 import { compressImage, formatFileSize } from '../../engine/imageEngine';
 import { useApp } from '../../context/AppContext';
 import { UploadZone } from '../common/UploadZone';
 import { ImagePreview } from '../common/ImagePreview';
 import { ExactTargetSizesGrid } from '../common/ExactTargetSizesGrid';
 import { TargetSizeInput } from '../common/TargetSizeInput';
+import { Button } from '../ui/Button';
 import { UniversalBatchEngine } from '../../engine/batch/UniversalBatchEngine';
 import { UniversalBatchQueue } from '../common/UniversalBatchQueue';
 import {
@@ -391,15 +393,16 @@ export const CompressToolView: React.FC<CompressToolViewProps> = ({ tool }) => {
                       Original: {formatFileSize(currentFile.size)} ({currentFile.width}×{currentFile.height}px)
                     </p>
                   </div>
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="xs"
                     onClick={() => {
                       setFiles([]);
                       setResult(null);
                     }}
-                    className="text-xs font-semibold text-rose-500 hover:text-rose-600 transition-colors"
                   >
                     Change Image
-                  </button>
+                  </Button>
                 </div>
 
                 {/* Primary Dedicated Target Size Input Component */}
@@ -442,22 +445,17 @@ export const CompressToolView: React.FC<CompressToolViewProps> = ({ tool }) => {
                       const Icon = mode.icon;
                       const isSelected = (options.qualityMode || 'best-quality') === mode.id;
                       return (
-                        <button
+                        <Button
                           key={mode.id}
-                          type="button"
+                          variant={isSelected ? 'primary' : 'outline'}
+                          size="sm"
                           onClick={() => handleQualityModeChange(mode.id as any)}
-                          className={`p-2.5 rounded-xl border text-left transition-all ${
-                            isSelected
-                              ? 'border-blue-600 bg-blue-50/70 text-blue-900 dark:border-blue-500 dark:bg-blue-950/70 dark:text-blue-200 ring-2 ring-blue-500/20 shadow-xs'
-                              : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
-                          }`}
                         >
                           <div className="flex items-center gap-1.5">
-                            <Icon className={`h-3.5 w-3.5 ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'}`} />
+                            <Icon className="h-3.5 w-3.5" />
                             <span className="text-xs font-bold">{mode.title}</span>
                           </div>
-                          <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 leading-tight">{mode.desc}</p>
-                        </button>
+                        </Button>
                       );
                     })}
                   </div>
@@ -480,88 +478,66 @@ export const CompressToolView: React.FC<CompressToolViewProps> = ({ tool }) => {
                       { id: 'image/jpeg', name: 'JPEG', badge: 'Standard' },
                       { id: 'image/avif', name: 'AVIF', badge: 'Ultra-Dense' },
                     ].map((fmt) => (
-                      <button
+                      <Button
                         key={fmt.id}
-                        type="button"
+                        variant={options.outputFormat === fmt.id ? 'primary' : 'outline'}
+                        size="sm"
                         onClick={() => handleFormatChange(fmt.id as any)}
-                        className={`p-2 rounded-xl border text-center transition-all ${
-                          options.outputFormat === fmt.id
-                            ? 'border-blue-600 bg-blue-50 text-blue-700 dark:border-blue-500 dark:bg-blue-950 dark:text-blue-300 ring-2 ring-blue-500/20'
-                            : 'border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
-                        }`}
                       >
-                        <p className="text-xs font-bold">{fmt.name}</p>
-                        <p className="text-[10px] text-slate-400">{fmt.badge}</p>
-                      </button>
+                        {fmt.name}
+                      </Button>
                     ))}
                   </div>
                 </div>
 
                 {/* Fidelity Options Switches */}
                 <div className="space-y-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
-                  <label className="flex items-center gap-2.5 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={options.optimizeForText !== false}
-                      onChange={(e) => handleToggleOptimizeText(e.target.checked)}
-                      className="rounded text-blue-600 accent-blue-600"
-                    />
-                    <span className="flex items-center gap-1.5 font-medium">
-                      <Type className="h-3.5 w-3.5 text-blue-500 shrink-0" />
-                      Optimize for typography, lines & fine mockup details
-                    </span>
-                  </label>
+                  <Checkbox
+                    checked={options.optimizeForText !== false}
+                    onChange={(e) => handleToggleOptimizeText(e.target.checked)}
+                    label={
+                      <span className="flex items-center gap-1.5 font-medium">
+                        <Type className="h-3.5 w-3.5 text-primary shrink-0" />
+                        Optimize for typography, lines & fine mockup details
+                      </span>
+                    }
+                  />
 
-                  <label className="flex items-center gap-2.5 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={!!options.preserveDimensions}
-                      onChange={(e) => handleTogglePreserveDimensions(e.target.checked)}
-                      className="rounded text-blue-600 accent-blue-600"
-                    />
-                    <span className="flex items-center gap-1.5 font-medium">
-                      <ImageIcon className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                      Preserve 100% original dimensions (no downscaling)
-                    </span>
-                  </label>
+                  <Checkbox
+                    checked={!!options.preserveDimensions}
+                    onChange={(e) => handleTogglePreserveDimensions(e.target.checked)}
+                    label={
+                      <span className="flex items-center gap-1.5 font-medium">
+                        <ImageIcon className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                        Preserve 100% original dimensions (no downscaling)
+                      </span>
+                    }
+                  />
 
-                  <label className="flex items-center gap-2.5 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={options.stripMetadata}
-                      onChange={(e) => {
-                        const next = { ...options, stripMetadata: e.target.checked };
-                        setOptions(next);
-                        if (currentFile) runCompression(currentFile, next);
-                      }}
-                      className="rounded text-blue-600 accent-blue-600"
-                    />
-                    <span className="flex items-center gap-1.5 font-medium">
-                      <ShieldCheck className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                      Strip EXIF metadata (saves ~10-40 KB)
-                    </span>
-                  </label>
+                  <Checkbox
+                    checked={options.stripMetadata}
+                    onChange={(e) => {
+                      const next = { ...options, stripMetadata: e.target.checked };
+                      setOptions(next);
+                      if (currentFile) runCompression(currentFile, next);
+                    }}
+                    label="Strip EXIF metadata for maximum compression & privacy"
+                  />
                 </div>
 
                 {/* Big Action Button */}
-                <button
+                <Button
                   id="compress-action-submit-btn"
+                  variant="primary"
+                  size="lg"
+                  fullWidth
+                  isLoading={isProcessing}
+                  leftIcon={Minimize2}
+                  disabled={!currentFile}
                   onClick={handleProcess}
-                  disabled={isProcessing || !currentFile}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-3.5 text-sm font-bold text-white hover:bg-blue-700 shadow-md shadow-blue-500/20 active:scale-[0.99] disabled:opacity-50 transition-all cursor-pointer"
                 >
-                  {isProcessing ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 animate-spin" />
-                      <span>Optimizing to {targetKb >= 1000 ? `${targetKb / 1000}MB` : `${targetKb}KB`}...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Minimize2 className="h-4 w-4" />
-                      <span>Compress to {targetKb >= 1000 ? `${targetKb / 1000}MB` : `${targetKb}KB`}</span>
-                    </>
-                  )}
-                </button>
+                  Compress to {targetKb >= 1000 ? `${targetKb / 1000}MB` : `${targetKb}KB`}
+                </Button>
               </div>
             </div>
 

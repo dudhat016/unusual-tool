@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { parseYouTubeUrl } from '../../utils/youtubeUrlParser';
+import { Input } from '../ui/Input';
 import { YouTubeService } from '../../services/youtubeService';
 import { YouTubeThumbnailInfo } from '../../types/youtube';
 import {
@@ -113,7 +114,7 @@ export const YouTubeThumbnailPreviewer: React.FC = () => {
         {/* Input Bar */}
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <input
+            <Input
               type="text"
               value={urlInput}
               onChange={(e) => {
@@ -123,8 +124,7 @@ export const YouTubeThumbnailPreviewer: React.FC = () => {
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleProcessUrl(urlInput);
               }}
-              placeholder="Paste YouTube link (watch, shorts, live, youtu.be)..."
-              className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/80 px-4 py-3.5 text-sm font-mono text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all"
+              placeholder="https://www.youtube.com/watch?v=... or paste Video ID"
             />
             {urlInput && (
               <button

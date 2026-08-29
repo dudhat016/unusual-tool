@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { getSeoForRoute, generateJsonLd, SITE_NAME, SITE_DOMAIN } from '../../config/seoRegistry';
 import { getCategoryBySlug } from '../../config/categoryData';
-import { getGuideBySlug } from '../../config/guidesData';
+import { BlogService } from '../../services/BlogService';
 
 interface SeoHeadUpdaterProps {
   currentPath: string;
@@ -19,15 +19,19 @@ export const SeoHeadUpdater: React.FC<SeoHeadUpdaterProps> = ({ currentPath }) =
       description = 'All-in-one free online image utility suite: resize, compress, convert, passport photos, watermarks, metadata strippers, YouTube thumbnails, and bulk pipelines.';
     } else {
       const cat = getCategoryBySlug(clean);
-      const guide = getGuideBySlug(clean);
+      const blogPost = BlogService.getPostBySlug(clean);
       const tool = getSeoForRoute(clean);
 
-      if (cat) {
+      if (blogPost) {
+        title = blogPost.seo?.seoTitle || `${blogPost.title} – ${SITE_NAME}`;
+        description = blogPost.seo?.metaDescription || blogPost.excerpt;
+        canonical = blogPost.seo?.canonicalUrl || `${SITE_DOMAIN}/blog/${blogPost.slug}`;
+      } else if (clean === '/blog' || clean === '/blogs') {
+        title = `Blog & Educational Tutorials Hub – ${SITE_NAME}`;
+        description = 'Step-by-step image optimization guides, format specifications, and YouTube creator tutorials.';
+      } else if (cat) {
         title = cat.title;
         description = cat.metaDescription;
-      } else if (guide) {
-        title = guide.title;
-        description = guide.metaDescription;
       } else if (tool) {
         title = tool.title;
         description = tool.metaDescription;
@@ -106,6 +110,25 @@ export const SeoHeadUpdater: React.FC<SeoHeadUpdaterProps> = ({ currentPath }) =
       document.head.appendChild(jsonLdScript);
     }
     jsonLdScript.textContent = JSON.stringify(schemas);
+
+    // 6. Update Hreflang Tags for Multi-Language SEO
+    const SUPPORTED_LOCALES = ['en', 'hi', 'es', 'fr', 'de', 'pt', 'it', 'ja', 'ko', 'zh', 'ar'];
+    const cleanPathNoLang = clean.replace(/^\/(en|hi|es|fr|de|pt|it|ja|ko|zh|ar)/i, '') || '/';
+
+    SUPPORTED_LOCALES.forEach((loc) => {
+      const hrefLoc = loc === 'en'
+        ? `${SITE_DOMAIN}${cleanPathNoLang === '/' ? '' : cleanPathNoLang}`
+        : `${SITE_DOMAIN}/${loc}${cleanPathNoLang === '/' ? '' : cleanPathNoLang}`;
+
+      let linkHref = document.querySelector(`link[rel="alternate"][hreflang="${loc}"]`);
+      if (!linkHref) {
+        linkHref = document.createElement('link');
+        linkHref.setAttribute('rel', 'alternate');
+        linkHref.setAttribute('hreflang', loc);
+        document.head.appendChild(linkHref);
+      }
+      linkHref.setAttribute('href', hrefLoc);
+    });
   }, [currentPath]);
 
   return null;

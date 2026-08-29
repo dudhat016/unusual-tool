@@ -3,6 +3,7 @@ import { UploadedFileItem } from '../../types';
 import { loadFileAsImage, formatFileSize } from '../../engine/imageEngine';
 import { useApp } from '../../context/AppContext';
 import { UploadCloud, Camera, Clipboard, X } from 'lucide-react';
+import { Button } from '../ui/Button';
 
 export interface UploadZoneProps {
   onFilesSelected?: (files: UploadedFileItem[]) => void;
@@ -166,6 +167,13 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
     (onRemoveFile as any)(item.id !== undefined ? item.id : index, index);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      fileInputRef.current?.click();
+    }
+  };
+
   return (
     <div className={`space-y-4 ${className}`}>
       {/* Hidden File Inputs */}
@@ -177,6 +185,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
         onChange={handleFileInputChange}
         className="hidden"
         id="aetherpix-file-input"
+        aria-label="File upload input"
       />
       <input
         ref={cameraInputRef}
@@ -186,25 +195,30 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
         onChange={handleFileInputChange}
         className="hidden"
         id="aetherpix-camera-input"
+        aria-label="Camera capture input"
       />
 
       {/* Main Drop Area */}
       <div
+        role="button"
+        tabIndex={0}
+        aria-label={title || 'Upload files. Choose an image or drag & drop'}
+        onKeyDown={handleKeyDown}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
-        className={`relative cursor-pointer rounded-2xl border-2 border-dashed transition-all duration-200 text-center ${
+        className={`relative cursor-pointer rounded-2xl border-2 border-dashed transition-all duration-200 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
           compact ? 'p-6' : 'p-8 sm:p-12'
         } ${
           isDragging
-            ? 'border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 scale-[1.01]'
-            : 'border-slate-300/80 bg-slate-50/50 hover:border-blue-400 hover:bg-blue-50/30 dark:border-slate-800 dark:bg-slate-900/40 dark:hover:border-blue-600 dark:hover:bg-slate-900/80'
+            ? 'border-primary bg-primary/10 scale-[1.01]'
+            : 'border-slate-300/80 bg-slate-50/50 hover:border-primary hover:bg-primary/5 dark:border-slate-800 dark:bg-slate-900/40 dark:hover:border-primary dark:hover:bg-slate-900/80'
         }`}
       >
         <div className="mx-auto flex max-w-md flex-col items-center justify-center space-y-3">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 shadow-xs">
-            <UploadCloud className="h-7 w-7" />
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-xs">
+            <UploadCloud className="h-7 w-7" aria-hidden="true" />
           </div>
 
           <div>
@@ -218,34 +232,40 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
 
           {/* Action Chips */}
           <div className="flex flex-wrap items-center justify-center gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
-            <button
+            <Button
               type="button"
+              variant="primary"
+              size="sm"
               onClick={() => fileInputRef.current?.click()}
-              className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 shadow-sm transition-colors"
             >
               Browse Files
-            </button>
+            </Button>
 
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
+              leftIcon={Camera}
               onClick={() => cameraInputRef.current?.click()}
-              className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
             >
-              <Camera className="h-3.5 w-3.5" />
-              <span>Camera</span>
-            </button>
+              Camera
+            </Button>
 
             <div className="hidden sm:flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
-              <Clipboard className="h-3.5 w-3.5" />
+              <Clipboard className="h-3.5 w-3.5" aria-hidden="true" />
               <span>Ctrl+V to Paste</span>
             </div>
           </div>
         </div>
 
         {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xs">
-            <div className="flex items-center gap-2 text-sm font-semibold text-blue-600">
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+          <div
+            role="status"
+            aria-live="polite"
+            className="absolute inset-0 flex items-center justify-center rounded-2xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xs"
+          >
+            <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
               <span>Analyzing image...</span>
             </div>
           </div>
@@ -255,7 +275,11 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
       {/* Selected Files Queue Preview (For Batch or Single View) */}
       {displayFiles.length > 0 && (
         <div className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900/70 shadow-2xs">
-          <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-slate-800 text-xs font-medium text-slate-500">
+          <div
+            role="status"
+            aria-live="polite"
+            className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-slate-800 text-xs font-medium text-slate-500"
+          >
             <span>
               {displayFiles.length} file{displayFiles.length > 1 ? 's' : ''} loaded
             </span>
@@ -263,7 +287,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
               <button
                 type="button"
                 onClick={onClearAll}
-                className="text-rose-500 hover:underline hover:text-rose-600"
+                className="text-rose-500 hover:underline hover:text-rose-600 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-rose-500 rounded"
               >
                 Clear all
               </button>
@@ -278,7 +302,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
               >
                 <img
                   src={item.previewUrl}
-                  alt={item.name}
+                  alt={item.name || 'Image preview'}
                   className="h-10 w-10 shrink-0 rounded-md object-cover border border-slate-200 dark:border-slate-800"
                 />
                 <div className="min-w-0 flex-1">
@@ -293,10 +317,10 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
                   <button
                     type="button"
                     onClick={() => handleRemove(item, index)}
-                    className="p-1 text-slate-400 hover:text-rose-500 rounded transition-colors"
-                    aria-label="Remove image"
+                    className="p-1 text-slate-400 hover:text-rose-500 rounded transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-rose-500"
+                    aria-label={`Remove ${item.name}`}
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-4 w-4" aria-hidden="true" />
                   </button>
                 )}
               </div>

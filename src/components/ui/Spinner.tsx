@@ -15,7 +15,7 @@ const sizeClasses = {
 };
 
 const variantClasses = {
-  primary: 'text-indigo-600 dark:text-indigo-400',
+  primary: 'text-primary',
   white: 'text-white',
   muted: 'text-slate-400 dark:text-slate-500',
   current: 'text-current',

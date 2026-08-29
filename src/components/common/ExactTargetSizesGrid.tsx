@@ -61,7 +61,7 @@ export const ExactTargetSizesGrid: React.FC<ExactTargetSizesGridProps> = ({
             onClick={() => setActiveTab('pdf')}
             className={`flex items-center gap-1 px-3 py-1 text-xs font-bold rounded-lg transition-all ${
               activeTab === 'pdf'
-                ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-2xs'
+                ? 'bg-white dark:bg-slate-700 text-primary shadow-2xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
@@ -97,9 +97,9 @@ export const ExactTargetSizesGrid: React.FC<ExactTargetSizesGridProps> = ({
               }}
               className={`px-3 py-2.5 text-xs sm:text-sm font-semibold rounded-xl border text-center transition-all flex items-center justify-center gap-1.5 ${
                 isActive
-                  ? 'border-blue-600 bg-blue-50 text-blue-700 dark:border-blue-500 dark:bg-blue-950 dark:text-blue-300 ring-2 ring-blue-500/20 shadow-xs font-bold'
+                  ? 'border-primary bg-primary/10 text-primary ring-2 ring-primary/20 shadow-xs font-bold'
                   : isPdf
-                  ? 'border-slate-200/90 bg-white text-slate-700 hover:border-blue-400 hover:bg-blue-50/50 hover:text-blue-600 dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-300 dark:hover:border-blue-500 dark:hover:bg-slate-800 dark:hover:text-blue-400 shadow-2xs'
+                  ? 'border-slate-200/90 bg-white text-slate-700 hover:border-primary hover:bg-primary/10 hover:text-primary dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-300 dark:hover:border-primary dark:hover:bg-slate-800 dark:hover:text-primary shadow-2xs'
                   : 'border-slate-200/90 bg-white text-slate-700 hover:border-emerald-400 hover:bg-emerald-50/50 hover:text-emerald-600 dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-300 dark:hover:border-emerald-500 dark:hover:bg-slate-800 dark:hover:text-emerald-400 shadow-2xs'
               }`}
             >

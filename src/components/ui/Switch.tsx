@@ -44,7 +44,7 @@ export const Switch: React.FC<SwitchProps> = ({
         <div
           className={`${cfg.track} rounded-full transition-colors duration-200 ease-in-out p-0.5 ${
             checked
-              ? 'bg-indigo-600 dark:bg-indigo-500'
+              ? 'bg-primary'
               : 'bg-slate-300 dark:bg-slate-700'
           }`}
         >

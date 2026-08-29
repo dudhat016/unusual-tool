@@ -12,7 +12,6 @@ import {
   SITE_NAME
 } from './src/config/seoRegistry';
 import { getCategoryBySlug } from './src/config/categoryData';
-import { getGuideBySlug } from './src/config/guidesData';
 
 const app = express();
 const PORT = 3000;
@@ -425,7 +424,6 @@ function injectSeoIntoHtml(html: string, reqPath: string): string {
 
   const toolSeo = getSeoForRoute(clean);
   const categorySeo = getCategoryBySlug(clean);
-  const guideSeo = getGuideBySlug(clean);
 
   if (toolSeo) {
     title = toolSeo.title;
@@ -442,13 +440,6 @@ function injectSeoIntoHtml(html: string, reqPath: string): string {
     h1 = categorySeo.h1;
     quickAnswer = categorySeo.quickAnswer;
     faqs = categorySeo.faq || [];
-  } else if (guideSeo) {
-    title = guideSeo.title;
-    description = guideSeo.metaDescription;
-    canonical = `${SITE_DOMAIN}/${guideSeo.slug}`;
-    h1 = guideSeo.h1;
-    quickAnswer = guideSeo.quickAnswer;
-    faqs = guideSeo.faq || [];
   } else if (clean === '/about') {
     title = `About Us – ${SITE_NAME}`;
     description = 'Learn about our 100% in-browser client-side image processing architecture.';

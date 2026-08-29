@@ -2,6 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { UserProfile, PlanTier } from '../../types/saas';
 import { SaaSDataService } from '../../services/SaaSDataService';
 import { DataTable, DataTableColumn } from '../ui/DataTable';
+import { Select } from '../ui/Select';
+import { Input, NumberInput } from '../ui';
 import {
   Users,
   Shield,
@@ -155,20 +157,17 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({ users, onRefresh, 
         cell: ({ row }) => {
           const currentRoleVal = row.role === 'admin' ? 'admin' : row.plan;
           return (
-            <div className="relative inline-block">
-              <select
+            <div className="w-36">
+              <Select
                 value={currentRoleVal}
                 onChange={(e) => handleRoleOrPlanChange(row.uid, e.target.value)}
-                className="appearance-none pl-3 pr-7 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 text-slate-900 dark:text-white font-bold text-xs hover:border-slate-300 dark:hover:border-slate-700 focus:outline-none focus:border-purple-500 cursor-pointer shadow-xs"
-              >
-                <option value="admin">Admin</option>
-                <option value="business">Business Studio</option>
-                <option value="pro">Pro Creator</option>
-                <option value="free">Free User</option>
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
-                <span className="text-[10px]">⌄</span>
-              </div>
+                options={[
+                  { value: 'admin', label: 'Admin' },
+                  { value: 'business', label: 'Business Studio' },
+                  { value: 'pro', label: 'Pro Creator' },
+                  { value: 'free', label: 'Free User' },
+                ]}
+              />
             </div>
           );
         },
@@ -317,16 +316,17 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({ users, onRefresh, 
         </div>
 
         <div className="flex items-center gap-2">
-          <select
+          <Select
+            size="sm"
             value={planFilter}
             onChange={(e) => setPlanFilter(e.target.value)}
-            className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold text-slate-700 dark:text-slate-200 cursor-pointer shadow-xs"
-          >
-            <option value="all">All Plans ({users.length})</option>
-            <option value="free">Free Tier</option>
-            <option value="pro">Pro Creator</option>
-            <option value="business">Business Studio</option>
-          </select>
+            options={[
+              { value: 'all', label: `All Plans (${users.length})` },
+              { value: 'free', label: 'Free Tier' },
+              { value: 'pro', label: 'Pro Creator' },
+              { value: 'business', label: 'Business Studio' },
+            ]}
+          />
 
           <button
             onClick={onRefresh}
@@ -378,24 +378,19 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({ users, onRefresh, 
 
             <div className="space-y-3">
               <div>
-                <label className="text-[11px] font-bold text-slate-400 block mb-1">
-                  Credit Amount (+ to add, - to debit)
-                </label>
-                <input
-                  type="number"
+                <NumberInput
+                  label="Credit Amount (+ to add, - to debit)"
                   value={adjustCreditsAmount}
-                  onChange={(e) => setAdjustCreditsAmount(parseInt(e.target.value) || 0)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white"
+                  onChange={(v) => setAdjustCreditsAmount(v || 0)}
                 />
               </div>
 
               <div>
-                <label className="text-[11px] font-bold text-slate-400 block mb-1">Audit Reason</label>
-                <input
+                <Input
+                  label="Audit Reason"
                   type="text"
                   value={adjustCreditsReason}
                   onChange={(e) => setAdjustCreditsReason(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white"
                 />
               </div>
             </div>

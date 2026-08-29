@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Icon } from './Icon';
+import { Checkbox } from './Checkbox';
 import { useTranslation } from '../../i18n';
 
 export interface DataTableColumn<T> {
@@ -57,7 +58,7 @@ export function DataTable<T>({
   keyExtractor,
   title,
   subtitle,
-  searchPlaceholder = 'Search by name or email...',
+  searchPlaceholder = 'Search by title, model, route...',
   enableSearch = true,
   enablePagination = true,
   enablePageSize = true,
@@ -99,102 +100,72 @@ export function DataTable<T>({
     return initial;
   });
 
-  // Local selection state (if uncontrolled)
-  const [internalSelectedIds, setInternalSelectedIds] = useState<string[]>([]);
-  const isControlledSelection = controlledSelectedIds !== undefined;
-  const currentSelectedIds = isControlledSelection ? controlledSelectedIds : internalSelectedIds;
-
-  // Dropdown open states
-  const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
+  // Dropdown states
   const [isColumnDropdownOpen, setIsColumnDropdownOpen] = useState(false);
   const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
+  const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
 
-  // Click outside refs
-  const pageSizeRef = useRef<HTMLDivElement>(null);
+  // Selection state (internal fallback if uncontrolled)
+  const [internalSelectedIds, setInternalSelectedIds] = useState<string[]>([]);
+  const isControlledSelection = controlledSelectedIds !== undefined;
+  const currentSelectedIds = isControlledSelection ? controlledSelectedIds! : internalSelectedIds;
+
+  // Refs for click outside
   const columnRef = useRef<HTMLDivElement>(null);
   const exportRef = useRef<HTMLDivElement>(null);
+  const pageSizeRef = useRef<HTMLDivElement>(null);
 
+  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (pageSizeRef.current && !pageSizeRef.current.contains(event.target as Node)) {
-        setIsPageSizeOpen(false);
-      }
       if (columnRef.current && !columnRef.current.contains(event.target as Node)) {
         setIsColumnDropdownOpen(false);
       }
       if (exportRef.current && !exportRef.current.contains(event.target as Node)) {
         setIsExportDropdownOpen(false);
       }
+      if (pageSizeRef.current && !pageSizeRef.current.contains(event.target as Node)) {
+        setIsPageSizeOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Filter visible columns
+  // Filter columns based on visibility
   const visibleColumns = useMemo(() => {
     return columns.filter((col) => !hiddenColumnIds.has(col.id));
   }, [columns, hiddenColumnIds]);
 
-  // Toggle column visibility
-  const toggleColumnVisibility = (columnId: string) => {
-    setHiddenColumnIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(columnId)) {
-        next.delete(columnId);
-      } else {
-        // Prevent hiding all columns
-        if (columns.length - next.size > 1) {
-          next.add(columnId);
-        }
-      }
-      return next;
-    });
-  };
-
-  // Reset columns
-  const resetColumnVisibility = () => {
-    const next = new Set<string>();
-    columns.forEach((col) => {
-      if (col.defaultHidden) next.add(col.id);
-    });
-    setHiddenColumnIds(next);
-  };
-
-  // Handle Search Filtering
+  // Search filter calculation
   const filteredData = useMemo(() => {
     if (!searchQuery.trim()) return data;
 
     const query = searchQuery.toLowerCase().trim();
-    return data.filter((item) => {
+    return data.filter((row) => {
       // Check searchable columns
       return columns.some((col) => {
         if (col.searchable === false) return false;
-
-        if (col.searchFn) {
-          return col.searchFn(item, query);
-        }
+        if (col.searchFn) return col.searchFn(row, query);
 
         let val: any;
         if (col.accessorFn) {
-          val = col.accessorFn(item);
+          val = col.accessorFn(row);
         } else if (col.accessorKey) {
-          val = item[col.accessorKey];
+          val = row[col.accessorKey];
         }
 
         if (val === null || val === undefined) return false;
-        if (typeof val === 'object') {
-          return JSON.stringify(val).toLowerCase().includes(query);
-        }
         return String(val).toLowerCase().includes(query);
       });
     });
   }, [data, columns, searchQuery]);
 
-  // Handle Sorting
+  // Sorting calculation
   const sortedData = useMemo(() => {
     if (!sortColumnId || !sortDirection) return filteredData;
 
-    const column = columns.find((c) => c.id === sortColumnId);
+    const column = columns.find((col) => col.id === sortColumnId);
     if (!column) return filteredData;
 
     const copy = [...filteredData];
@@ -222,10 +193,6 @@ export function DataTable<T>({
         return sortDirection === 'asc' ? valA - valB : valB - valA;
       }
 
-      if (valA instanceof Date && valB instanceof Date) {
-        return sortDirection === 'asc' ? valA.getTime() - valB.getTime() : valB.getTime() - valA.getTime();
-      }
-
       const strA = String(valA).toLowerCase();
       const strB = String(valB).toLowerCase();
       const comp = strA.localeCompare(strB);
@@ -240,7 +207,6 @@ export function DataTable<T>({
   const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
 
   useEffect(() => {
-    // Reset page if out of bounds after filtering
     if (currentPage > totalPages) {
       setCurrentPage(1);
     }
@@ -255,7 +221,6 @@ export function DataTable<T>({
   const startRecord = totalRecords === 0 ? 0 : (currentPage - 1) * pageSize + 1;
   const endRecord = Math.min(currentPage * pageSize, totalRecords);
 
-  // Sorting header click handler
   const handleHeaderSort = (col: DataTableColumn<T>) => {
     if (col.sortable === false) return;
 
@@ -272,7 +237,6 @@ export function DataTable<T>({
     }
   };
 
-  // Selection handlers
   const updateSelection = (newIds: string[]) => {
     if (!isControlledSelection) {
       setInternalSelectedIds(newIds);
@@ -304,47 +268,67 @@ export function DataTable<T>({
     }
   };
 
-  const isAllPageSelected = useMemo(() => {
-    if (paginatedData.length === 0) return false;
-    return paginatedData.every((item, idx) => currentSelectedIds.includes(keyExtractor(item, idx)));
-  }, [paginatedData, currentSelectedIds, keyExtractor]);
+  const isAllPageSelected =
+    paginatedData.length > 0 &&
+    paginatedData.every((item, idx) => currentSelectedIds.includes(keyExtractor(item, idx)));
 
-  const isSomePageSelected = useMemo(() => {
-    if (paginatedData.length === 0) return false;
-    const hasAny = paginatedData.some((item, idx) => currentSelectedIds.includes(keyExtractor(item, idx)));
-    return hasAny && !isAllPageSelected;
-  }, [paginatedData, currentSelectedIds, isAllPageSelected, keyExtractor]);
+  const isSomePageSelected =
+    paginatedData.some((item, idx) => currentSelectedIds.includes(keyExtractor(item, idx))) &&
+    !isAllPageSelected;
 
-  // Export handlers
+  const toggleColumnVisibility = (columnId: string) => {
+    setHiddenColumnIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(columnId)) {
+        next.delete(columnId);
+      } else {
+        next.add(columnId);
+      }
+      return next;
+    });
+  };
+
+  const resetColumnVisibility = () => {
+    const initial = new Set<string>();
+    columns.forEach((col) => {
+      if (col.defaultHidden) {
+        initial.add(col.id);
+      }
+    });
+    setHiddenColumnIds(initial);
+  };
+
+  // Export CSV / JSON / PDF
   const handleExportCSV = () => {
     const exportColumns = columns.filter((col) => !hiddenColumnIds.has(col.id));
     const rowsToExport = currentSelectedIds.length > 0
       ? data.filter((item, idx) => currentSelectedIds.includes(keyExtractor(item, idx)))
       : sortedData;
 
-    const headers = exportColumns.map((col) => {
-      if (typeof col.header === 'string') return `"${col.header.replace(/"/g, '""')}"`;
-      return `"${col.id}"`;
-    });
+    const headers = exportColumns
+      .map((col) => `"${typeof col.header === 'string' ? col.header : col.id}"`)
+      .join(',');
 
-    const csvRows = rowsToExport.map((row) => {
-      return exportColumns.map((col) => {
-        let val: any;
-        if (col.exportFormatter) {
-          val = col.exportFormatter(row);
-        } else if (col.accessorFn) {
-          val = col.accessorFn(row);
-        } else if (col.accessorKey) {
-          val = row[col.accessorKey];
-        }
+    const rows = rowsToExport
+      .map((row) =>
+        exportColumns
+          .map((col) => {
+            let val: any;
+            if (col.exportFormatter) {
+              val = col.exportFormatter(row);
+            } else if (col.accessorFn) {
+              val = col.accessorFn(row);
+            } else if (col.accessorKey) {
+              val = row[col.accessorKey];
+            }
+            const str = String(val ?? '');
+            return `"${str.replace(/"/g, '""')}"`;
+          })
+          .join(',')
+      )
+      .join('\n');
 
-        if (val === null || val === undefined) return '""';
-        if (typeof val === 'object') return `"${JSON.stringify(val).replace(/"/g, '""')}"`;
-        return `"${String(val).replace(/"/g, '""')}"`;
-      }).join(',');
-    });
-
-    const csvContent = [headers.join(','), ...csvRows].join('\r\n');
+    const csvContent = `\uFEFF${headers}\n${rows}`;
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -391,83 +375,14 @@ export function DataTable<T>({
     setIsExportDropdownOpen(false);
   };
 
-  const handleExportPDF = () => {
-    const exportColumns = columns.filter((col) => !hiddenColumnIds.has(col.id));
-    const rowsToExport = currentSelectedIds.length > 0
-      ? data.filter((item, idx) => currentSelectedIds.includes(keyExtractor(item, idx)))
-      : sortedData;
-
-    // Create a printable document in a new window/iframe for instantaneous high-quality PDF saving
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
-    const tableHeaders = exportColumns
-      .map((col) => `<th style="padding:8px 12px; border-bottom:2px solid #e2e8f0; text-align:${col.align || 'left'}; font-size:12px; font-weight:700; text-transform:uppercase; color:#475569;">${typeof col.header === 'string' ? col.header : col.id}</th>`)
-      .join('');
-
-    const tableBody = rowsToExport
-      .map((row) => {
-        const cells = exportColumns
-          .map((col) => {
-            let val: any;
-            if (col.exportFormatter) {
-              val = col.exportFormatter(row);
-            } else if (col.accessorFn) {
-              val = col.accessorFn(row);
-            } else if (col.accessorKey) {
-              val = row[col.accessorKey];
-            }
-            return `<td style="padding:8px 12px; border-bottom:1px solid #f1f5f9; text-align:${col.align || 'left'}; font-size:12px; color:#1e293b;">${val !== null && val !== undefined ? String(val) : '-'}</td>`;
-          })
-          .join('');
-        return `<tr>${cells}</tr>`;
-      })
-      .join('');
-
-    const html = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>${exportFileName} - Data Report</title>
-          <style>
-            body { font-family: system-ui, -apple-system, sans-serif; padding: 24px; color: #0f172a; }
-            h1 { font-size: 18px; margin: 0 0 4px 0; font-weight: 800; }
-            p { font-size: 11px; color: #64748b; margin: 0 0 16px 0; }
-            table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-            @media print {
-              body { padding: 0; }
-            }
-          </style>
-        </head>
-        <body>
-          <h1>${title ? String(title) : 'Report Export'}</h1>
-          <p>Generated on ${new Date().toLocaleString()} • ${rowsToExport.length} records</p>
-          <table>
-            <thead><tr>${tableHeaders}</tr></thead>
-            <tbody>${tableBody}</tbody>
-          </table>
-          <script>
-            window.onload = function() {
-              window.print();
-            }
-          </script>
-        </body>
-      </html>
-    `;
-
-    printWindow.document.write(html);
-    printWindow.document.close();
-    setIsExportDropdownOpen(false);
-  };
-
   return (
-    <div className={`space-y-3.5 ${className}`}>
+    <div className={`space-y-4 ${className}`}>
       {/* Title & Subtitle Header if provided */}
       {(title || subtitle) && (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             {title && (
-              <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white tracking-tight">
+              <h3 className="text-base font-black text-slate-900 dark:text-white tracking-tight">
                 {title}
               </h3>
             )}
@@ -479,12 +394,41 @@ export function DataTable<T>({
         </div>
       )}
 
-      {/* Top Toolbar: Search, Page Limit, Columns Toggle, Export Button */}
+      {/* Batch Selection Banner */}
+      {enableSelection && currentSelectedIds.length > 0 && (
+        <div className="flex items-center justify-between p-3 rounded-2xl bg-primary/10 border border-primary/20 text-xs text-slate-900 dark:text-white font-semibold animate-fade-in">
+          <div className="flex items-center gap-2">
+            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-[11px]">
+              {currentSelectedIds.length}
+            </span>
+            <span>items selected</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {typeof selectedActions === 'function'
+              ? selectedActions({
+                  selectedIds: currentSelectedIds,
+                  selectedItems: data.filter((item, idx) => currentSelectedIds.includes(keyExtractor(item, idx))),
+                  clearSelection: () => updateSelection([]),
+                })
+              : selectedActions}
+            <button
+              type="button"
+              onClick={() => updateSelection([])}
+              className="px-2.5 py-1 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              Clear selection
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Top Toolbar Bar (Exact Promptly Aesthetics) */}
       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
         {/* Left Side: Search Bar */}
         {enableSearch && (
-          <div className="relative flex-1 min-w-[240px] max-w-md">
-            <div className="absolute inset-y-0 left-0 rtl:left-auto rtl:right-0 pl-3.5 rtl:pl-0 rtl:pr-3.5 flex items-center pointer-events-none text-slate-400">
+          <div className="relative flex-1 min-w-[260px] max-w-md">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
               <Icon name="Search" size={15} />
             </div>
             <input
@@ -492,13 +436,13 @@ export function DataTable<T>({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={searchPlaceholder}
-              className="w-full pl-9 pr-9 rtl:pl-9 rtl:pr-9 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-purple-500 dark:focus:border-purple-400 shadow-xs transition-colors"
+              className="w-full pl-9 pr-9 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 shadow-xs transition-all"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute inset-y-0 right-0 rtl:right-auto rtl:left-0 pr-3 rtl:pr-0 rtl:pl-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
               >
                 <Icon name="X" size={14} />
               </button>
@@ -506,31 +450,28 @@ export function DataTable<T>({
           </div>
         )}
 
-        {/* Right Side: Page Limit, Columns Toggle, Export Button */}
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          {/* Page Limit Selector */}
+        {/* Right Side Controls: Page Limit, Column Toggle, Export */}
+        <div className="flex flex-wrap items-center justify-end gap-2.5">
+          {/* Page Limit Dropdown Trigger */}
           {enablePageSize && (
             <div ref={pageSizeRef} className="relative">
               <button
                 type="button"
                 onClick={() => setIsPageSizeOpen((prev) => !prev)}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/80 shadow-xs transition-colors cursor-pointer"
-                aria-label="Select page limit"
+                className="flex items-center gap-2 px-3.5 py-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-purple-400 dark:hover:border-slate-700 shadow-xs transition-colors cursor-pointer"
               >
                 <span className="font-mono">{pageSize}</span>
-                <span className="text-slate-400 dark:text-slate-500 font-normal">/ page</span>
+                <span className="text-slate-400 dark:text-slate-500 font-medium">/ page</span>
                 <Icon
                   name="ChevronDown"
                   size={14}
-                  className={`text-slate-400 transition-transform duration-200 ${
-                    isPageSizeOpen ? 'rotate-180' : ''
-                  }`}
+                  className={`text-slate-400 transition-transform duration-200 ${isPageSizeOpen ? 'rotate-180' : ''}`}
                 />
               </button>
 
               {isPageSizeOpen && (
-                <div className="absolute right-0 rtl:right-auto rtl:left-0 mt-1.5 w-32 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl p-1.5 z-40 animate-in fade-in zoom-in-95 duration-100">
-                  <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800 mb-1">
+                <div className="absolute right-0 mt-1.5 w-36 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
+                  <div className="px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800 mb-1">
                     Rows per page
                   </div>
                   {pageSizeOptions.map((size) => (
@@ -542,16 +483,14 @@ export function DataTable<T>({
                         setIsPageSizeOpen(false);
                         setCurrentPage(1);
                       }}
-                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-bold transition-colors ${
                         pageSize === size
-                          ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 font-bold'
-                          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                          ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                          : 'text-slate-700 dark:text-slate-300 hover:bg-primary/10'
                       }`}
                     >
                       <span className="font-mono">{size} rows</span>
-                      {pageSize === size && (
-                        <Icon name="Check" size={13} className="text-purple-600 dark:text-purple-400" />
-                      )}
+                      {pageSize === size && <Icon name="Check" size={13} />}
                     </button>
                   ))}
                 </div>
@@ -559,13 +498,13 @@ export function DataTable<T>({
             </div>
           )}
 
-          {/* Columns Visibility Toggle */}
+          {/* Columns Visibility Toggle Button */}
           {enableColumnVisibility && (
             <div ref={columnRef} className="relative">
               <button
                 type="button"
                 onClick={() => setIsColumnDropdownOpen((prev) => !prev)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/80 shadow-xs transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200 hover:border-purple-400 dark:hover:border-slate-700 shadow-xs transition-colors cursor-pointer"
               >
                 <Icon name="Sliders" size={14} className="text-slate-400" />
                 <span>COLUMNS</span>
@@ -575,13 +514,13 @@ export function DataTable<T>({
               </button>
 
               {isColumnDropdownOpen && (
-                <div className="absolute right-0 rtl:right-auto rtl:left-0 mt-1.5 w-60 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl p-2 z-40 animate-in fade-in zoom-in-95 duration-100">
-                  <div className="flex items-center justify-between px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800 mb-1.5">
-                    <span>Toggle Columns</span>
+                <div className="absolute right-0 mt-1.5 w-60 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-100">
+                  <div className="flex items-center justify-between px-2 py-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800 mb-1.5">
+                    <span>Visible Columns</span>
                     <button
                       type="button"
                       onClick={resetColumnVisibility}
-                      className="text-purple-600 hover:underline cursor-pointer"
+                      className="text-purple-600 dark:text-purple-400 hover:underline cursor-pointer"
                     >
                       Reset
                     </button>
@@ -594,25 +533,14 @@ export function DataTable<T>({
                       const headerTitle = typeof col.header === 'string' ? col.header : col.id;
 
                       return (
-                        <label
-                          key={col.id}
-                          className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs cursor-pointer select-none transition-colors ${
-                            isVisible
-                              ? 'text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800'
-                              : 'text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60'
-                          } ${!isHideable ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        >
-                          <div className="flex items-center gap-2 truncate">
-                            <input
-                              type="checkbox"
-                              checked={isVisible}
-                              disabled={!isHideable}
-                              onChange={() => isHideable && toggleColumnVisibility(col.id)}
-                              className="w-3.5 h-3.5 rounded border-slate-300 text-purple-600 focus:ring-purple-500"
-                            />
-                            <span className="truncate">{headerTitle}</span>
-                          </div>
-                        </label>
+                        <div key={col.id} className="px-2.5 py-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                          <Checkbox
+                            label={headerTitle}
+                            checked={isVisible}
+                            disabled={!isHideable}
+                            onChange={() => isHideable && toggleColumnVisibility(col.id)}
+                          />
+                        </div>
                       );
                     })}
                   </div>
@@ -621,91 +549,44 @@ export function DataTable<T>({
             </div>
           )}
 
-          {/* Export Dropdown Button */}
+          {/* Export Button */}
           {enableExport && (
             <div ref={exportRef} className="relative">
               <button
                 type="button"
                 onClick={() => setIsExportDropdownOpen((prev) => !prev)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-black tracking-wider uppercase shadow-md shadow-purple-600/20 hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-black tracking-wider uppercase shadow-md shadow-primary/30 transition-all cursor-pointer"
               >
                 <Icon name="Download" size={14} className="stroke-[2.5]" />
                 <span>EXPORT</span>
                 <Icon
                   name="ChevronDown"
                   size={12}
-                  className={`transition-transform duration-200 ${
-                    isExportDropdownOpen ? 'rotate-180' : ''
-                  }`}
+                  className={`transition-transform duration-200 ${isExportDropdownOpen ? 'rotate-180' : ''}`}
                 />
               </button>
 
               {isExportDropdownOpen && (
-                <div className="absolute right-0 rtl:right-auto rtl:left-0 mt-1.5 w-60 rounded-2xl bg-slate-950 text-white border border-slate-800 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-100">
-                  <div className="px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 border-b border-slate-800 mb-1.5 flex items-center justify-between">
-                    <span>Download As</span>
-                    {currentSelectedIds.length > 0 && (
-                      <span className="text-purple-400 font-mono">
-                        ({currentSelectedIds.length} Selected)
-                      </span>
-                    )}
+                <div className="absolute right-0 mt-1.5 w-56 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
+                  <div className="px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800 mb-1">
+                    Export Format
                   </div>
-
-                  <div className="space-y-1">
-                    <button
-                      type="button"
-                      onClick={handleExportCSV}
-                      className="w-full flex items-center gap-3 px-3 py-2 text-xs font-bold rounded-xl text-slate-200 hover:text-white hover:bg-slate-800/80 transition-colors text-left rtl:text-right cursor-pointer group"
-                    >
-                      <Icon
-                        name="Download"
-                        size={15}
-                        className="text-slate-400 group-hover:text-purple-400 transition-colors"
-                      />
-                      <div className="flex-1">
-                        <div>CSV SPREADSHEET</div>
-                        <div className="text-[10px] text-slate-400 font-normal">
-                          For Excel, Google Sheets
-                        </div>
-                      </div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleExportJSON}
-                      className="w-full flex items-center gap-3 px-3 py-2 text-xs font-bold rounded-xl text-slate-200 hover:text-white hover:bg-slate-800/80 transition-colors text-left rtl:text-right cursor-pointer group"
-                    >
-                      <Icon
-                        name="FileText"
-                        size={15}
-                        className="text-slate-400 group-hover:text-purple-400 transition-colors"
-                      />
-                      <div className="flex-1">
-                        <div>JSON DATA</div>
-                        <div className="text-[10px] text-slate-400 font-normal">
-                          Standard payload format
-                        </div>
-                      </div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleExportPDF}
-                      className="w-full flex items-center gap-3 px-3 py-2 text-xs font-bold rounded-xl text-slate-200 hover:text-white hover:bg-slate-800/80 transition-colors text-left rtl:text-right cursor-pointer group"
-                    >
-                      <Icon
-                        name="FileText"
-                        size={15}
-                        className="text-slate-400 group-hover:text-purple-400 transition-colors"
-                      />
-                      <div className="flex-1">
-                        <div>PDF DOCUMENT</div>
-                        <div className="text-[10px] text-slate-400 font-normal">
-                          Printable table report
-                        </div>
-                      </div>
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={handleExportCSV}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-primary/10 hover:text-primary transition-colors"
+                  >
+                    <Icon name="FileText" size={14} className="text-primary" />
+                    <span>CSV Spreadsheet</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleExportJSON}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-primary/10 hover:text-primary transition-colors"
+                  >
+                    <Icon name="Layers" size={14} className="text-primary" />
+                    <span>JSON Payload</span>
+                  </button>
                 </div>
               )}
             </div>
@@ -713,56 +594,19 @@ export function DataTable<T>({
         </div>
       </div>
 
-      {/* Selected Items Action Bar (if any rows selected) */}
-      {enableSelection && currentSelectedIds.length > 0 && (
-        <div className="flex items-center justify-between p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900/60 text-xs animate-in fade-in duration-150">
-          <div className="flex items-center gap-2 text-purple-900 dark:text-purple-200 font-semibold">
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-purple-600 text-white text-[10px] font-black">
-              {currentSelectedIds.length}
-            </span>
-            <span>rows selected</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {typeof selectedActions === 'function'
-              ? selectedActions({
-                  selectedIds: currentSelectedIds,
-                  selectedItems: data.filter((item, idx) =>
-                    currentSelectedIds.includes(keyExtractor(item, idx))
-                  ),
-                  clearSelection: () => updateSelection([]),
-                })
-              : selectedActions}
-
-            <button
-              type="button"
-              onClick={() => updateSelection([])}
-              className="px-2.5 py-1 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-white text-xs font-medium cursor-pointer"
-            >
-              Clear
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Main Table Wrapper */}
-      <div className={`w-full overflow-hidden rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs ${tableClassName}`}>
+      {/* Main Table Outer Container */}
+      <div className={`w-full overflow-hidden rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl ${tableClassName}`}>
         <div className="overflow-x-auto">
-          <table className="w-full text-left rtl:text-right border-collapse text-xs">
-            {/* Table Header */}
+          <table className="w-full text-left border-collapse text-xs">
+            {/* Table Header Row */}
             <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-850 text-slate-500 dark:text-slate-400 font-bold uppercase text-[10px] tracking-wider select-none">
+              <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 font-extrabold uppercase text-[10px] tracking-wider select-none">
                 {enableSelection && (
                   <th className="w-10 px-4 py-3.5 text-center">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={isAllPageSelected}
-                      ref={(el) => {
-                        if (el) el.indeterminate = isSomePageSelected;
-                      }}
+                      indeterminate={isSomePageSelected}
                       onChange={(e) => handleSelectAll(e.target.checked)}
-                      className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-purple-600 focus:ring-purple-500 cursor-pointer"
-                      aria-label="Select all current page rows"
                     />
                   </th>
                 )}
@@ -781,10 +625,8 @@ export function DataTable<T>({
                       }}
                       onClick={() => isSortable && handleHeaderSort(col)}
                       className={`px-4 py-3.5 transition-colors ${
-                        isSortable
-                          ? 'cursor-pointer hover:bg-slate-100/70 dark:hover:bg-slate-800/60'
-                          : ''
-                      } ${isSorted ? 'text-purple-600 dark:text-purple-400' : ''}`}
+                        isSortable ? 'cursor-pointer hover:bg-slate-200/50 dark:hover:bg-slate-800/80' : ''
+                      } ${isSorted ? 'text-primary' : ''}`}
                     >
                       <div
                         className={`inline-flex items-center gap-1.5 ${
@@ -796,18 +638,16 @@ export function DataTable<T>({
                         }`}
                       >
                         <span>
-                          {typeof col.header === 'function'
-                            ? col.header({ column: col })
-                            : col.header}
+                          {typeof col.header === 'function' ? col.header({ column: col }) : col.header}
                         </span>
 
                         {isSortable && (
-                          <span className="text-slate-400 dark:text-slate-500">
+                          <span className="text-slate-400">
                             {isSorted ? (
                               sortDirection === 'asc' ? (
-                                <Icon name="ChevronUp" size={13} className="text-purple-600 dark:text-purple-400 stroke-[2.5]" />
+                                <Icon name="ChevronUp" size={13} className="text-primary stroke-[2.5]" />
                               ) : (
-                                <Icon name="ChevronDown" size={13} className="text-purple-600 dark:text-purple-400 stroke-[2.5]" />
+                                <Icon name="ChevronDown" size={13} className="text-primary stroke-[2.5]" />
                               )
                             ) : (
                               <span className="text-[11px] opacity-60">⇅</span>
@@ -822,9 +662,8 @@ export function DataTable<T>({
             </thead>
 
             {/* Table Body */}
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
               {loading ? (
-                // Loading Skeleton Rows
                 Array.from({ length: pageSize > 5 ? 5 : pageSize }).map((_, rIdx) => (
                   <tr key={`skel-${rIdx}`} className="animate-pulse">
                     {enableSelection && (
@@ -850,21 +689,15 @@ export function DataTable<T>({
                       onClick={() => onRowClick?.(row, index)}
                       className={`transition-colors ${
                         isSelected
-                          ? 'bg-purple-50/60 dark:bg-purple-950/25'
-                          : 'hover:bg-slate-50/70 dark:hover:bg-slate-800/40'
+                          ? 'bg-primary/10 dark:bg-primary/20'
+                          : 'hover:bg-primary/5 dark:hover:bg-primary/10'
                       } ${onRowClick ? 'cursor-pointer' : ''}`}
                     >
                       {enableSelection && (
-                        <td
-                          className="w-10 px-4 py-3.5 text-center"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <input
-                            type="checkbox"
+                        <td className="w-10 px-4 py-3.5 text-center" onClick={(e) => e.stopPropagation()}>
+                          <Checkbox
                             checked={isSelected}
                             onChange={(e) => handleSelectRow(rowId, e.target.checked)}
-                            className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-purple-600 focus:ring-purple-500 cursor-pointer"
-                            aria-label={`Select row ${rowId}`}
                           />
                         </td>
                       )}
@@ -880,10 +713,8 @@ export function DataTable<T>({
                         return (
                           <td
                             key={col.id}
-                            style={{
-                              textAlign: col.align || 'left',
-                            }}
-                            className="px-4 py-3.5 text-slate-700 dark:text-slate-200"
+                            style={{ textAlign: col.align || 'left' }}
+                            className="px-4 py-3.5 text-slate-800 dark:text-slate-200 font-medium"
                           >
                             {col.cell
                               ? col.cell({ row, value, index, isSelected })
@@ -897,27 +728,24 @@ export function DataTable<T>({
                   );
                 })
               ) : (
-                // Empty State
                 <tr>
                   <td
                     colSpan={visibleColumns.length + (enableSelection ? 1 : 0)}
-                    className="py-12 px-4 text-center"
+                    className="py-16 px-4 text-center"
                   >
                     {emptyState || (
                       <div className="flex flex-col items-center justify-center space-y-2">
-                        <div className="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
                           <Icon name="Search" size={18} />
                         </div>
-                        <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                          {emptyMessage}
-                        </p>
+                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{emptyMessage}</p>
                         {searchQuery && (
                           <button
                             type="button"
                             onClick={() => setSearchQuery('')}
-                            className="text-xs font-semibold text-purple-600 dark:text-purple-400 hover:underline"
+                            className="text-xs font-bold text-primary hover:underline"
                           >
-                            Clear search query
+                            Clear search filter
                           </button>
                         )}
                       </div>
@@ -931,58 +759,40 @@ export function DataTable<T>({
 
         {/* Bottom Pagination & Records Indicator Bar */}
         {enablePagination && (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/60 text-xs">
-            {/* Records Range Counter (Exact match to reference style) */}
-            <div className="text-slate-500 dark:text-slate-400">
-              Showing <span className="font-bold text-slate-900 dark:text-white">{startRecord}-{endRecord}</span> of{' '}
-              <span className="font-bold text-slate-900 dark:text-white">{totalRecords}</span> records
-              {currentSelectedIds.length > 0 && (
-                <span className="ml-2 font-semibold text-purple-600 dark:text-purple-400">
-                  • {currentSelectedIds.length} selected
-                </span>
-              )}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-5 py-3.5 border-t border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/80 text-xs">
+            {/* Records Range Counter */}
+            <div className="text-slate-500 dark:text-slate-400 font-medium">
+              Showing <span className="font-extrabold text-slate-900 dark:text-white">{startRecord}–{endRecord}</span> of{' '}
+              <span className="font-extrabold text-slate-900 dark:text-white">{totalRecords}</span> records
             </div>
 
-            {/* Pagination Controls */}
+            {/* Pagination Button Controls */}
             <div className="flex items-center gap-1">
-              {/* First Page */}
               <button
                 type="button"
                 disabled={currentPage <= 1 || loading}
                 onClick={() => setCurrentPage(1)}
-                className="w-8 h-8 rounded-xl flex items-center justify-center border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 transition-colors cursor-pointer"
                 aria-label="First page"
               >
-                <span className="text-xs font-bold leading-none">«</span>
+                «
               </button>
 
-              {/* Previous Page */}
               <button
                 type="button"
                 disabled={currentPage <= 1 || loading}
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                className="w-8 h-8 rounded-xl flex items-center justify-center border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 transition-colors cursor-pointer"
                 aria-label="Previous page"
               >
-                <span className="text-xs font-bold leading-none">‹</span>
+                ‹
               </button>
 
-              {/* Page Number Pills */}
               {Array.from({ length: totalPages }).map((_, pIdx) => {
                 const pageNum = pIdx + 1;
-                // Render at most 5 page numbers around current page
-                if (
-                  totalPages > 7 &&
-                  Math.abs(pageNum - currentPage) > 2 &&
-                  pageNum !== 1 &&
-                  pageNum !== totalPages
-                ) {
+                if (totalPages > 7 && Math.abs(pageNum - currentPage) > 2 && pageNum !== 1 && pageNum !== totalPages) {
                   if (pageNum === 2 || pageNum === totalPages - 1) {
-                    return (
-                      <span key={`ellipsis-${pageNum}`} className="px-1 text-slate-400 font-mono">
-                        ...
-                      </span>
-                    );
+                    return <span key={`ellipsis-${pageNum}`} className="px-1 text-slate-400">...</span>;
                   }
                   return null;
                 }
@@ -994,10 +804,10 @@ export function DataTable<T>({
                     key={`page-${pageNum}`}
                     type="button"
                     onClick={() => setCurrentPage(pageNum)}
-                    className={`min-w-8 h-8 px-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                    className={`w-8 h-8 rounded-lg font-bold text-xs flex items-center justify-center transition-all cursor-pointer ${
                       isActive
-                        ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
-                        : 'border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+                        ? 'bg-primary text-primary-foreground shadow-md shadow-primary/30'
+                        : 'border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                     }`}
                   >
                     {pageNum}
@@ -1005,26 +815,24 @@ export function DataTable<T>({
                 );
               })}
 
-              {/* Next Page */}
               <button
                 type="button"
                 disabled={currentPage >= totalPages || loading}
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                className="w-8 h-8 rounded-xl flex items-center justify-center border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 transition-colors cursor-pointer"
                 aria-label="Next page"
               >
-                <span className="text-xs font-bold leading-none">›</span>
+                ›
               </button>
 
-              {/* Last Page */}
               <button
                 type="button"
                 disabled={currentPage >= totalPages || loading}
                 onClick={() => setCurrentPage(totalPages)}
-                className="w-8 h-8 rounded-xl flex items-center justify-center border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 transition-colors cursor-pointer"
                 aria-label="Last page"
               >
-                <span className="text-xs font-bold leading-none">»</span>
+                »
               </button>
             </div>
           </div>
@@ -1034,5 +842,4 @@ export function DataTable<T>({
   );
 }
 
-// Alias for CommonTable
 export const CommonTable = DataTable;

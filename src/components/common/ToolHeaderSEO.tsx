@@ -3,11 +3,17 @@ import { ToolDefinition } from '../../types';
 import { DynamicIcon } from './DynamicIcon';
 import { Lock, Zap, Sparkles, Layers, ShieldCheck } from 'lucide-react';
 
+import { ToolDetailContent } from '../../types/toolCms';
+
 interface ToolHeaderSEOProps {
   tool: ToolDefinition;
+  content?: ToolDetailContent | null;
 }
 
-export const ToolHeaderSEO: React.FC<ToolHeaderSEOProps> = ({ tool }) => {
+export const ToolHeaderSEO: React.FC<ToolHeaderSEOProps> = ({ tool, content }) => {
+  const displayTitle = content?.seo?.h1Title || tool.name;
+  const displayDescription = content?.seo?.headerDescription || tool.fullDescription;
+
   return (
     <div className="space-y-4 border-b border-slate-200/80 pb-6 dark:border-slate-800">
       {/* Badges Bar */}
@@ -22,7 +28,7 @@ export const ToolHeaderSEO: React.FC<ToolHeaderSEOProps> = ({ tool }) => {
             <Lock className="h-3.5 w-3.5" /> 100% In-Browser & Private
           </span>
         ) : (
-          <span className="flex items-center gap-1 rounded-md bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/60">
+          <span className="flex items-center gap-1 rounded-md bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary border border-primary/20">
             <Sparkles className="h-3.5 w-3.5" /> AI Engine • {tool.creditCost} Credits
           </span>
         )}
@@ -37,21 +43,11 @@ export const ToolHeaderSEO: React.FC<ToolHeaderSEOProps> = ({ tool }) => {
       {/* Main H1 & SEO Subheading */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-          {tool.name}
+          {displayTitle}
         </h1>
         <p className="mt-2 text-sm sm:text-base leading-relaxed text-slate-600 dark:text-slate-300 max-w-3xl">
-          {tool.fullDescription}
+          {displayDescription}
         </p>
-      </div>
-
-      {/* Privacy Guarantee Note */}
-      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-        <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0" />
-        <span>
-          {tool.processingType === 'browser'
-            ? 'Your photo is processed locally inside your web browser. No files are uploaded to any external server.'
-            : 'Your image is securely transformed using neural AI and automatically erased after generation.'}
-        </span>
       </div>
     </div>
   );

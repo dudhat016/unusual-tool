@@ -79,7 +79,7 @@ export const AdminAdsTab: React.FC<AdminAdsTabProps> = ({ showToast }) => {
                     onClick={() => handleUpdateDevice(slot.id, dev)}
                     className={`px-2 py-0.5 rounded-md text-[10px] font-bold capitalize ${
                       slot.device === dev
-                        ? 'bg-indigo-600 text-white'
+                        ? 'bg-primary text-primary-foreground'
                         : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
                     }`}
                   >

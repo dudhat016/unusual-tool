@@ -252,6 +252,9 @@ export const CATEGORIES_REGISTRY: CategorySeoEntry[] = [
 
 export function getCategoryBySlug(slug: string): CategorySeoEntry | undefined {
   const clean = slug.replace(/^\/+|\/+$/g, '').toLowerCase();
+  if (clean === 'tools' || clean === 'all-tools' || clean === 'all' || clean === 'tool') {
+    return CATEGORIES_REGISTRY.find((c) => c.id === 'image-tools');
+  }
   return CATEGORIES_REGISTRY.find(
     (c) => c.slug.toLowerCase() === clean || c.id.toLowerCase() === clean
   );

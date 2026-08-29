@@ -31,7 +31,7 @@ export const Chip: React.FC<ChipProps> = ({
           : 'px-3 py-1 text-xs rounded-xl'
       } ${
         selected
-          ? 'bg-indigo-600 border-indigo-600 text-white shadow-xs'
+          ? 'bg-primary border-primary text-primary-foreground shadow-xs'
           : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
       } ${onSelect && !disabled ? 'cursor-pointer' : ''} ${
         disabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''

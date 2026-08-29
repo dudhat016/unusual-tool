@@ -141,7 +141,7 @@ export const ExportMenu: React.FC<ExportMenuProps> = ({
               onClick={handleDownloadMd}
               className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-left rtl:text-right"
             >
-              <Code className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              <Code className="w-4 h-4 text-primary" />
               <div>
                 <p className="font-bold">Markdown (.md)</p>
                 <p className="text-[10px] text-slate-400">Formatted with headers & lists</p>

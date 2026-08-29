@@ -8,6 +8,7 @@ import {
   SearchInput,
   Textarea,
   Select,
+  CustomSelect,
   Checkbox,
   RadioGroup,
   Switch,
@@ -62,6 +63,8 @@ export const UIKitCatalogView: React.FC = () => {
   const [numberVal, setNumberVal] = useState(250);
   const [textareaVal, setTextareaVal] = useState('High precision client-side processing');
   const [selectVal, setSelectVal] = useState('webp');
+  const [customSelectVal, setCustomSelectVal] = useState('webp');
+  const [multiSelectVal, setMultiSelectVal] = useState(['resize', 'compress']);
   const [checkboxVal, setCheckboxVal] = useState(true);
   const [radioVal, setRadioVal] = useState('recommended');
   const [switchVal, setSwitchVal] = useState(true);
@@ -252,7 +255,7 @@ export const UIKitCatalogView: React.FC = () => {
               <CardDescription>Select dropdowns, sliders, switches, segmented bars, and checkboxes.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
-              <FormField label="Target Format Selection">
+              <FormField label="Target Format Selection (Native)">
                 <Select
                   value={selectVal}
                   onChange={(e) => setSelectVal(e.target.value)}
@@ -261,6 +264,36 @@ export const UIKitCatalogView: React.FC = () => {
                     { value: 'jpg', label: 'JPEG (High compatibility standard)' },
                     { value: 'png', label: 'PNG (Lossless transparency preservation)' },
                     { value: 'pdf', label: 'PDF (Single multi-page document)' },
+                  ]}
+                />
+              </FormField>
+
+              <FormField label="Searchable Dropdown (Promptly CustomSelect)">
+                <CustomSelect
+                  value={customSelectVal}
+                  onChange={setCustomSelectVal}
+                  isSearchable
+                  options={[
+                    { value: 'webp', label: 'WebP Image', description: 'Next-gen image format with high compression' },
+                    { value: 'jpg', label: 'JPEG Image', description: 'Universal format supported across all devices' },
+                    { value: 'png', label: 'PNG Image', description: 'Lossless format supporting full transparency' },
+                    { value: 'pdf', label: 'PDF Document', description: 'Multi-page document format for archiving' },
+                  ]}
+                />
+              </FormField>
+
+              <FormField label="Multi-Select Pipeline (Promptly Tags)">
+                <CustomSelect
+                  value={multiSelectVal}
+                  onChange={setMultiSelectVal}
+                  isMulti
+                  isSearchable
+                  placeholder="Select batch operations..."
+                  options={[
+                    { value: 'resize', label: 'Resize Dimensions', description: 'Scale resolution proportionally' },
+                    { value: 'compress', label: 'Compress File Size', description: 'Reduce KB size with zero quality loss' },
+                    { value: 'watermark', label: 'Apply Watermark', description: 'Stamp brand text or image overlay' },
+                    { value: 'convert', label: 'Format Conversion', description: 'Convert between WebP, PNG, JPG' },
                   ]}
                 />
               </FormField>

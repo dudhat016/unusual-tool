@@ -3,6 +3,7 @@ import { UploadedFileItem } from '../../types';
 import { extractColorPalette } from '../../engine/imageEngine';
 import { useApp } from '../../context/AppContext';
 import { UploadZone } from '../common/UploadZone';
+import { Button } from '../ui/Button';
 import { Pipette, Copy, Check } from 'lucide-react';
 
 export const ColorPickerToolView: React.FC = () => {
@@ -87,15 +88,16 @@ export const ColorPickerToolView: React.FC = () => {
                   <Pipette className="h-4 w-4 text-blue-600" />
                   <h3 className="font-bold text-slate-900 dark:text-white text-base">Color Palette</h3>
                 </div>
-                <button
+                <Button
+                  variant="ghost"
+                  size="xs"
                   onClick={() => {
                     setFiles([]);
                     setPalette([]);
                   }}
-                  className="text-xs font-semibold text-rose-500 hover:text-rose-600"
                 >
                   Change Photo
-                </button>
+                </Button>
               </div>
 
               {/* Selected / Eyedropper Color Preview Card */}
@@ -113,13 +115,15 @@ export const ColorPickerToolView: React.FC = () => {
                   </div>
                 </div>
 
-                <button
+                <Button
+                  variant="primary"
+                  size="md"
+                  fullWidth
+                  leftIcon={copiedHex === selectedColor ? Check : Copy}
                   onClick={() => copyToClipboard(selectedColor)}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white hover:bg-blue-700 transition-colors"
                 >
-                  {copiedHex === selectedColor ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                  <span>{copiedHex === selectedColor ? 'Copied to Clipboard!' : 'Copy Color Code'}</span>
-                </button>
+                  {copiedHex === selectedColor ? 'Copied to Clipboard!' : 'Copy Color Code'}
+                </Button>
               </div>
 
               {/* Dominant Palette Swatches */}

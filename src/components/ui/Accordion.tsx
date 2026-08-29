@@ -55,7 +55,7 @@ export const Accordion: React.FC<AccordionProps> = ({
                   <Icon
                     name={item.icon}
                     size={18}
-                    className="text-indigo-600 dark:text-indigo-400"
+                    className="text-primary"
                   />
                 )}
                 <span className="text-sm sm:text-base">{item.title}</span>

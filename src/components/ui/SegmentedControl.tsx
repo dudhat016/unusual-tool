@@ -65,7 +65,7 @@ export const SegmentedControl: React.FC<SegmentedControlProps> = ({
           >
             <span className="truncate">{opt.label}</span>
             {opt.badge && (
-              <span className="px-1.5 py-0.2 text-[10px] font-bold rounded-md bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300">
+              <span className="px-1.5 py-0.2 text-[10px] font-bold rounded-md bg-primary/10 text-primary">
                 {opt.badge}
               </span>
             )}

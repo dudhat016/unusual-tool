@@ -7,6 +7,8 @@ import {
 import { BeforeAfterComparisonModal } from './BeforeAfterComparisonModal';
 import { formatFileSize } from '../../engine/imageEngine';
 import { useApp } from '../../context/AppContext';
+import { Select } from '../ui/Select';
+import { Checkbox } from '../ui/Checkbox';
 import {
   Play,
   Pause,
@@ -309,7 +311,7 @@ export const UniversalBatchQueue: React.FC<UniversalBatchQueueProps> = ({
             </div>
             <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
               <div
-                className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-300"
+                className="h-full bg-primary transition-all duration-300"
                 style={{ width: `${engineState.progressPercentage}%` }}
               />
             </div>
@@ -408,17 +410,19 @@ export const UniversalBatchQueue: React.FC<UniversalBatchQueueProps> = ({
 
             {/* Concurrency Selector */}
             <div className="hidden md:flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-              <span>Parallel:</span>
-              <select
-                value={concurrency}
-                onChange={(e) => handleConcurrencyChange(Number(e.target.value))}
-                className="rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-xs font-semibold text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-              >
-                <option value={2}>2 Workers</option>
-                <option value={4}>4 Workers (Recommended)</option>
-                <option value={6}>6 Workers</option>
-                <option value={8}>8 Workers (Fast)</option>
-              </select>
+              <span className="shrink-0">Parallel:</span>
+              <div className="w-36">
+                <Select
+                  value={concurrency}
+                  onChange={(e) => handleConcurrencyChange(Number(e.target.value))}
+                  options={[
+                    { value: 2, label: '2 Workers' },
+                    { value: 4, label: '4 Workers (Rec.)' },
+                    { value: 6, label: '6 Workers' },
+                    { value: 8, label: '8 Workers (Fast)' },
+                  ]}
+                />
+              </div>
             </div>
           </div>
 
@@ -515,11 +519,9 @@ export const UniversalBatchQueue: React.FC<UniversalBatchQueueProps> = ({
                 {/* Left: Thumbnail & Details */}
                 <div className="flex items-center gap-3.5 min-w-0">
                   {/* Select Checkbox */}
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={job.selected}
                     onChange={() => batchEngine.toggleSelect(job.id)}
-                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800"
                   />
 
                   {/* Thumbnail */}

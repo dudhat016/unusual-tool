@@ -20,9 +20,11 @@ import {
   Cpu,
 } from 'lucide-react';
 
+import { Link } from '../components/common/Link';
+import { DynamicFaqAccordion } from '../components/common/DynamicFaqAccordion';
+
 export const HomePage: React.FC = () => {
   const { navigate, setIsSearchOpen } = useApp();
-  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
   const popularTools = TOOLS_REGISTRY.filter((t) => t.isPopular);
 
@@ -54,15 +56,15 @@ export const HomePage: React.FC = () => {
       {/* Hero Section */}
       <section className="relative text-center space-y-6 max-w-4xl mx-auto px-4">
         {/* Privacy Pill Badge */}
-        <div className="inline-flex items-center gap-2 rounded-full border border-purple-200/80 bg-purple-50/80 px-3.5 py-1 text-xs font-semibold text-purple-800 dark:border-purple-900/60 dark:bg-purple-950/60 dark:text-purple-300 shadow-2xs">
-          <Lock className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+        <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1 text-xs font-semibold text-primary shadow-2xs">
+          <Lock className="h-3.5 w-3.5 text-primary" />
           <span>Zero Server Uploads • 100% In-Browser Privacy</span>
         </div>
 
         {/* Display Heading */}
         <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 dark:text-white leading-[1.15]">
           The Complete Modern <br />
-          <span className="bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-500 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
             Image Utility Suite
           </span>
         </h1>
@@ -76,7 +78,7 @@ export const HomePage: React.FC = () => {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
           <button
             onClick={() => setIsSearchOpen(true)}
-            className="w-full sm:w-80 flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm text-slate-400 shadow-sm hover:border-purple-400 hover:text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700 transition-all text-left cursor-pointer"
+            className="w-full sm:w-80 flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm text-slate-400 shadow-sm hover:border-primary hover:text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700 transition-all text-left cursor-pointer"
           >
             <div className="flex items-center gap-2.5">
               <Search className="h-4 w-4 text-slate-400" />
@@ -87,19 +89,19 @@ export const HomePage: React.FC = () => {
             </kbd>
           </button>
 
-          <button
-            onClick={() => navigate('/tools')}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-2xl bg-purple-600 px-6 py-3.5 text-sm font-bold text-white shadow-md shadow-purple-500/20 hover:bg-purple-500 active:scale-[0.99] transition-all cursor-pointer"
+          <Link
+            href="/tools"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-3.5 text-sm font-bold text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90 active:scale-[0.99] transition-all cursor-pointer"
           >
             <Sparkles className="h-4 w-4" />
             <span>Explore All Tools</span>
-          </button>
+          </Link>
         </div>
 
         {/* Trust Badges */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6 text-left">
           <div className="flex items-center gap-2.5 rounded-xl border border-slate-200/80 bg-white/60 p-3 dark:border-slate-800/80 dark:bg-slate-900/40">
-            <Cpu className="h-4 w-4 text-purple-600 dark:text-purple-400 shrink-0" />
+            <Cpu className="h-4 w-4 text-primary shrink-0" />
             <div className="min-w-0">
               <p className="text-xs font-bold text-slate-900 dark:text-white">Local Hardware</p>
               <p className="text-[10px] text-slate-500">HTML5 Canvas Engine</p>
@@ -123,7 +125,7 @@ export const HomePage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2.5 rounded-xl border border-slate-200/80 bg-white/60 p-3 dark:border-slate-800/80 dark:bg-slate-900/40">
-            <Sparkles className="h-4 w-4 text-indigo-600 shrink-0" />
+            <Sparkles className="h-4 w-4 text-primary shrink-0" />
             <div className="min-w-0">
               <p className="text-xs font-bold text-slate-900 dark:text-white">15+ Pro Tools</p>
               <p className="text-[10px] text-slate-500">All-in-one suite</p>
@@ -150,10 +152,10 @@ export const HomePage: React.FC = () => {
             <div
               key={tool.id}
               onClick={() => navigate(tool.route)}
-              className="group cursor-pointer rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs hover:border-purple-500 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 transition-all"
+              className="group cursor-pointer rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs hover:border-primary hover:shadow-md dark:border-slate-800 dark:bg-slate-900 transition-all"
             >
               <div className="flex items-start justify-between gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-950 dark:text-purple-400 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                   <DynamicIcon name={tool.icon} className="h-5 w-5" />
                 </div>
                 <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
@@ -161,14 +163,14 @@ export const HomePage: React.FC = () => {
                 </span>
               </div>
 
-              <h3 className="mt-3 text-sm font-bold text-slate-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+              <h3 className="mt-3 text-sm font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
                 {tool.name}
               </h3>
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
                 {tool.shortDescription}
               </p>
 
-              <div className="mt-4 flex items-center gap-1 text-xs font-bold text-purple-600 dark:text-purple-400">
+              <div className="mt-4 flex items-center gap-1 text-xs font-bold text-primary">
                 <span>Open tool</span>
                 <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
               </div>
@@ -203,7 +205,7 @@ export const HomePage: React.FC = () => {
           </div>
           <button
             onClick={() => navigate('/convert')}
-            className="text-xs font-bold text-purple-600 hover:text-purple-700 dark:text-purple-400 flex items-center gap-1 cursor-pointer"
+            className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
           >
             <span>All Formats</span>
             <ArrowRight className="h-3.5 w-3.5" />
@@ -249,7 +251,7 @@ export const HomePage: React.FC = () => {
           </div>
 
           <div className="space-y-2 rounded-2xl bg-white p-6 shadow-2xs dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800">
-            <div className="h-9 w-9 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center dark:bg-purple-950 dark:text-purple-400 font-bold">
+            <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold">
               <Zap className="h-5 w-5" />
             </div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">Zero Upload / Download Lag</h3>
@@ -259,7 +261,7 @@ export const HomePage: React.FC = () => {
           </div>
 
           <div className="space-y-2 rounded-2xl bg-white p-6 shadow-2xs dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800">
-            <div className="h-9 w-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center dark:bg-indigo-950 dark:text-indigo-400 font-bold">
+            <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold">
               <Layers className="h-5 w-5" />
             </div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">Batch & ZIP Workflows</h3>
@@ -271,37 +273,11 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* Global Homepage FAQs */}
-      <section className="space-y-6 max-w-3xl mx-auto">
-        <div className="text-center space-y-1">
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Frequently Asked Questions</h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Everything you need to know about AetherPix Studio</p>
-        </div>
-
-        <div className="divide-y divide-slate-200 rounded-2xl border border-slate-200/80 bg-white dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
-          {homeFaqs.map((faq, index) => {
-            const isOpen = openFaqIndex === index;
-            return (
-              <div key={index} className="p-4 sm:p-5">
-                <button
-                  onClick={() => setOpenFaqIndex(isOpen ? null : index)}
-                  className="flex w-full items-center justify-between text-left text-sm font-semibold text-slate-900 dark:text-white cursor-pointer"
-                >
-                  <span>{faq.question}</span>
-                  <ChevronDown
-                    className={`h-4 w-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180 text-purple-600' : ''}`}
-                  />
-                </button>
-
-                {isOpen && (
-                  <div className="mt-3 text-xs leading-relaxed text-slate-600 dark:text-slate-300 pr-6 animate-in fade-in duration-200">
-                    {faq.answer}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </section>
+      <DynamicFaqAccordion
+        faqs={homeFaqs}
+        subtitle="Everything you need to know about AetherPix Studio"
+        className="max-w-3xl mx-auto"
+      />
     </div>
   );
 };

@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useApp } from '../../context/AppContext';
-import { TOOLS_REGISTRY } from '../../config/tools';
-import { EXACT_TARGET_SIZE_ITEMS } from '../../config/targetSizeTools';
+import { ArrowRight, Search, Sparkles, X } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { POPULAR_CONVERTER_PAIRS } from '../../config/converterTools';
+import { EXACT_TARGET_SIZE_ITEMS } from '../../config/targetSizeTools';
+import { TOOLS_REGISTRY } from '../../config/tools';
+import { useApp } from '../../context/AppContext';
 import { DynamicIcon } from './DynamicIcon';
-import { Search, X, ArrowRight, Zap, Sparkles, RefreshCw, Minimize2 } from 'lucide-react';
+import { Link } from './Link';
+import { BlogService } from '../../services/BlogService';
 
 interface SearchResultItem {
   id: string;
@@ -65,11 +67,21 @@ export const QuickSearchModal: React.FC = () => {
       badge: item.mediaType === 'pdf' ? 'PDF Target' : 'Target Size',
     }));
 
+    const blogPosts: SearchResultItem[] = BlogService.getPublishedPosts().map((p) => ({
+      id: `blog-${p.id}`,
+      name: p.title,
+      description: p.excerpt,
+      route: `/blog/${p.slug}`,
+      category: p.category,
+      icon: 'BookOpen',
+      badge: 'Article',
+    }));
+
     // Deduplicate by route
     const seenRoutes = new Set<string>();
     const uniqueItems: SearchResultItem[] = [];
 
-    for (const item of [...mainTools, ...converterTools, ...targetSizeTools]) {
+    for (const item of [...mainTools, ...converterTools, ...targetSizeTools, ...blogPosts]) {
       if (!seenRoutes.has(item.route)) {
         seenRoutes.add(item.route);
         uniqueItems.push(item);
@@ -77,7 +89,7 @@ export const QuickSearchModal: React.FC = () => {
     }
 
     return uniqueItems;
-  }, []);
+  }, [isSearchOpen]);
 
   if (!isSearchOpen) return null;
 
@@ -137,10 +149,11 @@ export const QuickSearchModal: React.FC = () => {
         <div className="max-h-[380px] overflow-y-auto p-2 space-y-1">
           {filtered.length > 0 ? (
             filtered.map((tool) => (
-              <button
+              <Link
                 key={tool.id}
-                onClick={() => handleSelect(tool.route)}
-                className="w-full flex items-center justify-between gap-3 rounded-xl p-2.5 text-left hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors group"
+                href={tool.route}
+                onClick={() => setIsSearchOpen(false)}
+                className="w-full flex items-center justify-between gap-3 rounded-xl p-2.5 text-left hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors group cursor-pointer"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 group-hover:bg-blue-600 group-hover:text-white transition-colors">
@@ -152,7 +165,7 @@ export const QuickSearchModal: React.FC = () => {
                         {tool.name}
                       </span>
                       {tool.isAi ? (
-                        <span className="flex items-center gap-0.5 rounded bg-indigo-50 px-1.5 py-0.2 text-[9px] font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                        <span className="flex items-center gap-0.5 rounded bg-primary/10 px-1.5 py-0.2 text-[9px] font-bold text-primary">
                           <Sparkles className="h-2.5 w-2.5" /> AI
                         </span>
                       ) : tool.badge === 'Target Size' ? (
@@ -176,7 +189,7 @@ export const QuickSearchModal: React.FC = () => {
                 </div>
 
                 <ArrowRight className="h-4 w-4 text-slate-400 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all shrink-0" />
-              </button>
+              </Link>
             ))
           ) : (
             <div className="py-10 text-center text-xs text-slate-400">

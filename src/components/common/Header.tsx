@@ -18,6 +18,8 @@ import {
 import { LanguageSwitcher } from '../ui/LanguageSwitcher';
 import { TOOL_CATEGORIES } from '../../config/tools';
 
+import { Link } from './Link';
+
 export const Header: React.FC = () => {
   const {
     currentPath,
@@ -34,12 +36,8 @@ export const Header: React.FC = () => {
   const { t } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const navLinks = [
+  const navLinks: { label: string; path: string; badge?: string }[] = [
     { label: t('navigation.allTools'), path: '/tools' },
-    { label: 'Notepad', path: '/online-notepad', badge: 'Free' },
-    { label: t('navigation.pdfTools'), path: '/tools?cat=pdf', badge: 'Hot' },
-    { label: t('navigation.youtubeTools'), path: '/youtube-tools' },
-    { label: t('navigation.pricing'), path: '/pricing' },
   ];
 
   return (
@@ -47,45 +45,45 @@ export const Header: React.FC = () => {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Brand Logo */}
         <div className="flex items-center gap-6 lg:gap-8">
-          <button
+          <Link
             id="brand-logo-button"
-            onClick={() => navigate('/')}
+            href="/"
             className="flex items-center gap-2.5 text-left group focus:outline-none cursor-pointer"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 text-white shadow-md shadow-purple-500/20 group-hover:scale-105 transition-transform">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/20 group-hover:scale-105 transition-transform">
               <Sparkles className="h-5 w-5" />
             </div>
             <div>
               <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-                Aether<span className="text-purple-600 dark:text-purple-400">Pix</span>
+                Aether<span className="text-primary">Pix</span>
               </span>
-              <span className="hidden sm:inline-block ml-2 text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/60">
+              <span className="hidden sm:inline-block ml-2 text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
                 Studio
               </span>
             </div>
-          </button>
+          </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
             {navLinks.map((link) => {
               const isActive = currentPath === link.path;
               return (
-                <button
+                <Link
                   key={link.path}
-                  onClick={() => navigate(link.path)}
+                  href={link.path}
                   className={`relative px-3 py-1.5 text-sm font-medium rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer ${
                     isActive
-                      ? 'text-purple-600 bg-purple-50/80 dark:bg-purple-950/60 dark:text-purple-400 font-semibold'
+                      ? 'text-primary bg-primary/10 font-semibold'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-900'
                   }`}
                 >
                   {link.label}
                   {link.badge && (
-                    <span className="px-1.5 py-0.2 text-[10px] font-bold rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white leading-tight">
+                    <span className="px-1.5 py-0.2 text-[10px] font-bold rounded-full bg-primary text-primary-foreground leading-tight">
                       {link.badge}
                     </span>
                   )}
-                </button>
+                </Link>
               );
             })}
           </nav>
@@ -124,7 +122,7 @@ export const Header: React.FC = () => {
           {isAdmin && (
             <button
               onClick={() => navigate('/admin')}
-              className="p-2 rounded-xl border border-purple-300 dark:border-purple-800 bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 hover:bg-purple-100 transition-colors cursor-pointer"
+              className="p-2 rounded-xl border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 transition-colors cursor-pointer"
               title={t('navigation.admin')}
             >
               <ShieldAlert className="h-4 w-4" />
@@ -140,7 +138,7 @@ export const Header: React.FC = () => {
               {user.photoURL ? (
                 <img src={user.photoURL} alt="Profile" className="h-6 w-6 rounded-lg object-cover" />
               ) : (
-                <div className="h-6 w-6 rounded-lg bg-purple-600 text-white flex items-center justify-center text-xs font-bold">
+                <div className="h-6 w-6 rounded-lg bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
                   {(user.displayName || user.email || 'U')[0].toUpperCase()}
                 </div>
               )}
@@ -151,7 +149,7 @@ export const Header: React.FC = () => {
           ) : (
             <button
               onClick={() => openAuthModal('signin')}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold shadow-xs transition-colors cursor-pointer"
             >
               <User className="h-3.5 w-3.5" />
               <span>{t('buttons.signIn')}</span>

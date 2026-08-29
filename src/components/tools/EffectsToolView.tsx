@@ -6,6 +6,8 @@ import { UploadZone } from '../common/UploadZone';
 import { ImagePreview } from '../common/ImagePreview';
 import { UniversalBatchEngine } from '../../engine/batch/UniversalBatchEngine';
 import { UniversalBatchQueue } from '../common/UniversalBatchQueue';
+import { Button } from '../ui/Button';
+import { Slider } from '../ui/Slider';
 import {
   Wand2,
   RefreshCw,
@@ -210,65 +212,42 @@ export const EffectsToolView: React.FC<EffectsToolViewProps> = ({ tool }) => {
 
                 {/* Sliders: Brightness, Contrast, Saturation */}
                 <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                      <span>Brightness</span>
-                      <span className="font-mono">{effects.brightness > 0 ? `+${effects.brightness}` : effects.brightness}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="-100"
-                      max="100"
-                      value={effects.brightness}
-                      onChange={(e) => setEffects((prev) => ({ ...prev, brightness: parseInt(e.target.value) }))}
-                      className="w-full accent-blue-600"
-                    />
-                  </div>
+                  <Slider
+                    label="Brightness"
+                    min={-100}
+                    max={100}
+                    step={1}
+                    value={effects.brightness}
+                    onChange={(v) => setEffects((prev) => ({ ...prev, brightness: v }))}
+                  />
 
-                  <div>
-                    <div className="flex justify-between text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                      <span>Contrast</span>
-                      <span className="font-mono">{effects.contrast > 0 ? `+${effects.contrast}` : effects.contrast}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="-100"
-                      max="100"
-                      value={effects.contrast}
-                      onChange={(e) => setEffects((prev) => ({ ...prev, contrast: parseInt(e.target.value) }))}
-                      className="w-full accent-blue-600"
-                    />
-                  </div>
+                  <Slider
+                    label="Contrast"
+                    min={-100}
+                    max={100}
+                    step={1}
+                    value={effects.contrast}
+                    onChange={(v) => setEffects((prev) => ({ ...prev, contrast: v }))}
+                  />
 
-                  <div>
-                    <div className="flex justify-between text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                      <span>Saturation</span>
-                      <span className="font-mono">{effects.saturation > 0 ? `+${effects.saturation}` : effects.saturation}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="-100"
-                      max="100"
-                      value={effects.saturation}
-                      onChange={(e) => setEffects((prev) => ({ ...prev, saturation: parseInt(e.target.value) }))}
-                      className="w-full accent-blue-600"
-                    />
-                  </div>
+                  <Slider
+                    label="Saturation"
+                    min={-100}
+                    max={100}
+                    step={1}
+                    value={effects.saturation}
+                    onChange={(v) => setEffects((prev) => ({ ...prev, saturation: v }))}
+                  />
 
-                  <div>
-                    <div className="flex justify-between text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                      <span>Blur / Soft Focus</span>
-                      <span className="font-mono">{effects.blur}px</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="20"
-                      value={effects.blur}
-                      onChange={(e) => setEffects((prev) => ({ ...prev, blur: parseInt(e.target.value) }))}
-                      className="w-full accent-blue-600"
-                    />
-                  </div>
+                  <Slider
+                    label="Blur / Soft Focus"
+                    min={0}
+                    max={20}
+                    step={1}
+                    value={effects.blur}
+                    unit="px"
+                    onChange={(v) => setEffects((prev) => ({ ...prev, blur: v }))}
+                  />
                 </div>
 
                 {/* Preset Filters Checkboxes / Buttons */}
@@ -277,75 +256,53 @@ export const EffectsToolView: React.FC<EffectsToolViewProps> = ({ tool }) => {
                     Artistic Presets
                   </label>
                   <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
+                    <Button
+                      variant={effects.grayscale ? 'primary' : 'outline'}
+                      size="sm"
                       onClick={() => setEffects((prev) => ({ ...prev, grayscale: !prev.grayscale }))}
-                      className={`p-2 rounded-xl border text-xs font-semibold transition-colors ${
-                        effects.grayscale
-                          ? 'border-blue-600 bg-blue-50 text-blue-700 dark:border-blue-500 dark:bg-blue-950 dark:text-blue-300'
-                          : 'border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800'
-                      }`}
                     >
                       B&W Grayscale
-                    </button>
+                    </Button>
 
-                    <button
-                      type="button"
+                    <Button
+                      variant={effects.vintage ? 'primary' : 'outline'}
+                      size="sm"
                       onClick={() => setEffects((prev) => ({ ...prev, vintage: !prev.vintage }))}
-                      className={`p-2 rounded-xl border text-xs font-semibold transition-colors ${
-                        effects.vintage
-                          ? 'border-blue-600 bg-blue-50 text-blue-700 dark:border-blue-500 dark:bg-blue-950 dark:text-blue-300'
-                          : 'border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800'
-                      }`}
                     >
                       Vintage Tone
-                    </button>
+                    </Button>
 
-                    <button
-                      type="button"
+                    <Button
+                      variant={effects.sepia > 0 ? 'primary' : 'outline'}
+                      size="sm"
                       onClick={() => setEffects((prev) => ({ ...prev, sepia: prev.sepia > 0 ? 0 : 70 }))}
-                      className={`p-2 rounded-xl border text-xs font-semibold transition-colors ${
-                        effects.sepia > 0
-                          ? 'border-blue-600 bg-blue-50 text-blue-700 dark:border-blue-500 dark:bg-blue-950 dark:text-blue-300'
-                          : 'border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800'
-                      }`}
                     >
                       Warm Sepia
-                    </button>
+                    </Button>
 
-                    <button
-                      type="button"
+                    <Button
+                      variant={effects.invert ? 'primary' : 'outline'}
+                      size="sm"
                       onClick={() => setEffects((prev) => ({ ...prev, invert: !prev.invert }))}
-                      className={`p-2 rounded-xl border text-xs font-semibold transition-colors ${
-                        effects.invert
-                          ? 'border-blue-600 bg-blue-50 text-blue-700 dark:border-blue-500 dark:bg-blue-950 dark:text-blue-300'
-                          : 'border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800'
-                      }`}
                     >
                       Invert Colors
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
                 {/* Single Image Action Button */}
                 {viewMode === 'single' && (
-                  <button
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    fullWidth
+                    isLoading={isProcessing}
+                    leftIcon={Wand2}
+                    disabled={!currentFile}
                     onClick={handleSingleApply}
-                    disabled={isProcessing || !currentFile}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 text-sm font-bold text-white hover:bg-blue-700 shadow-md shadow-blue-500/20 active:scale-[0.99] disabled:opacity-50 transition-all cursor-pointer"
                   >
-                    {isProcessing ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 animate-spin" />
-                        <span>Rendering Effects...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Wand2 className="h-4 w-4" />
-                        <span>Apply Effects</span>
-                      </>
-                    )}
-                  </button>
+                    Apply Filter & Adjustment
+                  </Button>
                 )}
               </div>
             </div>

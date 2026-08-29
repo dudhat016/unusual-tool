@@ -1,5 +1,6 @@
 import React from 'react';
 import { SystemSettings } from '../../types/admin';
+import { NumberInput } from '../ui/NumberInput';
 import { ShieldAlert, AlertTriangle, Zap, Server } from 'lucide-react';
 
 interface AdminTrafficTabProps {
@@ -93,44 +94,36 @@ export const AdminTrafficTab: React.FC<AdminTrafficTabProps> = ({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs">
           <div className="space-y-2">
-            <label className="font-bold text-slate-500 block">Anonymous Daily Limit (Images / day)</label>
-            <input
-              type="number"
+            <NumberInput
+              label="Anonymous Daily Limit (Images / day)"
               value={systemSettings.anonymousDailyLimit}
-              onChange={(e) => handleUpdateNumber('anonymousDailyLimit', parseInt(e.target.value) || 15)}
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white"
+              onChange={(v) => handleUpdateNumber('anonymousDailyLimit', v || 15)}
             />
             <span className="text-[10px] text-slate-400">Anonymous users hitting this will be prompted to create a free account.</span>
           </div>
 
           <div className="space-y-2">
-            <label className="font-bold text-slate-500 block">Registered Free Daily Limit (Images / day)</label>
-            <input
-              type="number"
+            <NumberInput
+              label="Registered Free Daily Limit (Images / day)"
               value={systemSettings.registeredFreeDailyLimit}
-              onChange={(e) => handleUpdateNumber('registeredFreeDailyLimit', parseInt(e.target.value) || 50)}
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white"
+              onChange={(v) => handleUpdateNumber('registeredFreeDailyLimit', v || 50)}
             />
             <span className="text-[10px] text-slate-400">Daily limit for authenticated free accounts.</span>
           </div>
 
           <div className="space-y-2">
-            <label className="font-bold text-slate-500 block">Normal Tool Rate Limit (Req / min)</label>
-            <input
-              type="number"
+            <NumberInput
+              label="Normal Tool Rate Limit (Req / min)"
               value={systemSettings.rateLimitNormalReqPerMin}
-              onChange={(e) => handleUpdateNumber('rateLimitNormalReqPerMin', parseInt(e.target.value) || 60)}
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white"
+              onChange={(v) => handleUpdateNumber('rateLimitNormalReqPerMin', v || 60)}
             />
           </div>
 
           <div className="space-y-2">
-            <label className="font-bold text-slate-500 block">AI Operations Rate Limit (Req / min)</label>
-            <input
-              type="number"
+            <NumberInput
+              label="AI Operations Rate Limit (Req / min)"
               value={systemSettings.rateLimitAiReqPerMin}
-              onChange={(e) => handleUpdateNumber('rateLimitAiReqPerMin', parseInt(e.target.value) || 5)}
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white"
+              onChange={(v) => handleUpdateNumber('rateLimitAiReqPerMin', v || 5)}
             />
           </div>
         </div>

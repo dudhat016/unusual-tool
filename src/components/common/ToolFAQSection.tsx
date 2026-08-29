@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { FAQItem, UsageStep } from '../../types';
-import { ChevronDown, HelpCircle, CheckCircle } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
+import { DynamicFaqAccordion } from './DynamicFaqAccordion';
 
 interface ToolFAQSectionProps {
   faqs?: FAQItem[];
@@ -15,12 +16,6 @@ export const ToolFAQSection: React.FC<ToolFAQSectionProps> = ({
   features = [],
   toolName,
 }) => {
-  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
-
-  const toggleFaq = (index: number) => {
-    setOpenFaqIndex(openFaqIndex === index ? null : index);
-  };
-
   const hasHowTo = Array.isArray(howToSteps) && howToSteps.length > 0;
   const hasFeatures = Array.isArray(features) && features.length > 0;
   const hasFaqs = Array.isArray(faqs) && faqs.length > 0;
@@ -49,7 +44,7 @@ export const ToolFAQSection: React.FC<ToolFAQSectionProps> = ({
                 key={step.step}
                 className="relative rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs dark:border-slate-800 dark:bg-slate-900"
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-600 text-white font-bold text-sm mb-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-sm mb-3">
                   {step.step}
                 </div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white">{step.title}</h3>
@@ -77,40 +72,8 @@ export const ToolFAQSection: React.FC<ToolFAQSectionProps> = ({
         </div>
       )}
 
-      {/* FAQs Accordion */}
-      {hasFaqs && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <HelpCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Frequently Asked Questions</h2>
-          </div>
-
-          <div className="divide-y divide-slate-200 rounded-2xl border border-slate-200/80 bg-white dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
-            {faqs.map((faq, index) => {
-              const isOpen = openFaqIndex === index;
-              return (
-                <div key={index} className="p-4 sm:p-5">
-                  <button
-                    onClick={() => toggleFaq(index)}
-                    className="flex w-full items-center justify-between text-left text-sm font-semibold text-slate-900 dark:text-white"
-                  >
-                    <span>{faq.question}</span>
-                    <ChevronDown
-                      className={`h-4 w-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180 text-blue-600' : ''}`}
-                    />
-                  </button>
-
-                  {isOpen && (
-                    <div className="mt-3 text-xs leading-relaxed text-slate-600 dark:text-slate-300 pr-6 animate-in fade-in duration-200">
-                      {faq.answer}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      {/* Reusable FAQs Accordion */}
+      {hasFaqs && <DynamicFaqAccordion faqs={faqs} toolName={toolName} />}
     </div>
   );
 };

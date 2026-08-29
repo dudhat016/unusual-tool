@@ -66,8 +66,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         isMobile
           ? 'w-72 h-full'
           : collapsed
-          ? 'w-20 min-h-screen'
-          : 'w-64 min-h-screen'
+          ? 'w-20 h-full'
+          : 'w-64 h-full'
       } ${
         isGradient
           ? 'bg-gradient-to-b from-purple-700 via-indigo-800 to-slate-900 text-white border-r border-white/10'
@@ -83,15 +83,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="flex items-center gap-3 overflow-hidden">
           {logo || (
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-purple-500/20 shrink-0">
-                <Zap className="w-5 h-5 fill-white" />
+              <div className="w-9 h-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-md shadow-primary/20 shrink-0">
+                <Zap className="w-5 h-5 fill-primary-foreground" />
               </div>
               {(!collapsed || isMobile) && (
                 <div className="flex flex-col truncate">
                   <span className="font-extrabold tracking-tight text-base font-display leading-tight">
                     AetherPix
                   </span>
-                  <span className="text-[10px] font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wider leading-none mt-0.5">
+                  <span className="text-[10px] font-semibold text-primary uppercase tracking-wider leading-none mt-0.5">
                     Studio Console
                   </span>
                 </div>
@@ -177,7 +177,8 @@ const SidebarItemRow: React.FC<SidebarItemRowProps> = ({
 
   const checkActive = (path?: string, exact = false): boolean => {
     if (!path) return false;
-    const cleanCurrent = currentPath.split('?')[0].replace(/\/$/, '') || '/';
+    const rawCurrent = currentPath.split('?')[0].replace(/\/$/, '') || '/';
+    const cleanCurrent = rawCurrent.replace(/^\/(en|hi|es|fr|de|pt|it|ja|ko|zh|ar)/i, '') || '/';
     const cleanPath = path.split('?')[0].replace(/\/$/, '') || '/';
     if (exact) return cleanCurrent === cleanPath;
     return cleanCurrent === cleanPath || cleanCurrent.startsWith(cleanPath + '/');
@@ -276,8 +277,8 @@ const SidebarItemRow: React.FC<SidebarItemRowProps> = ({
   }
 
   const leafActiveClass = isGradient
-    ? 'bg-white text-purple-700 shadow-md font-bold'
-    : 'bg-purple-600 text-white shadow-md shadow-purple-600/25 font-bold';
+    ? 'bg-white text-primary shadow-md font-bold'
+    : 'bg-primary text-primary-foreground shadow-md shadow-primary/25 font-bold';
 
   const leafInactiveClass =
     'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 font-medium';

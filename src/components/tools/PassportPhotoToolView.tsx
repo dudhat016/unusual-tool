@@ -1,11 +1,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { UploadedFileItem, ProcessedResult, PassportOptions, ToolDefinition } from '../../types';
+import { Checkbox } from '../ui/Checkbox';
 import { createPassportSheet } from '../../engine/imageEngine';
 import { useApp } from '../../context/AppContext';
 import { UploadZone } from '../common/UploadZone';
 import { ImagePreview } from '../common/ImagePreview';
 import { UniversalBatchEngine } from '../../engine/batch/UniversalBatchEngine';
 import { UniversalBatchQueue } from '../common/UniversalBatchQueue';
+import { Button } from '../ui/Button';
 import {
   UserSquare2,
   RefreshCw,
@@ -216,33 +218,25 @@ export const PassportPhotoToolView: React.FC<PassportPhotoToolViewProps> = ({ to
                       <p className="text-[10px] text-slate-500">Tile 4x6" photo print sheet with guidelines</p>
                     </div>
                   </div>
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={options.generatePrintSheet}
                     onChange={(e) => setOptions((prev) => ({ ...prev, generatePrintSheet: e.target.checked }))}
-                    className="h-4 w-4 rounded-sm border-slate-300 text-blue-600 accent-blue-600"
                   />
                 </div>
 
                 {/* Single Image Action Button */}
                 {viewMode === 'single' && (
-                  <button
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    fullWidth
+                    isLoading={isProcessing}
+                    leftIcon={UserSquare2}
+                    disabled={!currentFile}
                     onClick={handleSingleGenerate}
-                    disabled={isProcessing || !currentFile}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 text-sm font-bold text-white hover:bg-blue-700 shadow-md shadow-blue-500/20 active:scale-[0.99] disabled:opacity-50 transition-all cursor-pointer"
                   >
-                    {isProcessing ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 animate-spin" />
-                        <span>Rendering Passport Cut...</span>
-                      </>
-                    ) : (
-                      <>
-                        <UserSquare2 className="h-4 w-4" />
-                        <span>Generate Passport Photos</span>
-                      </>
-                    )}
-                  </button>
+                    Generate Passport Photos
+                  </Button>
                 )}
               </div>
             </div>

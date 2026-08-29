@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
+import { Checkbox } from '../ui/Checkbox';
+import { Input, NumberInput } from '../ui';
 import {
   parseYouTubeUrl,
   parseTimestampStringToSeconds,
@@ -146,30 +148,13 @@ export const YouTubeTimestampGenerator: React.FC = () => {
         </div>
 
         {/* Video URL Input */}
-        <div className="space-y-2">
-          <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            1. YouTube Video URL
-          </label>
-          <input
-            type="text"
-            value={urlInput}
-            onChange={(e) => setUrlInput(e.target.value)}
-            placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
-            className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/80 px-4 py-3.5 text-sm font-mono text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-all"
-          />
-          <div className="flex items-center gap-2 pt-1">
-            <span className="text-xs text-slate-400">Try Sample:</span>
-            {sampleUrls.map((s) => (
-              <button
-                key={s.url}
-                onClick={() => setUrlInput(s.url)}
-                className="text-xs px-2.5 py-0.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-amber-300 transition-colors"
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <Input
+          label="1. YouTube Video URL"
+          type="text"
+          value={urlInput}
+          onChange={(e) => setUrlInput(e.target.value)}
+          placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
+        />
 
         {/* Time Selector Controls */}
         <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
@@ -180,21 +165,13 @@ export const YouTubeTimestampGenerator: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {/* Direct HH:MM:SS text input */}
             <div className="space-y-2">
-              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                Timestamp Format (HH:MM:SS or MM:SS)
-              </span>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={timeFormattedInput}
-                  onChange={(e) => handleFormattedTimeChange(e.target.value)}
-                  placeholder="01:23:45 or 45:00 or 90s"
-                  className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-4 py-3 text-base font-mono font-bold text-slate-900 dark:text-white focus:border-amber-500 focus:outline-none"
-                />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-mono text-slate-400">
-                  ={totalStartSeconds}s
-                </span>
-              </div>
+              <Input
+                label="Timestamp Format (HH:MM:SS or MM:SS)"
+                type="text"
+                value={timeFormattedInput}
+                onChange={(e) => handleFormattedTimeChange(e.target.value)}
+                placeholder="01:23:45 or 45:00 or 90s"
+              />
             </div>
 
             {/* Dial selectors: Hours, Minutes, Seconds */}
@@ -203,89 +180,61 @@ export const YouTubeTimestampGenerator: React.FC = () => {
                 Individual Time Units
               </span>
               <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Hours</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="99"
-                    value={hours}
-                    onChange={(e) => handleNumericChange('h', parseInt(e.target.value, 10) || 0)}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-2.5 text-center font-mono font-bold text-sm text-slate-900 dark:text-white"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Minutes</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="59"
-                    value={minutes}
-                    onChange={(e) => handleNumericChange('m', parseInt(e.target.value, 10) || 0)}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-2.5 text-center font-mono font-bold text-sm text-slate-900 dark:text-white"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Seconds</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="59"
-                    value={seconds}
-                    onChange={(e) => handleNumericChange('s', parseInt(e.target.value, 10) || 0)}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-2.5 text-center font-mono font-bold text-sm text-slate-900 dark:text-white"
-                  />
-                </div>
+                <NumberInput
+                  label="Hours"
+                  min={0}
+                  max={99}
+                  value={hours}
+                  onChange={(v) => handleNumericChange('h', v || 0)}
+                />
+                <NumberInput
+                  label="Minutes"
+                  min={0}
+                  max={59}
+                  value={minutes}
+                  onChange={(v) => handleNumericChange('m', v || 0)}
+                />
+                <NumberInput
+                  label="Seconds"
+                  min={0}
+                  max={59}
+                  value={seconds}
+                  onChange={(v) => handleNumericChange('s', v || 0)}
+                />
               </div>
             </div>
           </div>
 
           {/* Optional End Timestamp toggle */}
           <div className="pt-2">
-            <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-600 dark:text-slate-300">
-              <input
-                type="checkbox"
-                checked={hasEndTime}
-                onChange={(e) => setHasEndTime(e.target.checked)}
-                className="rounded border-slate-300 text-amber-600 focus:ring-amber-500 h-4 w-4"
-              />
-              <span>Specify End Timestamp (for embeds & looped clips)</span>
-            </label>
+            <Checkbox
+              label="Specify End Timestamp (for embeds & looped clips)"
+              checked={hasEndTime}
+              onChange={(e) => setHasEndTime(e.target.checked)}
+            />
 
             {hasEndTime && (
               <div className="grid grid-cols-3 gap-2 max-w-sm mt-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 animate-in fade-in duration-150">
-                <div>
-                  <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">End Hours</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={endHours}
-                    onChange={(e) => setEndHours(parseInt(e.target.value, 10) || 0)}
-                    className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-2 text-center font-mono font-bold text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">End Min</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="59"
-                    value={endMinutes}
-                    onChange={(e) => setEndMinutes(parseInt(e.target.value, 10) || 0)}
-                    className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-2 text-center font-mono font-bold text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">End Sec</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="59"
-                    value={endSeconds}
-                    onChange={(e) => setEndSeconds(parseInt(e.target.value, 10) || 0)}
-                    className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-2 text-center font-mono font-bold text-xs"
-                  />
-                </div>
+                <NumberInput
+                  label="End Hours"
+                  min={0}
+                  value={endHours}
+                  onChange={(v) => setEndHours(v || 0)}
+                />
+                <NumberInput
+                  label="End Min"
+                  min={0}
+                  max={59}
+                  value={endMinutes}
+                  onChange={(v) => setEndMinutes(v || 0)}
+                />
+                <NumberInput
+                  label="End Sec"
+                  min={0}
+                  max={59}
+                  value={endSeconds}
+                  onChange={(v) => setEndSeconds(v || 0)}
+                />
               </div>
             )}
           </div>
@@ -342,11 +291,10 @@ export const YouTubeTimestampGenerator: React.FC = () => {
                   <span className="text-[11px] font-mono text-slate-400">Best for emails & desktop browsers</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <input
+                  <Input
                     type="text"
                     readOnly
                     value={generatedUrls.watchUrl}
-                    className="flex-1 font-mono text-xs text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 select-all focus:outline-none"
                   />
                   <button
                     onClick={() => handleCopy(generatedUrls.watchUrl, 'watch')}
@@ -367,11 +315,10 @@ export const YouTubeTimestampGenerator: React.FC = () => {
                   <span className="text-[11px] font-mono text-slate-400">Best for Twitter, WhatsApp, & Discord</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <input
+                  <Input
                     type="text"
                     readOnly
                     value={generatedUrls.shortUrl}
-                    className="flex-1 font-mono text-xs text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 select-all focus:outline-none"
                   />
                   <button
                     onClick={() => handleCopy(generatedUrls.shortUrl, 'short')}
@@ -392,11 +339,10 @@ export const YouTubeTimestampGenerator: React.FC = () => {
                   <span className="text-[11px] font-mono text-slate-400">URL parameter: ?start={totalStartSeconds}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <input
+                  <Input
                     type="text"
                     readOnly
                     value={generatedUrls.embedUrl}
-                    className="flex-1 font-mono text-xs text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 select-all focus:outline-none"
                   />
                   <button
                     onClick={() => handleCopy(generatedUrls.embedUrl, 'embed')}
