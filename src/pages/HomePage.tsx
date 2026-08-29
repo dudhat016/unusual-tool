@@ -1,0 +1,307 @@
+import React, { useState } from 'react';
+import { useApp } from '../context/AppContext';
+import { TOOLS_REGISTRY, CATEGORIES_METADATA } from '../config/tools';
+import { ToolGrid } from '../components/common/ToolGrid';
+import { DynamicIcon } from '../components/common/DynamicIcon';
+import { UploadZone } from '../components/common/UploadZone';
+import { ExactTargetSizesGrid } from '../components/common/ExactTargetSizesGrid';
+import { PopularConvertersGrid } from '../components/common/PopularConvertersGrid';
+import {
+  Search,
+  ShieldCheck,
+  Zap,
+  Lock,
+  Sparkles,
+  Layers,
+  ArrowRight,
+  HelpCircle,
+  ChevronDown,
+  Clock,
+  Cpu,
+} from 'lucide-react';
+
+export const HomePage: React.FC = () => {
+  const { navigate, setIsSearchOpen } = useApp();
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+
+  const popularTools = TOOLS_REGISTRY.filter((t) => t.isPopular);
+
+  const homeFaqs = [
+    {
+      question: 'Is AetherPix Studio really 100% free and private?',
+      answer:
+        'Yes! All standard utilities (resizing, compression, cropping, format conversion, effects, borders, watermarks, social media formatting, and metadata stripping) operate completely inside your local web browser using client-side HTML5 Canvas technology. Your photos never leave your device.',
+    },
+    {
+      question: 'How does client-side browser compression work without uploading?',
+      answer:
+        'Modern browsers feature powerful JavaScript graphics engines. AetherPix executes native mathematical matrix transforms and quantization directly in your browser memory (RAM), giving you near-instant downloads with zero network latency and maximum privacy.',
+    },
+    {
+      question: 'What image formats are supported?',
+      answer:
+        'AetherPix supports JPEG, PNG (with full alpha transparency), WebP, GIF, SVG, BMP, AVIF, TIFF, HEIC, and ICO files up to 50MB per image, including multi-image batch queues.',
+    },
+    {
+      question: 'Can I process multiple images at the same time?',
+      answer:
+        'Yes! Use our Batch Studio or Batch toggles on tools like Format Converter to drop dozens of photos at once and download everything in a single clean ZIP archive.',
+    },
+  ];
+
+  return (
+    <div className="space-y-16 py-4 sm:py-8">
+      {/* Hero Section */}
+      <section className="relative text-center space-y-6 max-w-4xl mx-auto px-4">
+        {/* Privacy Pill Badge */}
+        <div className="inline-flex items-center gap-2 rounded-full border border-purple-200/80 bg-purple-50/80 px-3.5 py-1 text-xs font-semibold text-purple-800 dark:border-purple-900/60 dark:bg-purple-950/60 dark:text-purple-300 shadow-2xs">
+          <Lock className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+          <span>Zero Server Uploads • 100% In-Browser Privacy</span>
+        </div>
+
+        {/* Display Heading */}
+        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 dark:text-white leading-[1.15]">
+          The Complete Modern <br />
+          <span className="bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-500 bg-clip-text text-transparent">
+            Image Utility Suite
+          </span>
+        </h1>
+
+        {/* Subtitle */}
+        <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
+          Ultra-fast browser-side image processing. Resize, compress, crop, convert formats, create passport photos, and enhance images instantly without losing quality.
+        </p>
+
+        {/* Quick Search & Action Bar */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+          <button
+            onClick={() => setIsSearchOpen(true)}
+            className="w-full sm:w-80 flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm text-slate-400 shadow-sm hover:border-purple-400 hover:text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700 transition-all text-left cursor-pointer"
+          >
+            <div className="flex items-center gap-2.5">
+              <Search className="h-4 w-4 text-slate-400" />
+              <span>Search any tool...</span>
+            </div>
+            <kbd className="hidden sm:inline-block rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500 dark:bg-slate-800">
+              ⌘K
+            </kbd>
+          </button>
+
+          <button
+            onClick={() => navigate('/tools')}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-2xl bg-purple-600 px-6 py-3.5 text-sm font-bold text-white shadow-md shadow-purple-500/20 hover:bg-purple-500 active:scale-[0.99] transition-all cursor-pointer"
+          >
+            <Sparkles className="h-4 w-4" />
+            <span>Explore All Tools</span>
+          </button>
+        </div>
+
+        {/* Trust Badges */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6 text-left">
+          <div className="flex items-center gap-2.5 rounded-xl border border-slate-200/80 bg-white/60 p-3 dark:border-slate-800/80 dark:bg-slate-900/40">
+            <Cpu className="h-4 w-4 text-purple-600 dark:text-purple-400 shrink-0" />
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-slate-900 dark:text-white">Local Hardware</p>
+              <p className="text-[10px] text-slate-500">HTML5 Canvas Engine</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 rounded-xl border border-slate-200/80 bg-white/60 p-3 dark:border-slate-800/80 dark:bg-slate-900/40">
+            <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-slate-900 dark:text-white">100% Private</p>
+              <p className="text-[10px] text-slate-500">No photos saved</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 rounded-xl border border-slate-200/80 bg-white/60 p-3 dark:border-slate-800/80 dark:bg-slate-900/40">
+            <Zap className="h-4 w-4 text-amber-500 shrink-0" />
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-slate-900 dark:text-white">Instant Speed</p>
+              <p className="text-[10px] text-slate-500">Zero wait queues</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 rounded-xl border border-slate-200/80 bg-white/60 p-3 dark:border-slate-800/80 dark:bg-slate-900/40">
+            <Sparkles className="h-4 w-4 text-indigo-600 shrink-0" />
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-slate-900 dark:text-white">15+ Pro Tools</p>
+              <p className="text-[10px] text-slate-500">All-in-one suite</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Popular Quick Start Grid */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+              Most Popular Image Tools
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Our most frequently used high-speed tools
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {popularTools.map((tool) => (
+            <div
+              key={tool.id}
+              onClick={() => navigate(tool.route)}
+              className="group cursor-pointer rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs hover:border-purple-500 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 transition-all"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-950 dark:text-purple-400 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                  <DynamicIcon name={tool.icon} className="h-5 w-5" />
+                </div>
+                <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                  {tool.processingType === 'browser' ? 'Browser' : 'AI'}
+                </span>
+              </div>
+
+              <h3 className="mt-3 text-sm font-bold text-slate-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                {tool.name}
+              </h3>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
+                {tool.shortDescription}
+              </p>
+
+              <div className="mt-4 flex items-center gap-1 text-xs font-bold text-purple-600 dark:text-purple-400">
+                <span>Open tool</span>
+                <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Exact Target Sizes Quick Navigator */}
+      <section className="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900/60 space-y-4">
+        <div>
+          <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+            Exact Target Size Compressors
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            One-click tools to hit strict government portal, job application, and passport upload limits (5KB to 2MB)
+          </p>
+        </div>
+        <ExactTargetSizesGrid title="" />
+      </section>
+
+      {/* Popular Image Format Converters */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+              Instant Format Converters
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Direct high-speed conversion between WebP, PNG, JPG, HEIC, SVG, ICO, and PDF
+            </p>
+          </div>
+          <button
+            onClick={() => navigate('/convert')}
+            className="text-xs font-bold text-purple-600 hover:text-purple-700 dark:text-purple-400 flex items-center gap-1 cursor-pointer"
+          >
+            <span>All Formats</span>
+            <ArrowRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
+        <PopularConvertersGrid />
+      </section>
+
+      {/* Categorized Full Explorer */}
+      <section className="space-y-6">
+        <div>
+          <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+            Explore Full Utility Catalog
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Browse all 15+ specialized image tools by category
+          </p>
+        </div>
+
+        <ToolGrid />
+      </section>
+
+      {/* Why Choose AetherPix Studio */}
+      <section className="rounded-3xl border border-slate-200 bg-slate-50/50 p-8 sm:p-12 dark:border-slate-800 dark:bg-slate-900/40 space-y-8">
+        <div className="text-center max-w-2xl mx-auto space-y-2">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+            Engineered for Unmatched Speed and Absolute Privacy
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+            Unlike traditional cloud image converters that store and analyze your sensitive pictures on remote servers, AetherPix runs directly on your device.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="space-y-2 rounded-2xl bg-white p-6 shadow-2xs dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800">
+            <div className="h-9 w-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center dark:bg-emerald-950 dark:text-emerald-400 font-bold">
+              <ShieldCheck className="h-5 w-5" />
+            </div>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Zero Server Ingestion</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              Your sensitive documents, ID photos, receipts, and personal pictures never leave your device. All calculations happen right in your browser.
+            </p>
+          </div>
+
+          <div className="space-y-2 rounded-2xl bg-white p-6 shadow-2xs dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800">
+            <div className="h-9 w-9 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center dark:bg-purple-950 dark:text-purple-400 font-bold">
+              <Zap className="h-5 w-5" />
+            </div>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Zero Upload / Download Lag</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              Skip waiting for large 4K files to upload over slow connections. Client-side processing happens instantaneously in your local RAM.
+            </p>
+          </div>
+
+          <div className="space-y-2 rounded-2xl bg-white p-6 shadow-2xs dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800">
+            <div className="h-9 w-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center dark:bg-indigo-950 dark:text-indigo-400 font-bold">
+              <Layers className="h-5 w-5" />
+            </div>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Batch & ZIP Workflows</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              Convert, resize, or compress dozens of images at once and download everything neatly packaged in a high-speed ZIP archive.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Global Homepage FAQs */}
+      <section className="space-y-6 max-w-3xl mx-auto">
+        <div className="text-center space-y-1">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Frequently Asked Questions</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Everything you need to know about AetherPix Studio</p>
+        </div>
+
+        <div className="divide-y divide-slate-200 rounded-2xl border border-slate-200/80 bg-white dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
+          {homeFaqs.map((faq, index) => {
+            const isOpen = openFaqIndex === index;
+            return (
+              <div key={index} className="p-4 sm:p-5">
+                <button
+                  onClick={() => setOpenFaqIndex(isOpen ? null : index)}
+                  className="flex w-full items-center justify-between text-left text-sm font-semibold text-slate-900 dark:text-white cursor-pointer"
+                >
+                  <span>{faq.question}</span>
+                  <ChevronDown
+                    className={`h-4 w-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180 text-purple-600' : ''}`}
+                  />
+                </button>
+
+                {isOpen && (
+                  <div className="mt-3 text-xs leading-relaxed text-slate-600 dark:text-slate-300 pr-6 animate-in fade-in duration-200">
+                    {faq.answer}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    </div>
+  );
+};

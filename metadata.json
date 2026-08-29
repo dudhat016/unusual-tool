@@ -1,0 +1,10 @@
+{
+  "name": "AetherPix Studio",
+  "description": "All-in-one browser-side creative studio for PDF manipulation (PDF to Word, Merge, Split, Compress, Protect, Sign), image optimization, conversion, and YouTube creator tools with 100% privacy.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

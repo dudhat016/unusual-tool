@@ -1,0 +1,25 @@
+import { SystemSettings } from '../types/admin';
+
+export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
+  siteName: 'AetherPix Studio',
+  siteUrl: 'https://aetherpix.studio',
+  supportEmail: 'support@aetherpix.studio',
+  defaultCurrency: 'USD',
+  defaultPlan: 'free',
+  anonymousDailyLimit: 15,
+  registeredFreeDailyLimit: 50,
+  anonymousMaxFileSizeMB: 25,
+  anonymousMaxBatch: 10,
+  maintenanceMode: false,
+  maintenanceNotice: 'AetherPix Studio is undergoing a brief scheduled maintenance upgrade. Please check back shortly.',
+  allowedMaintenanceToolIds: [],
+  emergencyAiDisabled: false,
+  emergencyBatchDisabled: false,
+  emergencyLimitsReduced: false,
+  rateLimitNormalReqPerMin: 60,
+  rateLimitHeavyReqPerMin: 15,
+  rateLimitAiReqPerMin: 5,
+  googleAdsClient: 'ca-pub-aetherpix-preview',
+  googleAnalyticsId: 'G-AETHERPIX01',
+  adBlockNoticeEnabled: false,
+};

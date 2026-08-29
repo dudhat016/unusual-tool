@@ -1,0 +1,68 @@
+import { FeatureFlag } from '../types/admin';
+
+export const DEFAULT_FEATURE_FLAGS: FeatureFlag[] = [
+  {
+    key: 'bulk_processing',
+    name: 'Bulk Batch Processing',
+    description: 'Enables parallel multi-file processing queues with ZIP exports across tools.',
+    status: 'enabled',
+    category: 'batch',
+    updatedAt: Date.now(),
+  },
+  {
+    key: 'saved_presets',
+    name: 'Saved Tool Presets',
+    description: 'Allows users to store frequently used tool configurations in local state and cloud accounts.',
+    status: 'enabled',
+    category: 'core',
+    updatedAt: Date.now(),
+  },
+  {
+    key: 'ai_upscaler',
+    name: 'Neural AI Super-Resolution (2x/4x)',
+    description: 'Hardware-accelerated deep learning image upscaling using browser/server pipelines.',
+    status: 'enabled',
+    category: 'ai',
+    updatedAt: Date.now(),
+  },
+  {
+    key: 'ai_background_remover',
+    name: 'AI Background Remover',
+    description: 'Automatic subject detection and background transparency matting.',
+    status: 'enabled',
+    category: 'ai',
+    updatedAt: Date.now(),
+  },
+  {
+    key: 'ocr_batch',
+    name: 'Batch Document OCR',
+    description: 'Multi-document optical character recognition with batch TXT/ZIP export.',
+    status: 'enabled',
+    category: 'core',
+    updatedAt: Date.now(),
+  },
+  {
+    key: 'ad_free',
+    name: 'Ad-Free Premium Mode',
+    description: 'Automatically hides all advertising placements for Pro and Business subscribers.',
+    status: 'enabled',
+    category: 'core',
+    updatedAt: Date.now(),
+  },
+  {
+    key: 'cloud_storage',
+    name: 'Cloud Preset Synchronization',
+    description: 'Syncs presets and workflow templates across devices for signed-in users.',
+    status: 'enabled',
+    category: 'storage',
+    updatedAt: Date.now(),
+  },
+  {
+    key: 'youtube_suite',
+    name: 'YouTube Creator Studio Suite',
+    description: 'Thumbnail downloaders, channel branding, and tag optimization tools.',
+    status: 'enabled',
+    category: 'core',
+    updatedAt: Date.now(),
+  },
+];
