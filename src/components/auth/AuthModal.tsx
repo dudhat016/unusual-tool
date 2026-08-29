@@ -59,8 +59,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMo
         }
         showToast('Account created successfully! Welcome to AetherPix.', 'success');
       } else {
-        await signInWithEmailAndPassword(auth, email, password);
-        showToast('Signed in successfully!', 'success');
+        try {
+          await signInWithEmailAndPassword(auth, email, password);
+          showToast('Signed in successfully!', 'success');
+        } catch (signInErr: any) {
+          // Dev admin auto-registration if account does not exist in Firebase yet
+          if (
+            email.toLowerCase() === 'chintandudhat1286@gmail.com' &&
+            (signInErr.code === 'auth/invalid-credential' || signInErr.code === 'auth/user-not-found')
+          ) {
+            const cred = await createUserWithEmailAndPassword(auth, email, password);
+            await updateProfile(cred.user, { displayName: 'Chintan (Admin)' });
+            showToast('Dev Admin account created & signed in successfully!', 'success');
+          } else {
+            throw signInErr;
+          }
+        }
       }
       onClose();
     } catch (err: any) {

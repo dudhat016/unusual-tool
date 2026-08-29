@@ -234,6 +234,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const logout = async () => {
+    setUserProfile(null);
     await signOut(auth);
     showToast('Signed out successfully.', 'info');
   };
@@ -250,7 +251,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     resetsAt: userProfile?.subscription?.currentPeriodEnd || Date.now() + 30 * 24 * 3600 * 1000,
   };
 
-  const isAdmin = userProfile?.role === 'admin' || user?.email === 'unusualgamerz16@gmail.com';
+  const DEV_ADMIN_EMAILS = ['chintandudhat1286@gmail.com', 'unusualgamerz16@gmail.com'];
+  const isAdmin =
+    userProfile?.role === 'admin' ||
+    (user?.email ? DEV_ADMIN_EMAILS.includes(user.email.toLowerCase()) : false);
 
   const refreshLedger = async (uid?: string) => {
     const targetUid = uid || user?.uid;

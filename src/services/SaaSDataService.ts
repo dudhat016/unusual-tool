@@ -88,7 +88,9 @@ export class SaaSDataService {
         needUpdate = true;
       }
 
-      const isAdminEmail = email === 'unusualgamerz16@gmail.com';
+      const DEV_ADMIN_EMAILS = ['chintandudhat1286@gmail.com', 'unusualgamerz16@gmail.com'];
+      const isAdminEmail = email ? DEV_ADMIN_EMAILS.includes(email.toLowerCase()) : false;
+
       if (isAdminEmail && data.role !== 'admin') {
         data.role = 'admin';
         needUpdate = true;
@@ -101,7 +103,8 @@ export class SaaSDataService {
       return { ...data, usage };
     }
 
-    const isAdmin = email === 'unusualgamerz16@gmail.com';
+    const DEV_ADMIN_EMAILS = ['chintandudhat1286@gmail.com', 'unusualgamerz16@gmail.com'];
+    const isAdminEmail = email ? DEV_ADMIN_EMAILS.includes(email.toLowerCase()) : false;
     const initialCredits = DEFAULT_PLANS.free.monthlyCredits;
 
     const initialProfile: UserProfile = {
@@ -109,7 +112,7 @@ export class SaaSDataService {
       email,
       displayName: displayName || (email ? email.split('@')[0] : 'User'),
       photoURL,
-      role: isAdmin ? 'admin' : 'user',
+      role: isAdminEmail ? 'admin' : 'user',
       plan: 'free',
       credits: initialCredits,
       usage: {
