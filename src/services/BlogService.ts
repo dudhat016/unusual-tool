@@ -72,6 +72,10 @@ const SEED_BLOG_POSTS: BlogPostItem[] = [
 
 export class BlogService {
   private static loadPosts(): BlogPostItem[] {
+    // Guard: localStorage is not available in Node.js SSR environments
+    if (typeof localStorage === 'undefined') {
+      return SEED_BLOG_POSTS;
+    }
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
@@ -86,6 +90,7 @@ export class BlogService {
   }
 
   private static saveToStorage(posts: BlogPostItem[]): void {
+    if (typeof localStorage === 'undefined') return;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
     } catch (e) {
