@@ -47,11 +47,12 @@ export const ToolPage: React.FC<ToolPageProps> = ({ tool }) => {
 
   useEffect(() => {
     let isMounted = true;
-    ToolContentService.getToolContent(tool.id, currentLanguage || 'en').then((data) => {
+    const unsub = ToolContentService.subscribeToToolContent(tool.id, currentLanguage || 'en', (data) => {
       if (isMounted) setCmsContent(data);
     });
     return () => {
       isMounted = false;
+      unsub();
     };
   }, [tool.id, currentLanguage]);
 

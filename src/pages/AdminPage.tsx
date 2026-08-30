@@ -12,6 +12,8 @@ import { AdminFlagsTab } from '../components/admin/AdminFlagsTab';
 import { AdminAuditTab } from '../components/admin/AdminAuditTab';
 import { AdminTranslationsTab } from '../components/admin/AdminTranslationsTab';
 import { AdminBlogsTab } from '../components/admin/AdminBlogsTab';
+import { AdminSettingsView } from '../views/AdminSettingsView';
+import { AnalyticsDashboard } from '../views/AnalyticsDashboard';
 import { SeoAdminView } from '../views/SeoAdminView';
 import { UIKitCatalogView } from '../views/UIKitCatalogView';
 import { AdminLayout } from '../components/layout/AdminLayout';
@@ -27,13 +29,13 @@ export const AdminPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   // Derive active tab from URL route path (e.g. /admin/users -> 'users') or query param
-  const getActiveTabFromRoute = (): 'overview' | 'users' | 'tools' | 'plans' | 'ads' | 'traffic' | 'flags' | 'translations' | 'audit' | 'seo' | 'blogs' | 'ui-kit' => {
+  const getActiveTabFromRoute = (): 'overview' | 'analytics' | 'users' | 'tools' | 'plans' | 'ads' | 'traffic' | 'flags' | 'translations' | 'audit' | 'seo' | 'blogs' | 'ui-kit' | 'settings' => {
     const raw = (currentPath || window.location.pathname).split('?')[0].replace(/\/$/, '');
     const cleanPath = raw.replace(/^\/(en|hi|es|fr|de|pt|it|ja|ko|zh|ar)/i, '') || '/';
     const segments = cleanPath.split('/').filter(Boolean);
     const subRoute = segments[1] || '';
 
-    const validTabs = ['overview', 'users', 'tools', 'plans', 'ads', 'traffic', 'flags', 'translations', 'audit', 'seo', 'blogs', 'ui-kit'];
+    const validTabs = ['overview', 'analytics', 'users', 'tools', 'plans', 'ads', 'traffic', 'flags', 'translations', 'audit', 'seo', 'blogs', 'ui-kit', 'settings'];
 
     if (subRoute && validTabs.includes(subRoute)) {
       return subRoute as any;
@@ -152,6 +154,16 @@ export const AdminPage: React.FC = () => {
             jobs={jobs}
             ledger={ledger}
             systemSettings={systemSettings}
+            navigate={navigate}
+          />
+        )}
+
+        {activeTab === 'analytics' && (
+          <AnalyticsDashboard
+            users={users}
+            jobs={jobs}
+            showToast={showToast}
+            navigate={navigate}
           />
         )}
 
@@ -182,6 +194,8 @@ export const AdminPage: React.FC = () => {
         {activeTab === 'seo' && <SeoAdminView />}
 
         {activeTab === 'blogs' && <AdminBlogsTab showToast={showToast} />}
+
+        {activeTab === 'settings' && <AdminSettingsView />}
 
         {activeTab === 'ui-kit' && <UIKitCatalogView />}
       </div>

@@ -1,11 +1,13 @@
-import React from 'react';
-import { UserProfile, ProcessingJobRecord, CreditLedgerRecord } from '../../types/saas';
+import React, { useState, useEffect } from 'react';
+import { UserProfile, ProcessingJobRecord, CreditLedgerRecord, PlanConfig } from '../../types/saas';
 import { SystemSettings } from '../../types/admin';
 import { DEFAULT_PLANS } from '../../config/plans';
+import { SaaSDataService } from '../../services/SaaSDataService';
 import { formatFileSize } from '../../engine/imageEngine';
 import {
   Users,
   Activity,
+  BarChart3,
   Layers,
   Sparkles,
   DollarSign,
@@ -14,6 +16,7 @@ import {
   AlertTriangle,
   Server,
   Zap,
+  ArrowRight
 } from 'lucide-react';
 
 interface AdminOverviewTabProps {
@@ -21,6 +24,7 @@ interface AdminOverviewTabProps {
   jobs: ProcessingJobRecord[];
   ledger: CreditLedgerRecord[];
   systemSettings: SystemSettings;
+  navigate?: (path: string) => void;
 }
 
 export const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({
@@ -28,7 +32,19 @@ export const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({
   jobs,
   ledger,
   systemSettings,
+  navigate,
 }) => {
+  const [plans, setPlans] = useState<Record<string, PlanConfig>>(DEFAULT_PLANS);
+
+  useEffect(() => {
+    const unsub = SaaSDataService.subscribeToPlans((livePlans) => {
+      if (livePlans && Object.keys(livePlans).length > 0) {
+        setPlans(livePlans);
+      }
+    });
+    return unsub;
+  }, []);
+
   // Aggregate statistics
   const totalUsers = users.length;
   const freeUsers = users.filter((u) => u.plan === 'free' || !u.plan).length;
@@ -36,8 +52,8 @@ export const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({
   const businessUsers = users.filter((u) => u.plan === 'business').length;
 
   const totalMonthlyRevenue = users.reduce((acc, u) => {
-    if (u.plan === 'pro') return acc + (DEFAULT_PLANS.pro?.priceMonthly || 12);
-    if (u.plan === 'business') return acc + (DEFAULT_PLANS.business?.priceMonthly || 39);
+    if (u.plan === 'pro') return acc + (plans.pro?.priceMonthly ?? DEFAULT_PLANS.pro?.priceMonthly ?? 12);
+    if (u.plan === 'business') return acc + (plans.business?.priceMonthly ?? DEFAULT_PLANS.business?.priceMonthly ?? 39);
     return acc;
   }, 0);
 
@@ -150,6 +166,32 @@ export const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({
             />
           </div>
         </div>
+      </div>
+
+      {/* Tool Usage Analytics Quick Banner */}
+      <div className="rounded-3xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/40 dark:bg-indigo-950/30 p-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="p-3 rounded-2xl bg-indigo-600 text-white shadow-xs">
+            <BarChart3 className="h-6 w-6" />
+          </div>
+          <div className="space-y-1">
+            <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+              Tool Usage & Execution Analytics Dashboard
+            </h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xl">
+              Visualize granular execution counts, category share breakdowns, processing SLAs, and historical throughput charts using Recharts.
+            </p>
+          </div>
+        </div>
+        {navigate && (
+          <button
+            onClick={() => navigate('/admin/analytics')}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-xs shrink-0 cursor-pointer"
+          >
+            <span>Open Tool Analytics</span>
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        )}
       </div>
     </div>
   );

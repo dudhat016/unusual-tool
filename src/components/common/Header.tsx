@@ -135,15 +135,19 @@ export const Header: React.FC = () => {
               onClick={() => navigate('/dashboard')}
               className="flex items-center gap-2 p-1.5 sm:px-3 sm:py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer"
             >
-              {user.photoURL ? (
-                <img src={user.photoURL} alt="Profile" className="h-6 w-6 rounded-lg object-cover" />
+              {(userProfile?.photoURL || userProfile?.avatar || user.photoURL) ? (
+                <img
+                  src={userProfile?.photoURL || userProfile?.avatar || user.photoURL || ''}
+                  alt="Profile"
+                  className="h-6 w-6 rounded-lg object-cover"
+                />
               ) : (
                 <div className="h-6 w-6 rounded-lg bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
-                  {(user.displayName || user.email || 'U')[0].toUpperCase()}
+                  {((userProfile?.displayName || user.displayName || user.email || 'U')[0]).toUpperCase()}
                 </div>
               )}
               <span className="hidden sm:inline-block max-w-[100px] truncate">
-                {user.displayName || user.email?.split('@')[0]}
+                {userProfile?.displayName || user.displayName || user.email?.split('@')[0]}
               </span>
             </button>
           ) : (

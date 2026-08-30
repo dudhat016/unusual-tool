@@ -2,13 +2,14 @@ import React from 'react';
 import { useTranslation } from '../../i18n';
 import { Sparkles, Shield, Lock, Zap, Sliders } from 'lucide-react';
 import { LanguageSwitcher } from '../ui/LanguageSwitcher';
-import { TOOLS_REGISTRY } from '../../config/tools';
+import { DynamicToolService } from '../../services/DynamicToolService';
 import { Link } from './Link';
 
 export const Footer: React.FC = () => {
   const { t } = useTranslation();
 
-  const popularTools = TOOLS_REGISTRY.filter((t) => t.isPopular).slice(0, 6);
+  const allTools = DynamicToolService.getAllTools();
+  const popularTools = allTools.filter((t) => t.isPopular).slice(0, 6);
 
   return (
     <footer className="border-t border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400 mt-20 transition-colors">

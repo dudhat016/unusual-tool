@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BlogService } from '../services/BlogService';
 import { BlogPostItem } from '../types/blog';
 import { Link } from '../components/common/Link';
@@ -13,6 +13,7 @@ import {
   Sparkles,
   Calendar,
   Layers,
+  RefreshCw,
 } from 'lucide-react';
 
 import { useApp } from '../context/AppContext';
@@ -32,34 +33,72 @@ export const BlogHubView: React.FC = () => {
   const rawAuthorSlug = authorMatch ? authorMatch[1].toLowerCase() : '';
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [publishedPosts, setPublishedPosts] = useState<BlogPostItem[]>(() => BlogService.getPublishedPosts());
+  const [isLoading, setIsLoading] = useState<boolean>(() => BlogService.getPublishedPosts().length === 0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const publishedPosts = BlogService.getPublishedPosts();
+  // Live subscription to Firestore 'blogs' collection
+  useEffect(() => {
+    const unsubscribe = BlogService.subscribePublishedPosts((posts) => {
+      setPublishedPosts(posts);
+      setIsLoading(false);
+    });
+
+    // Also trigger initial fresh fetch from Firestore
+    BlogService.fetchBlogsFromFirestore().finally(() => {
+      setIsLoading(false);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      const fresh = await BlogService.fetchBlogsFromFirestore();
+      setPublishedPosts(fresh.filter((p) => p.status === 'published'));
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const breadcrumbs = getBreadcrumbsForRoute('/blog');
 
-  // Categories list
-  const categories = Array.from(new Set(publishedPosts.map((p) => p.category)));
+  // Categories list derived from live Firestore posts
+  const categories: string[] = Array.from(
+    new Set(publishedPosts.map((p) => p.category).filter((c): c is string => Boolean(c)))
+  );
 
-  // Filter posts
+  // Filter posts based on category, tag, author, and search keyword
   const filteredPosts = publishedPosts.filter((post) => {
     if (rawCatSlug !== 'all' && slugify(post.category) !== rawCatSlug) return false;
 
     if (rawTagSlug) {
-      const hasMatchingTag = post.tags.some((t) => slugify(t) === rawTagSlug || t.toLowerCase().includes(rawTagSlug.replace(/-/g, ' ')));
+      const hasMatchingTag = post.tags?.some(
+        (t) => slugify(t) === rawTagSlug || t.toLowerCase().includes(rawTagSlug.replace(/-/g, ' '))
+      );
       if (!hasMatchingTag) return false;
     }
 
     if (rawAuthorSlug) {
-      const authorSlug = slugify(post.author.name);
-      if (authorSlug !== rawAuthorSlug && !post.author.name.toLowerCase().includes(rawAuthorSlug.replace(/-/g, ' '))) {
+      const authorSlug = slugify(post.author?.name || '');
+      if (
+        authorSlug !== rawAuthorSlug &&
+        !post.author?.name?.toLowerCase().includes(rawAuthorSlug.replace(/-/g, ' '))
+      ) {
         return false;
       }
     }
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      const titleMatch = post.title.toLowerCase().includes(q);
-      const excerptMatch = post.excerpt.toLowerCase().includes(q);
-      const tagMatch = post.tags.some((t) => t.toLowerCase().includes(q) || slugify(t).includes(q));
+      const titleMatch = post.title?.toLowerCase().includes(q);
+      const excerptMatch = post.excerpt?.toLowerCase().includes(q);
+      const tagMatch = post.tags?.some(
+        (t) => t.toLowerCase().includes(q) || slugify(t).includes(q)
+      );
       return titleMatch || excerptMatch || tagMatch;
     }
 
@@ -72,9 +111,20 @@ export const BlogHubView: React.FC = () => {
     : filteredPosts;
 
   return (
-    <div className="space-y-12 py-6 max-w-6xl mx-auto px-4 sm:px-6">
-      {/* Breadcrumbs */}
-      <Breadcrumbs items={breadcrumbs} />
+    <div className="space-y-12 py-6 max-w-6xl mx-auto px-4 sm:px-6 animate-fade-in">
+      {/* Breadcrumbs & Refresh */}
+      <div className="flex items-center justify-between">
+        <Breadcrumbs items={breadcrumbs} />
+        <button
+          onClick={handleManualRefresh}
+          disabled={isRefreshing}
+          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition-colors cursor-pointer disabled:opacity-50"
+          title="Refresh blog posts from Firestore"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin text-primary' : ''}`} />
+          <span>{isRefreshing ? 'Syncing...' : 'Sync Firestore'}</span>
+        </button>
+      </div>
 
       {/* Search Header */}
       <div className="text-center max-w-2xl mx-auto space-y-4">
@@ -87,10 +137,18 @@ export const BlogHubView: React.FC = () => {
           Guides, Tutorials & Format Insights
         </h1>
 
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+          In-depth technical guides, conversion standards, and WebAssembly optimization tutorials powered by our live Firestore publication engine.
+        </p>
+
         {(rawTagSlug || rawCatSlug !== 'all' || rawAuthorSlug) && (
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-xs">
-            <span>Filtered by: {rawTagSlug ? `#${rawTagSlug}` : rawCatSlug !== 'all' ? rawCatSlug : rawAuthorSlug}</span>
-            <Link href="/blog" className="underline font-normal text-slate-500 hover:text-slate-900">Clear</Link>
+            <span>
+              Filtered by: {rawTagSlug ? `#${rawTagSlug}` : rawCatSlug !== 'all' ? rawCatSlug : rawAuthorSlug}
+            </span>
+            <Link href="/blog" className="underline font-normal text-slate-500 hover:text-slate-900 dark:hover:text-white">
+              Clear
+            </Link>
           </div>
         )}
 
@@ -121,6 +179,7 @@ export const BlogHubView: React.FC = () => {
           {categories.map((cat) => {
             const catSlug = slugify(cat);
             const isActive = rawCatSlug === catSlug;
+            const count = publishedPosts.filter((p) => p.category === cat).length;
             return (
               <Link
                 key={cat}
@@ -131,161 +190,175 @@ export const BlogHubView: React.FC = () => {
                     : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
               >
-                {cat}
+                {cat} ({count})
               </Link>
             );
           })}
         </div>
       </div>
 
-      {/* Featured Article Spotlight Card */}
-      {featuredPost && (
-        <section className="space-y-4">
-          <div className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-            <Sparkles className="h-4 w-4 text-amber-500" />
-            <span>Featured Spotlight Article</span>
+      {/* Loading Skeletons */}
+      {isLoading && publishedPosts.length === 0 ? (
+        <div className="space-y-8 animate-pulse">
+          <div className="h-72 rounded-3xl bg-slate-200 dark:bg-slate-800" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="h-64 rounded-2xl bg-slate-200 dark:bg-slate-800" />
+            <div className="h-64 rounded-2xl bg-slate-200 dark:bg-slate-800" />
+            <div className="h-64 rounded-2xl bg-slate-200 dark:bg-slate-800" />
           </div>
-
-          <Link
-            href={`/blog/${featuredPost.slug}`}
-            className="group relative grid grid-cols-1 lg:grid-cols-12 rounded-3xl border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900 overflow-hidden shadow-lg hover:shadow-xl hover:border-primary/50 transition-all cursor-pointer"
-          >
-            <div className="lg:col-span-7 h-64 lg:h-auto overflow-hidden">
-              <img
-                src={
-                  featuredPost.coverImage ||
-                  'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80'
-                }
-                alt={featuredPost.title}
-                className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-            </div>
-
-            <div className="lg:col-span-5 p-6 sm:p-8 flex flex-col justify-between space-y-6">
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-bold">
-                    {featuredPost.category}
-                  </span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-3.5 w-3.5 text-slate-400" />
-                    {featuredPost.readTime}
-                  </span>
-                </div>
-
-                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors leading-snug">
-                  {featuredPost.title}
-                </h2>
-
-                <p className="text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-slate-300 line-clamp-3">
-                  {featuredPost.excerpt}
-                </p>
-              </div>
-
-              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {featuredPost.author.avatarUrl ? (
-                    <img
-                      src={featuredPost.author.avatarUrl}
-                      alt=""
-                      className="h-7 w-7 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="h-7 w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
-                      {featuredPost.author.name[0]}
-                    </div>
-                  )}
-                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    {featuredPost.author.name}
-                  </span>
-                </div>
-
-                <span className="flex items-center gap-1 text-xs font-bold text-primary group-hover:translate-x-1 transition-transform">
-                  <span>Read Article</span>
-                  <ArrowRight className="h-4 w-4" />
-                </span>
-              </div>
-            </div>
-          </Link>
-        </section>
-      )}
-
-      {/* 3-Column Articles Grid */}
-      <section className="space-y-6 pt-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-            Latest Articles ({gridPosts.length})
-          </h2>
         </div>
+      ) : (
+        <>
+          {/* Featured Article Spotlight Card */}
+          {featuredPost && (
+            <section className="space-y-4">
+              <div className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <Sparkles className="h-4 w-4 text-amber-500" />
+                <span>Featured Spotlight Article</span>
+              </div>
 
-        {gridPosts.length === 0 ? (
-          <div className="p-12 text-center rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900">
-            <BookOpen className="h-10 w-10 text-slate-400 mx-auto mb-2" />
-            <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-              No blog posts found matching your search.
-            </p>
-            <Link
-              href="/blog"
-              onClick={() => setSearchQuery('')}
-              className="inline-block mt-3 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold"
-            >
-              Reset Filters
-            </Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {gridPosts.map((post) => (
               <Link
-                key={post.id}
-                href={`/blog/${post.slug}`}
-                className="group relative flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900 p-5 shadow-2xs hover:shadow-md hover:border-primary/50 transition-all cursor-pointer overflow-hidden"
+                href={`/blog/${featuredPost.slug}`}
+                className="group relative grid grid-cols-1 lg:grid-cols-12 rounded-3xl border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900 overflow-hidden shadow-lg hover:shadow-xl hover:border-primary/50 transition-all cursor-pointer"
               >
-                <div className="space-y-4">
-                  {/* Cover Image */}
-                  <div className="h-44 w-full rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800">
-                    <img
-                      src={
-                        post.coverImage ||
-                        'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?auto=format&fit=crop&w=1200&q=80'
-                      }
-                      alt={post.title}
-                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
+                <div className="lg:col-span-7 h-64 lg:h-auto overflow-hidden">
+                  <img
+                    src={
+                      featuredPost.coverImage ||
+                      'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80'
+                    }
+                    alt={featuredPost.title}
+                    className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
 
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-[11px] text-slate-500">
-                      <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
-                        {post.category}
+                <div className="lg:col-span-5 p-6 sm:p-8 flex flex-col justify-between space-y-6">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                      <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-bold">
+                        {featuredPost.category}
                       </span>
+                      <span>•</span>
                       <span className="flex items-center gap-1">
-                        <Clock className="h-3 w-3 text-slate-400" />
-                        {post.readTime}
+                        <Clock className="h-3.5 w-3.5 text-slate-400" />
+                        {featuredPost.readTime}
                       </span>
                     </div>
 
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors line-clamp-2 leading-snug">
-                      {post.title}
-                    </h3>
+                    <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors leading-snug">
+                      {featuredPost.title}
+                    </h2>
 
-                    <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400 line-clamp-2">
-                      {post.excerpt}
+                    <p className="text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-slate-300 line-clamp-3">
+                      {featuredPost.excerpt}
                     </p>
                   </div>
-                </div>
 
-                <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400 font-medium">
-                  <span>{post.publishedDate}</span>
-                  <span className="text-primary font-semibold group-hover:underline flex items-center gap-1">
-                    Read →
-                  </span>
+                  <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {featuredPost.author?.avatarUrl ? (
+                        <img
+                          src={featuredPost.author.avatarUrl}
+                          alt=""
+                          className="h-7 w-7 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-7 w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
+                          {featuredPost.author?.name ? featuredPost.author.name[0] : 'A'}
+                        </div>
+                      )}
+                      <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        {featuredPost.author?.name || 'AetherPix Author'}
+                      </span>
+                    </div>
+
+                    <span className="flex items-center gap-1 text-xs font-bold text-primary group-hover:translate-x-1 transition-transform">
+                      <span>Read Article</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </span>
+                  </div>
                 </div>
               </Link>
-            ))}
-          </div>
-        )}
-      </section>
+            </section>
+          )}
+
+          {/* 3-Column Articles Grid */}
+          <section className="space-y-6 pt-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                Latest Articles ({gridPosts.length})
+              </h2>
+            </div>
+
+            {gridPosts.length === 0 && !featuredPost ? (
+              <div className="p-12 text-center rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900">
+                <BookOpen className="h-10 w-10 text-slate-400 mx-auto mb-2" />
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  No blog posts found matching your search.
+                </p>
+                <Link
+                  href="/blog"
+                  onClick={() => setSearchQuery('')}
+                  className="inline-block mt-3 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold cursor-pointer"
+                >
+                  Reset Filters
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {gridPosts.map((post) => (
+                  <Link
+                    key={post.id}
+                    href={`/blog/${post.slug}`}
+                    className="group relative flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900 p-5 shadow-2xs hover:shadow-md hover:border-primary/50 transition-all cursor-pointer overflow-hidden"
+                  >
+                    <div className="space-y-4">
+                      {/* Cover Image */}
+                      <div className="h-44 w-full rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800">
+                        <img
+                          src={
+                            post.coverImage ||
+                            'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?auto=format&fit=crop&w=1200&q=80'
+                          }
+                          alt={post.title}
+                          className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-[11px] text-slate-500">
+                          <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
+                            {post.category}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3 text-slate-400" />
+                            {post.readTime}
+                          </span>
+                        </div>
+
+                        <h3 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors line-clamp-2 leading-snug">
+                          {post.title}
+                        </h3>
+
+                        <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400 line-clamp-2">
+                          {post.excerpt}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400 font-medium">
+                      <span>{post.publishedDate}</span>
+                      <span className="text-primary font-semibold group-hover:underline flex items-center gap-1">
+                        Read →
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
+        </>
+      )}
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BlogService } from '../services/BlogService';
 import { BlogPostItem } from '../types/blog';
 import { Breadcrumbs } from '../components/common/Breadcrumbs';
@@ -16,6 +16,7 @@ import {
   ArrowRight,
   Sparkles,
   Tag,
+  Loader2,
 } from 'lucide-react';
 import { slugify } from '../utils/slugify';
 
@@ -24,21 +25,74 @@ interface BlogPostViewProps {
 }
 
 export const BlogPostView: React.FC<BlogPostViewProps> = ({ slug }) => {
-  const post = BlogService.getPostBySlug(slug);
+  const [post, setPost] = useState<BlogPostItem | null>(() => BlogService.getPostBySlug(slug) || null);
+  const [isLoading, setIsLoading] = useState(!post);
+  const [allPosts, setAllPosts] = useState<BlogPostItem[]>(() => BlogService.getPublishedPosts());
 
   useEffect(() => {
-    if (post) {
+    let isMounted = true;
+    setIsLoading(!post);
+
+    // Fetch from Firestore
+    BlogService.fetchPostBySlug(slug).then((fetched) => {
+      if (isMounted) {
+        setPost(fetched);
+        setIsLoading(false);
+      }
+    });
+
+    // Subscribe to published list
+    const unsub = BlogService.subscribePublishedPosts((posts) => {
+      if (isMounted) {
+        setAllPosts(posts);
+        const matching = posts.find(
+          (p) =>
+            p.slug.toLowerCase() === slug.toLowerCase() ||
+            p.id.toLowerCase() === slug.toLowerCase()
+        );
+        if (matching) {
+          setPost(matching);
+          setIsLoading(false);
+        }
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      unsub();
+    };
+  }, [slug]);
+
+  useEffect(() => {
+    if (post?.id) {
       BlogService.incrementViews(post.id);
     }
   }, [post?.id]);
 
+  if (isLoading && !post) {
+    return (
+      <div className="py-24 text-center space-y-4 max-w-2xl mx-auto">
+        <Loader2 className="h-8 w-8 text-primary animate-spin mx-auto" />
+        <p className="text-xs text-slate-500 font-medium">Loading article from Firestore database...</p>
+      </div>
+    );
+  }
+
   if (!post) {
     return (
-      <div className="py-20 text-center space-y-4">
+      <div className="py-20 text-center space-y-4 max-w-md mx-auto">
+        <div className="h-12 w-12 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto">
+          <BookOpen className="h-6 w-6" />
+        </div>
         <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Article Not Found</h1>
-        <p className="text-xs text-slate-500">The requested blog post &quot;{slug}&quot; could not be found.</p>
-        <Link href="/blog" className="inline-block px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold">
-          Back to Blog Hub
+        <p className="text-xs text-slate-500">
+          The requested blog post &quot;{slug}&quot; could not be found in our publication database.
+        </p>
+        <Link
+          href="/blog"
+          className="inline-block px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold"
+        >
+          Back to Editorial Hub
         </Link>
       </div>
     );
@@ -50,15 +104,62 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ slug }) => {
     { name: post.title, url: `/blog/${post.slug}` },
   ];
 
-  const allPosts = BlogService.getPublishedPosts();
   const relatedPosts = allPosts
     .filter((p) => p.id !== post.id && (p.category === post.category || p.featured))
     .slice(0, 3);
 
   const title = post.seo?.h1Title || post.title;
 
+  const articleSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.excerpt,
+    image: post.coverImage ? [post.coverImage] : undefined,
+    datePublished: post.publishedDate,
+    dateModified: post.updatedDate || post.publishedDate,
+    author: {
+      '@type': 'Person',
+      name: post.author?.name || 'AetherPix Editorial Team',
+      jobTitle: post.author?.role || 'Digital Imaging Specialists',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'AetherPix Studio',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://aetherpix.studio/icon-192.png',
+      },
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': post.seo?.canonicalUrl || `https://aetherpix.studio/blog/${post.slug}`,
+    },
+  };
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbs.map((b, idx) => ({
+      '@type': 'ListItem',
+      position: idx + 1,
+      name: b.name,
+      item: b.url.startsWith('http') ? b.url : `https://aetherpix.studio${b.url}`,
+    })),
+  };
+
   return (
-    <article className="space-y-10 py-6 max-w-4xl mx-auto px-4 sm:px-6">
+    <article className="space-y-10 py-6 max-w-4xl mx-auto px-4 sm:px-6 animate-fade-in">
+      {/* Dynamic JSON-LD Structured Data Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+
       {/* Breadcrumbs */}
       <Breadcrumbs items={breadcrumbs} />
 
@@ -89,8 +190,11 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ slug }) => {
 
         {/* Author Header Bar */}
         <div className="flex items-center justify-between py-4 border-y border-slate-200/80 dark:border-slate-800">
-          <Link href={`/blog/author/${slugify(post.author.name)}`} className="flex items-center gap-3 group">
-            {post.author.avatarUrl ? (
+          <Link
+            href={`/blog/author/${slugify(post.author?.name || 'editorial')}`}
+            className="flex items-center gap-3 group"
+          >
+            {post.author?.avatarUrl ? (
               <img
                 src={post.author.avatarUrl}
                 alt=""
@@ -98,14 +202,14 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ slug }) => {
               />
             ) : (
               <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm">
-                {post.author.name[0]}
+                {post.author?.name ? post.author.name[0] : 'A'}
               </div>
             )}
             <div>
               <div className="font-bold text-xs text-slate-900 dark:text-white group-hover:text-primary transition-colors">
-                {post.author.name}
+                {post.author?.name || 'AetherPix Team'}
               </div>
-              <div className="text-[11px] text-slate-500">{post.author.role}</div>
+              <div className="text-[11px] text-slate-500">{post.author?.role || 'Digital Specialists'}</div>
             </div>
           </Link>
 
@@ -118,7 +222,7 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ slug }) => {
                 alert('Article URL copied to clipboard!');
               }
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <Share2 className="h-3.5 w-3.5" />
             <span>Share</span>
@@ -162,7 +266,7 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ slug }) => {
 
       {/* Author Bio Footer Box */}
       <div className="p-6 rounded-2xl border border-slate-200/80 bg-slate-50/60 dark:border-slate-800 dark:bg-slate-900/40 flex items-center gap-4">
-        {post.author.avatarUrl ? (
+        {post.author?.avatarUrl ? (
           <img
             src={post.author.avatarUrl}
             alt=""
@@ -170,13 +274,15 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ slug }) => {
           />
         ) : (
           <div className="h-12 w-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-base shrink-0">
-            {post.author.name[0]}
+            {post.author?.name ? post.author.name[0] : 'A'}
           </div>
         )}
         <div>
-          <h4 className="text-sm font-bold text-slate-900 dark:text-white">Written by {post.author.name}</h4>
+          <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+            Written by {post.author?.name || 'AetherPix Team'}
+          </h4>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
-            {post.author.role} at AetherPix Studio specializing in browser WebAssembly graphics, image compression algorithms, and digital media standards.
+            {post.author?.role || 'Digital Specialists'} at AetherPix Studio specializing in browser WebAssembly graphics, image compression algorithms, and digital media standards.
           </p>
         </div>
       </div>

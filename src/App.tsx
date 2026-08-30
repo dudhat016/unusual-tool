@@ -32,14 +32,13 @@ const RouteLoadingSpinner: React.FC = () => (
 );
 
 import { Wrench } from 'lucide-react';
-import { getCategoryBySlug } from './config/categoryData';
-import { getToolByRoute, TOOLS_REGISTRY } from './config/tools';
+import { DynamicCategoryService } from './services/DynamicCategoryService';
 import { useTranslation } from './i18n';
 
 const SUPPORTED_LOCALES = ['en', 'hi', 'es', 'fr', 'de', 'pt', 'it', 'ja', 'ko', 'zh', 'ar'];
 
 const AppRouter: React.FC = () => {
-  const { currentPath, isAuthModalOpen, setIsAuthModalOpen, authModalMode, systemSettings, isAdmin } = useApp();
+  const { currentPath, isAuthModalOpen, setIsAuthModalOpen, authModalMode, systemSettings, isAdmin, getToolByRoute, getToolBySlug } = useApp();
   const { setLanguage, language } = useTranslation();
 
   // Normalize path and extract locale prefix (e.g. /es/compress-image -> locale: 'es', path: '/compress-image')
@@ -90,7 +89,7 @@ const AppRouter: React.FC = () => {
   const matchedTool = getToolByRoute(normalizedPath);
 
   // Check if route matches a category hub
-  const matchedCategory = getCategoryBySlug(normalizedPath);
+  const matchedCategory = DynamicCategoryService.getCategoryBySlug(normalizedPath);
 
   const renderContent = () => {
     if (normalizedPath === '/') {
@@ -126,8 +125,10 @@ const AppRouter: React.FC = () => {
     // Dynamic Parametric Target Size Tool Route Matcher (e.g. /compress-image-to-15kb, /compress-jpg-to-2mb)
     const isTargetSizeRoute = /^\/(compress|resize)-(image|jpeg|jpg|png|webp|avif|pdf)?-?(?:between-)?(\d+)?(?:kb|mb)?(?:-to-)?(\d+)(kb|mb|px)$/i.test(normalizedPath);
     if (isTargetSizeRoute) {
-      const compressTool = getToolByRoute('/compress-image') || getToolByRoute('/compress') || TOOLS_REGISTRY[0];
-      return <ToolPage tool={compressTool} />;
+      const compressTool = getToolByRoute('/compress-image') || getToolByRoute('/compress') || getToolBySlug('compress');
+      if (compressTool) {
+        return <ToolPage tool={compressTool} />;
+      }
     }
 
     // Blog Directory & Article Detail Views
@@ -169,9 +170,7 @@ const AppRouter: React.FC = () => {
     }
 
     // Fallback: Check if path matches slug directly (e.g. /resize-image)
-    const toolBySlug = TOOLS_REGISTRY.find(
-      (t) => `/${t.slug}` === normalizedPath || `/${t.id}` === normalizedPath
-    );
+    const toolBySlug = getToolBySlug(normalizedPath);
     if (toolBySlug) {
       return <ToolPage tool={toolBySlug} />;
     }
@@ -225,10 +224,17 @@ const AppRouter: React.FC = () => {
 };
 
 const LanguageConnectedApp: React.FC = () => {
-  const { userProfile } = useApp();
+  const { userProfile, updateUserProfile } = useApp();
 
   return (
-    <LanguageProvider userLanguage={userProfile?.preferredLanguage || null}>
+    <LanguageProvider
+      userLanguage={userProfile?.preferredLanguage || null}
+      onLanguagePersist={(lang) => {
+        if (userProfile && userProfile.preferredLanguage !== lang) {
+          updateUserProfile({ preferredLanguage: lang });
+        }
+      }}
+    >
       <AppRouter />
     </LanguageProvider>
   );

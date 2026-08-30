@@ -1,9 +1,11 @@
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
   limit,
+  onSnapshot,
   orderBy,
   query,
   runTransaction,
@@ -19,11 +21,13 @@ import { DEFAULT_SYSTEM_SETTINGS } from '../config/systemSettings';
 import {
   AdminAuditLog,
   FeatureFlag,
-  SystemSettings
+  SystemSettings,
+  ToolUsageStatItem
 } from '../types/admin';
 import { AdSlotConfig } from '../types/ads';
 import {
   CreditLedgerRecord,
+  PlanConfig,
   PlanTier,
   ProcessingJobRecord,
   SavedPreset,
@@ -226,6 +230,21 @@ export class SaaSDataService {
 
     await setDoc(jobRef, jobRecord);
 
+    // Record tool usage stats in Firestore
+    try {
+      await this.recordToolUsage(
+        jobData.toolId,
+        jobData.toolName,
+        jobData.processorType === 'ai' ? 'ai' : 'image',
+        jobData.status !== 'failed',
+        jobData.originalSize || 0,
+        jobData.processingTimeMs || 300,
+        jobData.processorType === 'ai'
+      );
+    } catch {
+      // Non-blocking
+    }
+
     const userRef = doc(db, 'users', userId);
     try {
       const snap = await getDoc(userRef);
@@ -346,21 +365,71 @@ export class SaaSDataService {
 
   // ================= SYSTEM SETTINGS & FEATURE FLAGS ================= //
 
+  /**
+   * Real-time listener for the 'system_settings' Firestore document ('global' document ID).
+   * Automatically invokes the callback whenever settings change without requiring a page refresh.
+   */
+  public static subscribeToSystemSettings(
+    callback: (settings: SystemSettings) => void
+  ): () => void {
+    try {
+      const settingsDocRef = doc(db, 'system_settings', 'global');
+      const unsubscribe = onSnapshot(
+        settingsDocRef,
+        (snapshot) => {
+          if (snapshot.exists()) {
+            const data = snapshot.data();
+            const merged: SystemSettings = {
+              ...DEFAULT_SYSTEM_SETTINGS,
+              ...data,
+            };
+            callback(merged);
+          } else {
+            // If global doc does not exist yet, fallback to system_config/settings
+            this.getSystemSettings().then(callback).catch(() => callback(DEFAULT_SYSTEM_SETTINGS));
+          }
+        },
+        (error) => {
+          console.warn('Real-time listener on system_settings/global encountered an issue:', error);
+          // Fallback to one-time fetch
+          this.getSystemSettings().then(callback).catch(() => callback(DEFAULT_SYSTEM_SETTINGS));
+        }
+      );
+      return unsubscribe;
+    } catch (err) {
+      console.warn('Failed to attach real-time listener to system_settings:', err);
+      return () => {};
+    }
+  }
+
   public static async getSystemSettings(): Promise<SystemSettings> {
     try {
-      const snap = await getDoc(doc(db, 'system_config', 'settings'));
+      // First try system_settings/global document, with fallback to system_config/settings
+      const snap = await getDoc(doc(db, 'system_settings', 'global'));
       if (snap.exists()) {
         return { ...DEFAULT_SYSTEM_SETTINGS, ...snap.data() } as SystemSettings;
       }
-    } catch {
-      // Use default local system settings
+      const fallbackSnap = await getDoc(doc(db, 'system_config', 'settings'));
+      if (fallbackSnap.exists()) {
+        return { ...DEFAULT_SYSTEM_SETTINGS, ...fallbackSnap.data() } as SystemSettings;
+      }
+    } catch (e) {
+      console.warn('Using default local system settings', e);
     }
     return DEFAULT_SYSTEM_SETTINGS;
   }
 
   public static async updateSystemSettings(settings: Partial<SystemSettings>, adminEmail = 'admin'): Promise<boolean> {
     try {
-      await setDoc(doc(db, 'system_config', 'settings'), settings, { merge: true });
+      // Save directly to the 'system_settings' Firestore document ('global' document id)
+      await setDoc(doc(db, 'system_settings', 'global'), settings, { merge: true });
+      // Keep system_config/settings synchronized
+      try {
+        await setDoc(doc(db, 'system_config', 'settings'), settings, { merge: true });
+      } catch {
+        // Non-blocking fallback sync
+      }
+
       await this.logAuditAction({
         adminEmail,
         action: 'UPDATE_SYSTEM_SETTINGS',
@@ -370,7 +439,7 @@ export class SaaSDataService {
       });
       return true;
     } catch (e) {
-      console.error('Failed to update system settings', e);
+      console.error('Failed to update system settings in Firestore', e);
       return false;
     }
   }
@@ -398,6 +467,403 @@ export class SaaSDataService {
       return true;
     } catch {
       return false;
+    }
+  }
+
+  // ================= DYNAMIC PLANS (FIRESTORE) ================= //
+
+  public static async getPlans(): Promise<Record<string, PlanConfig>> {
+    try {
+      const snap = await getDocs(collection(db, 'plans'));
+      if (!snap.empty) {
+        const plansMap: Record<string, PlanConfig> = {};
+        snap.docs.forEach((d) => {
+          const plan = d.data() as PlanConfig;
+          plansMap[plan.id] = plan;
+        });
+        return plansMap;
+      } else {
+        // Seed initial plans to Firestore
+        await this.seedPlansIfEmpty();
+      }
+    } catch (e) {
+      console.warn('Could not fetch plans from Firestore:', e);
+    }
+    return DEFAULT_PLANS;
+  }
+
+  public static subscribeToPlans(callback: (plans: Record<string, PlanConfig>) => void): () => void {
+    try {
+      const plansCol = collection(db, 'plans');
+      return onSnapshot(
+        plansCol,
+        (snap) => {
+          if (!snap.empty) {
+            const plansMap: Record<string, PlanConfig> = {};
+            snap.docs.forEach((d) => {
+              const p = d.data() as PlanConfig;
+              plansMap[p.id] = p;
+            });
+            callback(plansMap);
+          } else {
+            this.seedPlansIfEmpty().then(() => callback(DEFAULT_PLANS));
+          }
+        },
+        (error) => {
+          console.warn('Plans Firestore subscription notice:', error);
+          callback(DEFAULT_PLANS);
+        }
+      );
+    } catch (e) {
+      console.warn('Could not subscribe to plans Firestore collection', e);
+      callback(DEFAULT_PLANS);
+      return () => {};
+    }
+  }
+
+  public static async savePlan(plan: PlanConfig, adminEmail = 'admin'): Promise<boolean> {
+    try {
+      const docRef = doc(db, 'plans', plan.id);
+      await setDoc(docRef, plan, { merge: true });
+      await this.logAuditAction({
+        adminEmail,
+        action: 'UPDATE_PLAN',
+        targetType: 'plan',
+        targetId: plan.id,
+        newValue: plan,
+      });
+      return true;
+    } catch (e) {
+      console.error('Failed to save plan to Firestore', e);
+      return false;
+    }
+  }
+
+  public static async seedPlansIfEmpty(): Promise<void> {
+    try {
+      const snap = await getDocs(collection(db, 'plans'));
+      if (snap.empty) {
+        for (const [key, plan] of Object.entries(DEFAULT_PLANS)) {
+          const docRef = doc(db, 'plans', key);
+          await setDoc(docRef, plan, { merge: true });
+        }
+      }
+    } catch (e) {
+      console.warn('Could not seed plans to Firestore', e);
+    }
+  }
+
+  // ================= USER PROFILE & ACCOUNT SETTINGS (FIRESTORE) ================= //
+
+  public static async getUserProfile(uid: string): Promise<UserProfile | null> {
+    if (!uid) return null;
+    try {
+      const userRef = doc(db, 'users', uid);
+      const snap = await getDoc(userRef);
+      if (snap.exists()) {
+        return snap.data() as UserProfile;
+      }
+      return null;
+    } catch (e) {
+      console.warn('Could not fetch user profile from Firestore', e);
+      return null;
+    }
+  }
+
+  public static subscribeToUserProfile(uid: string, callback: (profile: UserProfile | null) => void): () => void {
+    if (!uid) {
+      callback(null);
+      return () => {};
+    }
+    try {
+      const userRef = doc(db, 'users', uid);
+      return onSnapshot(
+        userRef,
+        (snap) => {
+          if (snap.exists()) {
+            callback(snap.data() as UserProfile);
+          } else {
+            callback(null);
+          }
+        },
+        (err) => {
+          console.warn(`UserProfile snapshot error for ${uid}:`, err);
+        }
+      );
+    } catch (e) {
+      console.warn('Could not subscribe to user profile in Firestore', e);
+      return () => {};
+    }
+  }
+
+  public static async updateUserAccountSettings(uid: string, updates: Partial<UserProfile>): Promise<boolean> {
+    if (!uid) return false;
+    try {
+      const userRef = doc(db, 'users', uid);
+      const payload: Record<string, any> = {
+        ...updates,
+        updatedAt: Date.now(),
+      };
+      // Normalize avatar/photoURL aliases
+      if (updates.avatar && !updates.photoURL) {
+        payload.photoURL = updates.avatar;
+      } else if (updates.photoURL && !updates.avatar) {
+        payload.avatar = updates.photoURL;
+      }
+
+      await setDoc(userRef, payload, { merge: true });
+      return true;
+    } catch (e) {
+      console.error('Failed to update user account settings in Firestore', e);
+      return false;
+    }
+  }
+
+  // ================= USER FAVORITES (FIRESTORE 'favorites' COLLECTION) ================= //
+
+  /**
+   * Subscribe in real-time to the user's favorites from the 'favorites' Firestore collection
+   */
+  public static subscribeToUserFavorites(uid: string, callback: (favorites: string[]) => void): () => void {
+    if (!uid) {
+      callback([]);
+      return () => {};
+    }
+    try {
+      const favRef = doc(db, 'favorites', uid);
+      return onSnapshot(
+        favRef,
+        (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            const toolIds = Array.isArray(data.toolIds) ? data.toolIds : Array.isArray(data.favorites) ? data.favorites : [];
+            callback(toolIds);
+          } else {
+            // Check fallback from user profile doc if favorites doc not yet created
+            this.getUserProfile(uid).then((profile) => {
+              if (profile && (profile as any).favoriteTools && Array.isArray((profile as any).favoriteTools)) {
+                callback((profile as any).favoriteTools);
+              } else {
+                callback([]);
+              }
+            }).catch(() => callback([]));
+          }
+        },
+        (error) => {
+          console.warn('Firestore favorites listener error:', error);
+          callback([]);
+        }
+      );
+    } catch (e) {
+      console.warn('Could not establish favorites subscription', e);
+      callback([]);
+      return () => {};
+    }
+  }
+
+  /**
+   * Fetch favorites for a user directly from the 'favorites' Firestore collection
+   */
+  public static async getUserFavorites(uid: string): Promise<string[]> {
+    if (!uid) return [];
+    try {
+      const favRef = doc(db, 'favorites', uid);
+      const favSnap = await getDoc(favRef);
+      if (favSnap.exists()) {
+        const data = favSnap.data();
+        return Array.isArray(data.toolIds) ? data.toolIds : Array.isArray(data.favorites) ? data.favorites : [];
+      }
+
+      // Check legacy user document
+      const userRef = doc(db, 'users', uid);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+        if (Array.isArray(userData.favoriteTools)) {
+          // Migrate to 'favorites' collection
+          await setDoc(favRef, {
+            id: uid,
+            userId: uid,
+            toolIds: userData.favoriteTools,
+            updatedAt: Date.now(),
+            createdAt: Date.now(),
+          }, { merge: true });
+          return userData.favoriteTools;
+        }
+      }
+      return [];
+    } catch (e) {
+      console.warn('Failed to get user favorites from Firestore', e);
+      return [];
+    }
+  }
+
+  /**
+   * Persist updated tool favorites into the 'favorites' Firestore collection
+   */
+  public static async updateUserFavorites(uid: string, favorites: string[]): Promise<boolean> {
+    if (!uid) return false;
+    try {
+      const favRef = doc(db, 'favorites', uid);
+      const now = Date.now();
+      await setDoc(
+        favRef,
+        {
+          id: uid,
+          userId: uid,
+          toolIds: favorites,
+          updatedAt: now,
+        },
+        { merge: true }
+      );
+
+      // Also mirror to user profile document
+      try {
+        const userRef = doc(db, 'users', uid);
+        await setDoc(
+          userRef,
+          {
+            favoriteTools: favorites,
+            updatedAt: now,
+          },
+          { merge: true }
+        );
+      } catch {}
+
+      return true;
+    } catch (e) {
+      console.warn('Failed to update user favorites in Firestore favorites collection', e);
+      return false;
+    }
+  }
+
+  /**
+   * Toggle a tool favorite in the 'favorites' collection and return the updated array
+   */
+  public static async toggleUserFavorite(uid: string, toolId: string, currentFavorites?: string[]): Promise<string[]> {
+    if (!uid) return [];
+    try {
+      let existing = currentFavorites;
+      if (!existing) {
+        existing = await this.getUserFavorites(uid);
+      }
+      const nextFavorites = existing.includes(toolId)
+        ? existing.filter((id) => id !== toolId)
+        : [...existing, toolId];
+
+      await this.updateUserFavorites(uid, nextFavorites);
+      return nextFavorites;
+    } catch (e) {
+      console.warn('Error toggling user favorite in Firestore', e);
+      return currentFavorites || [];
+    }
+  }
+
+  // ================= PROCESSING JOBS / HISTORY (FIRESTORE) ================= //
+
+  public static subscribeToUserJobs(uid: string, callback: (jobs: ProcessingJobRecord[]) => void): () => void {
+    if (!uid) {
+      callback([]);
+      return () => {};
+    }
+    try {
+      const q = query(
+        collection(db, 'processing_jobs'),
+        where('userId', '==', uid),
+        orderBy('timestamp', 'desc'),
+        limit(50)
+      );
+      return onSnapshot(
+        q,
+        (snap) => {
+          const jobs = snap.docs.map((d) => d.data() as ProcessingJobRecord);
+          callback(jobs);
+        },
+        (err) => {
+          console.warn(`User jobs snapshot error for ${uid}:`, err);
+          callback([]);
+        }
+      );
+    } catch (e) {
+      console.warn('Could not subscribe to user jobs in Firestore', e);
+      return () => {};
+    }
+  }
+
+  public static async deleteUserJob(uid: string, jobId: string): Promise<boolean> {
+    try {
+      await deleteDoc(doc(db, 'processing_jobs', jobId));
+      return true;
+    } catch (e) {
+      console.error('Failed to delete processing job from Firestore', e);
+      return false;
+    }
+  }
+
+  public static async clearUserJobs(uid: string): Promise<boolean> {
+    try {
+      const q = query(collection(db, 'processing_jobs'), where('userId', '==', uid));
+      const snap = await getDocs(q);
+      const deletePromises = snap.docs.map((d) => deleteDoc(d.ref));
+      await Promise.all(deletePromises);
+      return true;
+    } catch (e) {
+      console.error('Failed to clear user jobs from Firestore', e);
+      return false;
+    }
+  }
+
+  // ================= CREDIT LEDGER (FIRESTORE) ================= //
+
+  public static subscribeToUserLedger(uid: string, callback: (records: CreditLedgerRecord[]) => void): () => void {
+    if (!uid) {
+      callback([]);
+      return () => {};
+    }
+    try {
+      const q = query(
+        collection(db, 'credit_ledger'),
+        where('userId', '==', uid),
+        orderBy('timestamp', 'desc'),
+        limit(50)
+      );
+      return onSnapshot(
+        q,
+        (snap) => {
+          const records = snap.docs.map((d) => d.data() as CreditLedgerRecord);
+          callback(records);
+        },
+        (err) => {
+          console.warn(`User ledger snapshot error for ${uid}:`, err);
+          callback([]);
+        }
+      );
+    } catch (e) {
+      console.warn('Could not subscribe to user ledger in Firestore', e);
+      return () => {};
+    }
+  }
+
+  public static subscribeToToolUsageStats(callback: (stats: ToolUsageStatItem[]) => void): () => void {
+    try {
+      const statsCol = collection(db, 'tool_usage_stats');
+      return onSnapshot(
+        statsCol,
+        (snap) => {
+          if (!snap.empty) {
+            callback(snap.docs.map((d) => d.data() as ToolUsageStatItem));
+          } else {
+            callback([]);
+          }
+        },
+        (err) => {
+          console.warn('Tool usage stats snapshot error:', err);
+          callback([]);
+        }
+      );
+    } catch (e) {
+      console.warn('Could not subscribe to tool usage stats in Firestore', e);
+      return () => {};
     }
   }
 
@@ -560,5 +1026,81 @@ export class SaaSDataService {
       targetId: targetUserId,
       newValue: { isSuspended: suspend, reason },
     });
+  }
+
+  // ================= TOOL USAGE ANALYTICS ================= //
+
+  public static async recordToolUsage(
+    toolId: string,
+    toolName: string,
+    category: string,
+    success = true,
+    bytesProcessed = 0,
+    durationMs = 250,
+    isAi = false
+  ): Promise<void> {
+    try {
+      const docRef = doc(db, 'tool_usage_stats', toolId);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const data = snap.data() as ToolUsageStatItem;
+        const prevUsage = data.usageCount || 0;
+        const nextUsage = prevUsage + 1;
+        const prevDuration = data.avgDurationMs || 250;
+        const newAvgDuration = Math.round((prevDuration * prevUsage + durationMs) / nextUsage);
+
+        await updateDoc(docRef, {
+          usageCount: nextUsage,
+          successCount: (data.successCount || 0) + (success ? 1 : 0),
+          failureCount: (data.failureCount || 0) + (success ? 0 : 1),
+          totalBytesProcessed: (data.totalBytesProcessed || 0) + bytesProcessed,
+          avgDurationMs: newAvgDuration,
+          lastUsedAt: Date.now(),
+          toolName: toolName || data.toolName,
+          category: category || data.category,
+          isAi: isAi ?? data.isAi,
+        });
+      } else {
+        const newStat: ToolUsageStatItem = {
+          id: toolId,
+          toolId,
+          toolName: toolName || toolId,
+          category: category || 'general',
+          usageCount: 1,
+          successCount: success ? 1 : 0,
+          failureCount: success ? 0 : 1,
+          totalBytesProcessed: bytesProcessed,
+          avgDurationMs: durationMs,
+          lastUsedAt: Date.now(),
+          isAi,
+        };
+        await setDoc(docRef, newStat);
+      }
+    } catch (e) {
+      console.warn('Could not record tool usage in Firestore', e);
+    }
+  }
+
+  public static async getToolUsageStats(): Promise<ToolUsageStatItem[]> {
+    try {
+      const snap = await getDocs(collection(db, 'tool_usage_stats'));
+      if (!snap.empty) {
+        return snap.docs.map((d) => d.data() as ToolUsageStatItem);
+      }
+    } catch (e) {
+      console.warn('Could not fetch tool usage stats from Firestore', e);
+    }
+    return [];
+  }
+
+  public static async seedToolUsageStats(stats: ToolUsageStatItem[]): Promise<void> {
+    try {
+      for (const item of stats) {
+        const docRef = doc(db, 'tool_usage_stats', item.toolId);
+        await setDoc(docRef, item, { merge: true });
+      }
+    } catch (e) {
+      console.warn('Error seeding tool usage stats to Firestore', e);
+    }
   }
 }

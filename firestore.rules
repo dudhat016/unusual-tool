@@ -12,6 +12,7 @@ service cloud.firestore {
       return isAuthenticated() && (
         request.auth.token.admin == true ||
         request.auth.token.email == "unusualgamerz16@gmail.com" ||
+        request.auth.token.email == "chintandudhat1286@gmail.com" ||
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin")
       );
@@ -25,6 +26,30 @@ service cloud.firestore {
         request.auth.uid == userId || isAdmin()
       );
       allow delete: if isAdmin();
+    }
+
+    // User Favorites (Cross-device persistence)
+    match /favorites/{favoriteId} {
+      allow read: if isAuthenticated() && (
+        favoriteId == request.auth.uid ||
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+      allow create: if isAuthenticated() && (
+        favoriteId == request.auth.uid ||
+        request.resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+      allow update: if isAuthenticated() && (
+        favoriteId == request.auth.uid ||
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+      allow delete: if isAuthenticated() && (
+        favoriteId == request.auth.uid ||
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
     }
 
     // Credit Ledger - append only for users or admin
@@ -66,18 +91,92 @@ service cloud.firestore {
       );
     }
 
+    // Dynamic Tool Catalog (Public Read, Admin Write)
+    match /tools/{toolId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Tool CMS Contents (Public Read, Admin Write)
+    match /toolContents/{contentId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Blog & Editorial Posts (Public Read, Admin Write, and view counter increment)
+    match /blogs/{blogId} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views']) &&
+        request.resource.data.views is number
+      );
+    }
+
+    match /blog_posts/{postId} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views']) &&
+        request.resource.data.views is number
+      );
+    }
+
+    // Dynamic SEO Entries & Settings (Public Read, Admin Write)
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /seo_entries/{entryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /seo_settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // Configurable SaaS Plans (Public Read, Admin Write)
     match /plans/{planId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // System Settings & Error Logs
+    // System Settings & Feature Flags (Public Read, Admin Write)
+    match /system_config/{configId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /system_settings/{settingId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
+    // Tool Usage Statistics & Telemetry Aggregation
+    match /tool_usage_stats/{statId} {
+      allow read: if true;
+      allow write: if isAdmin() || isAuthenticated();
+    }
+
+    match /feature_flags/{flagId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /ad_slots/{slotId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Admin Audit Logs
+    match /admin_audit_logs/{logId} {
+      allow read, write: if isAdmin();
+    }
+
+    // System Error Logs
     match /error_logs/{logId} {
       allow read: if isAdmin();
       allow create: if true; // Any client can log unexpected errors safely
@@ -86,7 +185,7 @@ service cloud.firestore {
 
     // Rate Limiting Bucket
     match /rate_limits/{bucketId} {
-      allow read, write: if isAuthenticated() || true;
+      allow read, write: if true;
     }
   }
 }

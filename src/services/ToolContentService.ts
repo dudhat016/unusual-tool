@@ -1,7 +1,7 @@
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { ALL_TOOLS } from '../config/tools';
-import { getSeoForRoute } from '../config/seoRegistry';
+import { DynamicToolService } from './DynamicToolService';
+import { DynamicSeoService } from './DynamicSeoService';
 import { ToolDetailContent, ToolFaqItem, ToolSeoHealthWarning } from '../types/toolCms';
 
 const LOCAL_STORAGE_KEY = 'aetherpix_tool_contents_v1';
@@ -11,9 +11,10 @@ export class ToolContentService {
    * Generates default baseline CMS content for any tool if custom admin content has not been created yet.
    */
   public static getDefaultContent(toolId: string, locale: string = 'en'): ToolDetailContent {
-    const tool = ALL_TOOLS.find((t) => t.id === toolId || t.slug === toolId);
+    const allTools = DynamicToolService.getAllTools();
+    const tool = allTools.find((t) => t.id === toolId || t.slug === toolId);
     const route = tool?.route || `/${toolId}`;
-    const seoData = getSeoForRoute(route);
+    const seoData = DynamicSeoService.getSeoForRoute(route);
 
     const toolName = tool?.name || toolId;
     const category = tool?.category || 'Image Processing';
@@ -82,7 +83,7 @@ export class ToolContentService {
       introHtml: `<p class="lead">${tool?.shortDescription || `Fast, browser-based ${toolName} tool with zero server uploads.`}</p>`,
       contentHtml: defaultContentHtml,
       tags: [category, 'online tool', 'free converter'],
-      relatedToolIds: ALL_TOOLS.filter((t) => t.category === category && t.id !== toolId).slice(0, 6).map((t) => t.id),
+      relatedToolIds: allTools.filter((t) => t.category === category && t.id !== toolId).slice(0, 6).map((t) => t.id),
       tocEnabled: true,
       faqs: defaultFaqs,
       metrics: this.calculateMetrics(defaultContentHtml, defaultFaqs),
@@ -113,33 +114,68 @@ export class ToolContentService {
   }
 
   /**
-   * Fetch tool content by toolId and locale.
+   * Fetch tool content by toolId and locale with direct Firestore lookup.
    */
   public static async getToolContent(toolId: string, locale: string = 'en'): Promise<ToolDetailContent> {
     const key = `${toolId}_${locale}`;
 
-    // 1. LocalStorage Check
-    const stored = this.getStoredContents();
-    if (stored[key]) {
-      return stored[key];
-    }
-
-    // 2. Firestore Check
+    // 1. Direct Firestore Check
     try {
       const docRef = doc(db, 'toolContents', key);
       const snap = await getDoc(docRef);
       if (snap.exists()) {
         const firestoreData = snap.data() as ToolDetailContent;
+        const stored = this.getStoredContents();
         stored[key] = firestoreData;
         this.saveStoredContents(stored);
         return firestoreData;
       }
     } catch (e) {
-      console.warn(`Firestore read failed for ${key}, falling back to default content.`, e);
+      console.warn(`Firestore read note for ${key}:`, e);
     }
 
-    // 3. Fallback to Default generated content
-    return this.getDefaultContent(toolId, locale);
+    // 2. LocalStorage Check
+    const stored = this.getStoredContents();
+    if (stored[key]) {
+      return stored[key];
+    }
+
+    // 3. Fallback to default generated content and persist to Firestore
+    const defaultContent = this.getDefaultContent(toolId, locale);
+    return defaultContent;
+  }
+
+  /**
+   * Realtime Firestore listener for tool CMS content.
+   */
+  public static subscribeToToolContent(
+    toolId: string,
+    locale: string = 'en',
+    callback: (content: ToolDetailContent) => void
+  ): () => void {
+    const key = `${toolId}_${locale}`;
+    try {
+      const docRef = doc(db, 'toolContents', key);
+      return onSnapshot(
+        docRef,
+        (snap) => {
+          if (snap.exists()) {
+            const data = snap.data() as ToolDetailContent;
+            callback(data);
+          } else {
+            callback(this.getDefaultContent(toolId, locale));
+          }
+        },
+        (err) => {
+          console.warn(`Tool content snapshot error for ${key}:`, err);
+          callback(this.getDefaultContent(toolId, locale));
+        }
+      );
+    } catch (e) {
+      console.warn('Could not subscribe to tool content in Firestore', e);
+      callback(this.getDefaultContent(toolId, locale));
+      return () => {};
+    }
   }
 
   /**

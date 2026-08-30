@@ -1,0 +1,281 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User account profile including subscription tier, credit balance, and usage statistics.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Unique identifier of the user matching Firebase Auth UID." },
+        "email": { "type": "string", "description": "User email address." },
+        "displayName": { "type": "string", "description": "Display name of the user." },
+        "photoURL": { "type": "string", "description": "Avatar URL of the user." },
+        "avatar": { "type": "string", "description": "Custom avatar or image URL of the user." },
+        "preferredLanguage": { "type": "string", "description": "User preferred interface language code (e.g. en, es, fr, hi, ja)." },
+        "role": { "type": "string", "enum": ["user", "admin"], "description": "User authorization role." },
+        "plan": { "type": "string", "enum": ["free", "starter", "pro", "enterprise"], "description": "Active subscription tier." },
+        "credits": { "type": "number", "description": "Available processing credits." },
+        "usage": { "type": "object", "description": "Daily and monthly processing telemetry statistics." },
+        "privacySettings": { "type": "object", "description": "User privacy and history preferences." },
+        "createdAt": { "type": "number", "description": "Timestamp when the user registered." },
+        "updatedAt": { "type": "number", "description": "Timestamp when the profile was last updated." }
+      },
+      "required": ["uid", "role", "plan", "credits", "createdAt", "updatedAt"]
+    },
+    "CreditLedgerRecord": {
+      "title": "CreditLedgerRecord",
+      "description": "Immutable ledger record of credit deductions, bonuses, and subscription grants.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Transaction identifier." },
+        "userId": { "type": "string", "description": "UID of the user." },
+        "transactionType": { "type": "string", "enum": ["usage", "bonus", "subscription", "purchase", "refund"], "description": "Category of credit mutation." },
+        "amount": { "type": "number", "description": "Amount of credits changed (negative for deduction, positive for grant)." },
+        "balanceAfter": { "type": "number", "description": "Remaining credit balance after transaction." },
+        "description": { "type": "string", "description": "Description or reason for transaction." },
+        "toolId": { "type": "string", "description": "Identifier of the tool used, if applicable." },
+        "jobId": { "type": "string", "description": "Associated job identifier, if applicable." },
+        "metadata": { "type": "object", "description": "Optional arbitrary metadata payload." },
+        "timestamp": { "type": "number", "description": "Epoch timestamp of the transaction." }
+      },
+      "required": ["id", "userId", "transactionType", "amount", "balanceAfter", "description", "timestamp"]
+    },
+    "ProcessingJobRecord": {
+      "title": "ProcessingJobRecord",
+      "description": "Log of completed media processing actions for telemetry and user history.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Job record identifier." },
+        "userId": { "type": "string", "description": "User who ran the job." },
+        "toolId": { "type": "string", "description": "Tool identifier used for processing." },
+        "toolName": { "type": "string", "description": "Human-readable tool title." },
+        "category": { "type": "string", "description": "Tool category." },
+        "processorType": { "type": "string", "enum": ["client", "ai", "wasm"], "description": "Execution engine type." },
+        "inputSize": { "type": "number", "description": "File input size in bytes." },
+        "outputSize": { "type": "number", "description": "File output size in bytes." },
+        "durationMs": { "type": "number", "description": "Execution time in milliseconds." },
+        "creditCost": { "type": "number", "description": "Credits consumed." },
+        "status": { "type": "string", "enum": ["success", "failed"], "description": "Job completion status." },
+        "errorMessage": { "type": "string", "description": "Error details if job failed." },
+        "timestamp": { "type": "number", "description": "Epoch timestamp when the job executed." }
+      },
+      "required": ["id", "userId", "toolId", "processorType", "status", "timestamp"]
+    },
+    "SavedPreset": {
+      "title": "SavedPreset",
+      "description": "User saved tool workflow parameters and options.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Preset identifier." },
+        "userId": { "type": "string", "description": "Owner user UID." },
+        "title": { "type": "string", "description": "Human-readable title for the preset." },
+        "toolId": { "type": "string", "description": "Target tool identifier." },
+        "options": { "type": "object", "description": "Arbitrary parameter settings map." },
+        "isPublic": { "type": "boolean", "description": "Whether preset can be viewed by others." },
+        "createdAt": { "type": "number", "description": "Creation timestamp." }
+      },
+      "required": ["id", "userId", "title", "toolId", "options", "createdAt"]
+    },
+    "ToolDetailContent": {
+      "title": "ToolDetailContent",
+      "description": "Admin-editable rich CMS content, FAQs, SEO metadata, and localized guides for a tool.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique key composed of toolId and locale (e.g. compress-image_en)." },
+        "toolId": { "type": "string", "description": "Target tool ID." },
+        "locale": { "type": "string", "description": "Language code (e.g. en, es, hi)." },
+        "status": { "type": "string", "enum": ["published", "draft", "archived"], "description": "Publishing status." },
+        "seo": { "type": "object", "description": "SEO titles, meta descriptions, and OpenGraph tags." },
+        "introHtml": { "type": "string", "description": "Lead intro HTML content." },
+        "contentHtml": { "type": "string", "description": "Main long-form guide content HTML." },
+        "tags": { "type": "array", "description": "Content tags." },
+        "relatedToolIds": { "type": "array", "description": "IDs of related tools." },
+        "tocEnabled": { "type": "boolean", "description": "Whether table of contents is rendered." },
+        "faqs": { "type": "array", "description": "Array of FAQs." },
+        "metrics": { "type": "object", "description": "Word counts and quality metrics." },
+        "createdAt": { "type": "number", "description": "Creation epoch timestamp." },
+        "updatedAt": { "type": "number", "description": "Last updated epoch timestamp." },
+        "publishedAt": { "type": "number", "description": "Publication epoch timestamp." }
+      },
+      "required": ["id", "toolId", "locale", "status", "seo", "contentHtml", "createdAt", "updatedAt"]
+    },
+    "BlogPostItem": {
+      "title": "BlogPostItem",
+      "description": "Editorial blog post or guide article with rich content, author details, and SEO tags.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Post slug or identifier." },
+        "slug": { "type": "string", "description": "URL slug." },
+        "title": { "type": "string", "description": "Post headline title." },
+        "excerpt": { "type": "string", "description": "Short summary text." },
+        "contentHtml": { "type": "string", "description": "Full HTML body content." },
+        "category": { "type": "string", "description": "Blog topic category." },
+        "tags": { "type": "array", "description": "Search and topic tags." },
+        "author": { "type": "object", "description": "Author name, role, and avatar." },
+        "coverImage": { "type": "string", "description": "Header image URL." },
+        "readTime": { "type": "string", "description": "Estimated reading duration." },
+        "publishedDate": { "type": "string", "description": "Publication date string." },
+        "updatedDate": { "type": "string", "description": "Last updated date string." },
+        "status": { "type": "string", "enum": ["published", "draft", "archived"], "description": "Publication status." },
+        "seo": { "type": "object", "description": "SEO metadata fields." },
+        "views": { "type": "number", "description": "View count." },
+        "featured": { "type": "boolean", "description": "Whether post is pinned/featured." }
+      },
+      "required": ["id", "slug", "title", "contentHtml", "category", "status"]
+    },
+    "ToolCatalogItem": {
+      "title": "ToolCatalogItem",
+      "description": "Dynamic tool definition and registry stored in Firestore.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique tool ID." },
+        "slug": { "type": "string", "description": "Tool slug." },
+        "name": { "type": "string", "description": "Display name." },
+        "shortDescription": { "type": "string", "description": "Short description." },
+        "fullDescription": { "type": "string", "description": "Long description." },
+        "category": { "type": "string", "description": "Tool category." },
+        "processingType": { "type": "string", "description": "Processing method." },
+        "icon": { "type": "string", "description": "Lucide icon name." },
+        "route": { "type": "string", "description": "App route path." },
+        "creditCost": { "type": "number", "description": "Cost in credits." },
+        "isPopular": { "type": "boolean", "description": "Whether highlighted as popular." },
+        "isAi": { "type": "boolean", "description": "Whether uses AI logic." },
+        "isPremiumOnly": { "type": "boolean", "description": "Whether locked to paid tiers." },
+        "maintenanceMode": { "type": "boolean", "description": "Whether currently under maintenance." },
+        "supportedFormats": { "type": "array", "description": "Supported MIME types." },
+        "maxFileSizeMB": { "type": "number", "description": "Max allowed file size." }
+      },
+      "required": ["id", "slug", "name", "category", "route"]
+    },
+    "SeoMetadataEntry": {
+      "title": "SeoMetadataEntry",
+      "description": "Dynamic SEO and AEO metadata for a specific route or tool.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Route key or tool slug." },
+        "route": { "type": "string", "description": "Target route path." },
+        "title": { "type": "string", "description": "SEO page title." },
+        "metaDescription": { "type": "string", "description": "Meta description." },
+        "keywords": { "type": "array", "description": "Target keywords." },
+        "h1": { "type": "string", "description": "H1 page title." },
+        "canonicalUrl": { "type": "string", "description": "Canonical URL." },
+        "ogTitle": { "type": "string", "description": "OpenGraph title." },
+        "ogDescription": { "type": "string", "description": "OpenGraph description." },
+        "quickAnswer": { "type": "string", "description": "Direct AEO summary answer." },
+        "schemaType": { "type": "string", "description": "Schema.org type." },
+        "indexable": { "type": "boolean", "description": "Whether indexed by crawlers." }
+      },
+      "required": ["id", "route", "title", "metaDescription"]
+    },
+    "SystemSettings": {
+      "title": "SystemSettings",
+      "description": "Global SaaS system settings including site name, maintenance mode, traffic rate limits, and analytics.",
+      "type": "object",
+      "properties": {
+        "siteName": { "type": "string", "description": "Public branding website name." },
+        "siteUrl": { "type": "string", "description": "Canonical base website URL." },
+        "supportEmail": { "type": "string", "description": "Public support email address." },
+        "logoUrl": { "type": "string", "description": "Custom logo image URL." },
+        "defaultCurrency": { "type": "string", "description": "Default subscription and billing currency." },
+        "defaultPlan": { "type": "string", "description": "Default registered user plan tier." },
+        "anonymousDailyLimit": { "type": "number", "description": "Max daily jobs for guests." },
+        "registeredFreeDailyLimit": { "type": "number", "description": "Max daily jobs for free registered users." },
+        "anonymousMaxFileSizeMB": { "type": "number", "description": "Max input file size in MB for anonymous visitors." },
+        "anonymousMaxBatch": { "type": "number", "description": "Max batch count for anonymous visitors." },
+        "maintenanceMode": { "type": "boolean", "description": "Global platform maintenance mode lock." },
+        "maintenanceNotice": { "type": "string", "description": "Notice message displayed to visitors during maintenance." },
+        "allowedMaintenanceToolIds": { "type": "array", "description": "Tool IDs allowed during maintenance." },
+        "emergencyAiDisabled": { "type": "boolean", "description": "Kill switch for AI operations." },
+        "emergencyBatchDisabled": { "type": "boolean", "description": "Kill switch for batch operations." },
+        "emergencyLimitsReduced": { "type": "boolean", "description": "Emergency throttle mode." },
+        "rateLimitNormalReqPerMin": { "type": "number", "description": "Rate limit per minute for standard operations." },
+        "rateLimitHeavyReqPerMin": { "type": "number", "description": "Rate limit per minute for heavy operations." },
+        "rateLimitAiReqPerMin": { "type": "number", "description": "Rate limit per minute for AI operations." },
+        "googleAdsClient": { "type": "string", "description": "Google AdSense client publisher ID." },
+        "googleAnalyticsId": { "type": "string", "description": "Google Analytics tracking ID (GA4)." },
+        "adBlockNoticeEnabled": { "type": "boolean", "description": "Whether to show anti-adblock notices." }
+      },
+      "required": ["siteName", "siteUrl", "maintenanceMode", "maintenanceNotice"]
+    },
+    "ToolUsageStat": {
+      "title": "ToolUsageStat",
+      "description": "Aggregated tool usage metrics and count records.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Stat identifier (toolId or toolId_date)." },
+        "toolId": { "type": "string", "description": "Target tool ID." },
+        "toolName": { "type": "string", "description": "Display name of the tool." },
+        "category": { "type": "string", "description": "Tool category." },
+        "usageCount": { "type": "number", "description": "Total execution count." },
+        "successCount": { "type": "number", "description": "Successful job count." },
+        "failureCount": { "type": "number", "description": "Failed job count." },
+        "totalBytesProcessed": { "type": "number", "description": "Total data processed in bytes." },
+        "avgDurationMs": { "type": "number", "description": "Average execution time in ms." },
+        "lastUsedAt": { "type": "number", "description": "Timestamp of most recent execution." },
+        "isAi": { "type": "boolean", "description": "Whether the tool utilizes AI neural models." }
+      },
+      "required": ["id", "toolId", "toolName", "usageCount"]
+    },
+    "UserFavorites": {
+      "title": "UserFavorites",
+      "description": "User favorited tools list persisted across sessions and devices.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Document ID matching userId." },
+        "userId": { "type": "string", "description": "UID of the user." },
+        "toolIds": { "type": "array", "description": "List of favorite tool IDs." },
+        "updatedAt": { "type": "number", "description": "Timestamp of last modification." }
+      },
+      "required": ["id", "userId", "toolIds", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Individual user profiles, plan status, and credit balance."
+    },
+    "/favorites/{favoriteId}": {
+      "schema": "UserFavorites",
+      "description": "User favorited tools records for cross-device synchronization."
+    },
+    "/credit_ledger/{ledgerId}": {
+      "schema": "CreditLedgerRecord",
+      "description": "Immutable ledger of all user credit mutations."
+    },
+    "/processing_jobs/{jobId}": {
+      "schema": "ProcessingJobRecord",
+      "description": "Historical processing jobs."
+    },
+    "/presets/{presetId}": {
+      "schema": "SavedPreset",
+      "description": "User saved tool parameters and presets."
+    },
+    "/tools/{toolId}": {
+      "schema": "ToolCatalogItem",
+      "description": "Dynamic tool catalog configurations and attributes."
+    },
+    "/toolContents/{contentId}": {
+      "schema": "ToolDetailContent",
+      "description": "Admin tool CMS content with SEO, guides, and FAQs."
+    },
+    "/blogs/{blogId}": {
+      "schema": "BlogPostItem",
+      "description": "Public blog posts, editorial tutorials, and format guides stored in blogs collection."
+    },
+    "/blog_posts/{postId}": {
+      "schema": "BlogPostItem",
+      "description": "Public blog posts, tutorials, and format guides."
+    },
+    "/seo_entries/{entryId}": {
+      "schema": "SeoMetadataEntry",
+      "description": "Dynamic SEO & AEO metadata overrides."
+    },
+    "/system_settings/{settingId}": {
+      "schema": "SystemSettings",
+      "description": "Global SaaS system configuration including site name, maintenance mode, and traffic limits."
+    },
+    "/tool_usage_stats/{statId}": {
+      "schema": "ToolUsageStat",
+      "description": "Aggregated tool analytics and execution counts stored in Firestore."
+    }
+  }
+}

@@ -1,15 +1,27 @@
-import { onAuthStateChanged, signOut, User } from 'firebase/auth';
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import {
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  signOut,
+  updateProfile,
+  User,
+} from 'firebase/auth';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { DEFAULT_AD_SLOTS } from '../config/adSlots';
 import { DEFAULT_FEATURE_FLAGS } from '../config/featureFlags';
-import { auth } from '../config/firebase';
+import { auth, googleProvider } from '../config/firebase';
 import { DEFAULT_PLANS, IPaymentProvider, MockPaymentProviderAdapter } from '../config/plans';
 import { DEFAULT_SYSTEM_SETTINGS } from '../config/systemSettings';
 import { AbusePreventionService } from '../services/AbusePreventionService';
 import { SaaSDataService } from '../services/SaaSDataService';
-import { PRIMARY_COLOR_PRESETS } from '../components/common/CustomizerDrawer';
+import { DynamicToolService } from '../services/DynamicToolService';
+import { DynamicSeoService } from '../services/DynamicSeoService';
+import { PRIMARY_COLOR_PRESETS, applyGlobalThemeVariables } from '../utils/themeHelper';
 import { RateLimitCheckResult, TrafficProtectionService } from '../services/TrafficProtectionService';
-import { HistoryItem, UserCredits } from '../types';
+import { HistoryItem, ToolDefinition, UserCredits } from '../types';
+import { ToolSeoEntry } from '../types/seo';
 import {
   FeatureFlag,
   SystemSettings,
@@ -57,16 +69,35 @@ interface AppContextType {
   setSidebarTheme: (st: 'default' | 'dark' | 'light' | 'gradient') => void;
   resetThemeConfig: () => void;
 
-  // SaaS Auth & User Profile
+  // Dynamic Tools & SEO Catalog
+  tools: ToolDefinition[];
+  getToolBySlug: (slug: string) => ToolDefinition | undefined;
+  getToolByRoute: (route: string) => ToolDefinition | undefined;
+  getToolsByCategory: (category: string) => ToolDefinition[];
+  getSeoForRoute: (route: string) => Partial<ToolSeoEntry> | undefined;
+
+  // SaaS Auth & User Profile (Firestore 'users' collection & Firebase Auth)
   user: User | null;
   userProfile: UserProfile | null;
+  signInWithEmail: (email: string, password: string) => Promise<User>;
+  signUpWithEmail: (email: string, password: string, displayName?: string) => Promise<User>;
+  signInWithGoogle: () => Promise<User>;
+  sendPasswordReset: (email: string) => Promise<void>;
+  updateUserProfile: (updates: Partial<UserProfile>) => Promise<boolean>;
+  updateUserPreferences: (prefs: {
+    displayName?: string;
+    photoURL?: string;
+    avatar?: string;
+    preferredLanguage?: string;
+    privacySettings?: Partial<UserProfile['privacySettings']>;
+  }) => Promise<boolean>;
+  refreshUserProfile: () => Promise<void>;
   isAuthModalOpen: boolean;
   setIsAuthModalOpen: (open: boolean) => void;
-  authModalMode: 'signin' | 'signup';
-  setAuthModalMode: (mode: 'signin' | 'signup') => void;
-  openAuthModal: (mode?: 'signin' | 'signup') => void;
+  authModalMode: 'signin' | 'signup' | 'forgot_password';
+  setAuthModalMode: (mode: 'signin' | 'signup' | 'forgot_password') => void;
+  openAuthModal: (mode?: 'signin' | 'signup' | 'forgot_password') => void;
   logout: () => Promise<void>;
-  loginWithLocalAuth: (email: string, displayName?: string) => void;
   isAdmin: boolean;
 
   // SaaS Credits & Ledger
@@ -115,11 +146,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signin');
+  const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup' | 'forgot_password'>('signin');
 
   const [creditLedger, setCreditLedger] = useState<CreditLedgerRecord[]>([]);
   const [processingJobs, setProcessingJobs] = useState<ProcessingJobRecord[]>([]);
   const [presets, setPresets] = useState<SavedPreset[]>([]);
+
+  // Dynamic Tools & SEO state
+  const [tools, setTools] = useState<ToolDefinition[]>(() => DynamicToolService.getAllTools());
+
+  useEffect(() => {
+    const unsub = DynamicToolService.subscribe((updated) => {
+      setTools([...updated]);
+    });
+    return unsub;
+  }, []);
+
+  const getToolBySlug = useCallback((slug: string) => DynamicToolService.getToolBySlug(slug), [tools]);
+  const getToolByRoute = useCallback((route: string) => DynamicToolService.getToolByRoute(route), [tools]);
+  const getToolsByCategory = useCallback((category: string) => DynamicToolService.getToolsByCategory(category), [tools]);
+  const getSeoForRoute = useCallback((route: string) => DynamicSeoService.getSeoForRoute(route), []);
 
   const [systemSettings, setSystemSettings] = useState<SystemSettings>(DEFAULT_SYSTEM_SETTINGS);
   const [featureFlags, setFeatureFlags] = useState<FeatureFlag[]>(DEFAULT_FEATURE_FLAGS);
@@ -185,30 +231,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Dynamic DOM theme & design tokens synchronization
   useEffect(() => {
-    const root = document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-      root.style.colorScheme = 'dark';
-    } else {
-      root.classList.remove('dark');
-      root.style.colorScheme = 'light';
-    }
-
-    // Radius & Primary Color HSL sync
-    root.style.setProperty('--radius', `${radius}px`);
-    const preset = PRIMARY_COLOR_PRESETS.find((p) => p.id === primaryColor) || PRIMARY_COLOR_PRESETS[0];
-    const primaryHsl = theme === 'dark' ? preset.darkValue : preset.value;
-    const primaryHue = primaryHsl.split(' ')[0];
-    root.style.setProperty('--primary', primaryHsl);
-    root.style.setProperty('--ring', primaryHsl);
-    root.style.setProperty(
-      '--accent',
-      theme === 'dark' ? `${primaryHue} 30% 15%` : `${primaryHue} 100% 97%`
-    );
-    root.style.setProperty(
-      '--accent-foreground',
-      theme === 'dark' ? `${primaryHue} 90% 80%` : `${primaryHue} 90% 40%`
-    );
+    applyGlobalThemeVariables({
+      theme,
+      primaryColor,
+      radius,
+      sidebarTheme,
+    });
 
     try {
       localStorage.setItem('aetherpix_theme', theme);
@@ -229,47 +257,66 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setSidebarTheme('dark');
   };
 
-  // Load global system configs and flags
+  // Real-time listener for the 'system_settings' Firestore document ('global' doc ID)
   useEffect(() => {
-    const initSystem = async () => {
+    const unsubscribe = SaaSDataService.subscribeToSystemSettings((liveSettings) => {
+      setSystemSettings(liveSettings);
+
+      // Dynamically sync theme, accent/primary color, radius, and sidebar variables globally in real-time
+      if (liveSettings.theme) {
+        if (liveSettings.theme === 'system') {
+          const systemIsDark = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          setTheme(systemIsDark ? 'dark' : 'light');
+        } else {
+          setTheme(liveSettings.theme);
+        }
+      }
+
+      if (liveSettings.primaryColor || liveSettings.accentColor) {
+        setPrimaryColor(liveSettings.primaryColor || liveSettings.accentColor || 'purple');
+      }
+
+      if (typeof liveSettings.radius === 'number') {
+        setRadius(liveSettings.radius);
+      }
+
+      if (liveSettings.sidebarTheme) {
+        setSidebarTheme(liveSettings.sidebarTheme);
+      }
+
+      // Immediately apply CSS variables to the document root in real time
+      applyGlobalThemeVariables({
+        theme: liveSettings.theme,
+        primaryColor: liveSettings.primaryColor || liveSettings.accentColor,
+        radius: liveSettings.radius,
+        sidebarTheme: liveSettings.sidebarTheme,
+      });
+    });
+
+    // Also fetch initial feature flags and ad slots
+    const fetchOtherConfigs = async () => {
       try {
-        const [settings, flags, ads] = await Promise.all([
-          SaaSDataService.getSystemSettings(),
+        const [flags, ads] = await Promise.all([
           SaaSDataService.getFeatureFlags(),
           SaaSDataService.getAdSlots(),
         ]);
-        setSystemSettings(settings);
         setFeatureFlags(flags);
         setAdSlots(ads);
       } catch (err) {
-        console.warn('Using local configuration defaults', err);
+        console.warn('Config fetch error', err);
       }
     };
-    initSystem();
+    fetchOtherConfigs();
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   // DEV Admin emails list
   const DEV_ADMIN_EMAILS = ['chintandudhat1286@gmail.com', 'unusualgamerz16@gmail.com'];
 
-  // Restore Local User Session on mount
-  useEffect(() => {
-    try {
-      const savedSession = localStorage.getItem('aetherpix_user_session');
-      if (savedSession) {
-        const profile = JSON.parse(savedSession) as UserProfile;
-        setUserProfile(profile);
-        setUser({
-          uid: profile.uid,
-          email: profile.email,
-          displayName: profile.displayName,
-        } as User);
-      }
-    } catch (e) {
-      console.warn('Error reading saved session', e);
-    }
-  }, []);
-
-  // Firebase Auth State Listener
+  // Firebase Auth State Listener (Single source of truth for user session)
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
@@ -289,11 +336,64 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         } catch (err) {
           console.warn('Firebase profile fetch warning', err);
         }
+      } else {
+        setUser(null);
+        setUserProfile(null);
       }
     });
 
     return () => unsubscribe();
   }, []);
+
+  // Real-time Firestore 'users' collection listener for UserProfile
+  useEffect(() => {
+    if (!user?.uid) return;
+
+    let isSubscribed = true;
+    const unsubscribe = SaaSDataService.subscribeToUserProfile(user.uid, (cloudProfile) => {
+      if (!isSubscribed) return;
+      if (cloudProfile) {
+        setUserProfile(cloudProfile);
+      }
+    });
+
+    return () => {
+      isSubscribed = false;
+      unsubscribe();
+    };
+  }, [user?.uid]);
+
+  // Cross-device User Favorites Listener via Firestore 'favorites' collection
+  useEffect(() => {
+    if (!user?.uid) return;
+
+    let isSubscribed = true;
+    const unsubscribe = SaaSDataService.subscribeToUserFavorites(user.uid, (cloudFavorites) => {
+      if (!isSubscribed) return;
+      if (cloudFavorites && Array.isArray(cloudFavorites)) {
+        if (cloudFavorites.length > 0) {
+          setFavorites(cloudFavorites);
+          try {
+            localStorage.setItem('aetherpix_favorites', JSON.stringify(cloudFavorites));
+          } catch {}
+        } else {
+          // If user has local favorites, migrate them to cloud favorites collection
+          try {
+            const saved = localStorage.getItem('aetherpix_favorites');
+            const localFavs: string[] = saved ? JSON.parse(saved) : [];
+            if (localFavs.length > 0) {
+              SaaSDataService.updateUserFavorites(user.uid, localFavs);
+            }
+          } catch {}
+        }
+      }
+    });
+
+    return () => {
+      isSubscribed = false;
+      unsubscribe();
+    };
+  }, [user?.uid]);
 
   // History & routing
   useEffect(() => {
@@ -334,60 +434,81 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  const openAuthModal = (mode: 'signin' | 'signup' = 'signin') => {
+  const openAuthModal = (mode: 'signin' | 'signup' | 'forgot_password' = 'signin') => {
     setAuthModalMode(mode);
     setIsAuthModalOpen(true);
   };
 
-  const loginWithLocalAuth = (emailInput: string, nameInput?: string) => {
-    const cleanEmail = emailInput.trim().toLowerCase();
-    const isAdminEmail = DEV_ADMIN_EMAILS.includes(cleanEmail);
-    const role = isAdminEmail ? 'admin' : 'user';
-
-    const mockProfile: UserProfile = {
-      uid: `user-${role}-${cleanEmail.replace(/[^a-z0-9]/g, '_')}`,
-      email: cleanEmail,
-      displayName: nameInput || (cleanEmail.includes('@') ? cleanEmail.split('@')[0] : 'User'),
-      photoURL: null,
-      role,
-      plan: role === 'admin' ? 'business' : 'free',
-      credits: role === 'admin' ? 9999 : 50,
-      usage: {
-        todayProcessedCount: 0,
-        todayAiCount: 0,
-        monthProcessedCount: 0,
-        monthAiCount: 0,
-        totalProcessedCount: 0,
-        lastActiveDate: new Date().toISOString().split('T')[0],
-        currentMonth: new Date().toISOString().substring(0, 7),
-      },
-      privacySettings: { telemetryOptIn: true, autoPurgeHistoryMinutes: 0 },
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
-
-    setUserProfile(mockProfile);
-    setUser({
-      uid: mockProfile.uid,
-      email: mockProfile.email,
-      displayName: mockProfile.displayName,
-    } as User);
-
-    try {
-      localStorage.setItem('aetherpix_user_session', JSON.stringify(mockProfile));
-    } catch (e) {
-      console.error(e);
+  const signInWithEmail = async (emailInput: string, passwordInput: string): Promise<User> => {
+    const cred = await signInWithEmailAndPassword(auth, emailInput.trim(), passwordInput);
+    if (cred.user) {
+      const profile = await SaaSDataService.getOrCreateUserProfile(
+        cred.user.uid,
+        cred.user.email,
+        cred.user.displayName,
+        cred.user.photoURL
+      );
+      setUser(cred.user);
+      setUserProfile(profile);
     }
+    return cred.user;
+  };
+
+  const signUpWithEmail = async (
+    emailInput: string,
+    passwordInput: string,
+    nameInput?: string
+  ): Promise<User> => {
+    const cleanEmail = emailInput.trim();
+    const cleanName = (nameInput || '').trim() || cleanEmail.split('@')[0];
+    const cred = await createUserWithEmailAndPassword(auth, cleanEmail, passwordInput);
+    if (cred.user) {
+      try {
+        await updateProfile(cred.user, { displayName: cleanName });
+      } catch (profileErr) {
+        console.warn('Could not update Firebase user displayName', profileErr);
+      }
+      const profile = await SaaSDataService.getOrCreateUserProfile(
+        cred.user.uid,
+        cleanEmail,
+        cleanName,
+        null
+      );
+      setUser(cred.user);
+      setUserProfile(profile);
+    }
+    return cred.user;
+  };
+
+  const signInWithGoogle = async (): Promise<User> => {
+    const result = await signInWithPopup(auth, googleProvider);
+    if (result.user) {
+      const profile = await SaaSDataService.getOrCreateUserProfile(
+        result.user.uid,
+        result.user.email,
+        result.user.displayName,
+        result.user.photoURL
+      );
+      setUser(result.user);
+      setUserProfile(profile);
+    }
+    return result.user;
+  };
+
+  const sendPasswordReset = async (emailInput: string): Promise<void> => {
+    await sendPasswordResetEmail(auth, emailInput.trim());
   };
 
   const logout = async () => {
-    setUserProfile(null);
-    setUser(null);
     try {
-      localStorage.removeItem('aetherpix_user_session');
       await signOut(auth);
-    } catch {}
-    showToast('Signed out successfully.', 'info');
+    } catch (err) {
+      console.warn('Sign out error', err);
+    } finally {
+      setUserProfile(null);
+      setUser(null);
+      showToast('Signed out successfully.', 'info');
+    }
   };
 
   // Derive current plan configuration
@@ -405,6 +526,95 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const isAdmin =
     userProfile?.role === 'admin' ||
     (user?.email ? DEV_ADMIN_EMAILS.includes(user.email.toLowerCase()) : false);
+
+  const refreshUserProfile = async () => {
+    if (!user?.uid) return;
+    try {
+      const profile = await SaaSDataService.getUserProfile(user.uid);
+      if (profile) {
+        setUserProfile(profile);
+      }
+    } catch (e) {
+      console.warn('Could not refresh user profile', e);
+    }
+  };
+
+  const updateUserProfile = async (updates: Partial<UserProfile>): Promise<boolean> => {
+    if (!user?.uid) {
+      showToast('Please sign in to update your profile.', 'error');
+      return false;
+    }
+
+    try {
+      const normalizedUpdates: Partial<UserProfile> = { ...updates };
+      if (updates.avatar && !updates.photoURL) {
+        normalizedUpdates.photoURL = updates.avatar;
+      } else if (updates.photoURL && !updates.avatar) {
+        normalizedUpdates.avatar = updates.photoURL;
+      }
+
+      // Optimistic update of local userProfile state
+      setUserProfile((prev) => (prev ? { ...prev, ...normalizedUpdates, updatedAt: Date.now() } : null));
+
+      if (normalizedUpdates.displayName !== undefined || normalizedUpdates.photoURL !== undefined || normalizedUpdates.avatar !== undefined) {
+        setUser((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            displayName: normalizedUpdates.displayName !== undefined ? normalizedUpdates.displayName : prev.displayName,
+            photoURL: normalizedUpdates.photoURL !== undefined ? normalizedUpdates.photoURL : (normalizedUpdates.avatar || prev.photoURL),
+          } as User;
+        });
+      }
+
+      // 1. Write to Firestore 'users' collection
+      const success = await SaaSDataService.updateUserAccountSettings(user.uid, normalizedUpdates);
+
+      // 2. Sync Firebase Auth user token if available
+      if (auth.currentUser && (normalizedUpdates.displayName !== undefined || normalizedUpdates.photoURL !== undefined)) {
+        try {
+          await updateProfile(auth.currentUser, {
+            displayName: normalizedUpdates.displayName !== undefined ? (normalizedUpdates.displayName || '') : auth.currentUser.displayName,
+            photoURL: normalizedUpdates.photoURL !== undefined ? (normalizedUpdates.photoURL || undefined) : (auth.currentUser.photoURL || undefined),
+          });
+        } catch (authErr) {
+          console.warn('Firebase Auth updateProfile warning', authErr);
+        }
+      }
+
+      if (success) {
+        showToast('Profile updated successfully in Firestore', 'success');
+      } else {
+        showToast('Failed to save profile changes to cloud', 'error');
+      }
+      return success;
+    } catch (e) {
+      console.error('Error updating user profile in Firestore', e);
+      showToast('Failed to update profile settings', 'error');
+      return false;
+    }
+  };
+
+  const updateUserPreferences = async (prefs: {
+    displayName?: string;
+    photoURL?: string;
+    avatar?: string;
+    preferredLanguage?: string;
+    privacySettings?: Partial<UserProfile['privacySettings']>;
+  }): Promise<boolean> => {
+    const payload: Partial<UserProfile> = {};
+    if (prefs.displayName !== undefined) payload.displayName = prefs.displayName;
+    if (prefs.photoURL !== undefined) payload.photoURL = prefs.photoURL;
+    if (prefs.avatar !== undefined) payload.avatar = prefs.avatar;
+    if (prefs.preferredLanguage !== undefined) payload.preferredLanguage = prefs.preferredLanguage;
+    if (prefs.privacySettings !== undefined) {
+      payload.privacySettings = {
+        ...(userProfile?.privacySettings || { telemetryOptIn: true, autoPurgeHistoryMinutes: 0 }),
+        ...prefs.privacySettings,
+      };
+    }
+    return updateUserProfile(payload);
+  };
 
   const refreshLedger = async (uid?: string) => {
     const targetUid = uid || user?.uid;
@@ -450,10 +660,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateSystemSettings = async (newSettings: Partial<SystemSettings>): Promise<boolean> => {
+    // Optimistically apply theme/accent color if present
+    if (newSettings.theme || newSettings.primaryColor || newSettings.accentColor || typeof newSettings.radius === 'number' || newSettings.sidebarTheme) {
+      applyGlobalThemeVariables({
+        theme: newSettings.theme || theme,
+        primaryColor: newSettings.primaryColor || newSettings.accentColor || primaryColor,
+        radius: typeof newSettings.radius === 'number' ? newSettings.radius : radius,
+        sidebarTheme: newSettings.sidebarTheme || sidebarTheme,
+      });
+    }
+
     const ok = await SaaSDataService.updateSystemSettings(newSettings, user?.email || 'admin');
     if (ok) {
       setSystemSettings((prev) => ({ ...prev, ...newSettings }));
-      showToast('System settings updated successfully', 'success');
+      showToast('System settings updated successfully and broadcasted in real-time', 'success');
       return true;
     }
     showToast('Failed to update system settings', 'error');
@@ -571,14 +791,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const checkResolution = (w: number, h: number) => AbusePreventionService.validateResolution(w, h, activePlanConfig);
   const checkAiQuota = () => AbusePreventionService.checkAiRateLimit(user?.uid || 'guest', activePlanConfig);
 
-  const toggleFavorite = (toolId: string) => {
-    setFavorites((prev) => {
-      const next = prev.includes(toolId) ? prev.filter((id) => id !== toolId) : [...prev, toolId];
+  const toggleFavorite = async (toolId: string) => {
+    const isAdding = !favorites.includes(toolId);
+    const next = isAdding
+      ? [...favorites, toolId]
+      : favorites.filter((id) => id !== toolId);
+
+    setFavorites(next);
+    try {
+      localStorage.setItem('aetherpix_favorites', JSON.stringify(next));
+    } catch {}
+
+    if (user?.uid) {
       try {
-        localStorage.setItem('aetherpix_favorites', JSON.stringify(next));
-      } catch {}
-      return next;
-    });
+        await SaaSDataService.updateUserFavorites(user.uid, next);
+      } catch (err) {
+        console.warn('Failed to sync favorite to Firestore', err);
+      }
+    }
+
+    showToast(isAdding ? 'Added to favorites' : 'Removed from favorites', 'info');
   };
 
   const isFavorite = (toolId: string) => favorites.includes(toolId);
@@ -642,15 +874,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         sidebarTheme,
         setSidebarTheme,
         resetThemeConfig,
+        tools,
+        getToolBySlug,
+        getToolByRoute,
+        getToolsByCategory,
+        getSeoForRoute,
         user,
         userProfile,
+        signInWithEmail,
+        signUpWithEmail,
+        signInWithGoogle,
+        sendPasswordReset,
+        updateUserProfile,
+        updateUserPreferences,
+        refreshUserProfile,
         isAuthModalOpen,
         setIsAuthModalOpen,
         authModalMode,
         setAuthModalMode,
         openAuthModal,
         logout,
-        loginWithLocalAuth,
         isAdmin,
         credits,
         activePlanConfig,

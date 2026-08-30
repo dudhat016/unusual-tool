@@ -54,6 +54,7 @@ export interface UserProfile {
   email: string | null;
   displayName: string | null;
   photoURL: string | null;
+  avatar?: string | null;
   role: UserRole;
   plan: PlanTier;
   credits: number;
@@ -106,6 +107,14 @@ export interface SavedPreset {
   options: Record<string, any>;
   isPublic?: boolean;
   createdAt: number;
+}
+
+export interface UserFavoritesDoc {
+  id: string;
+  userId: string;
+  toolIds: string[];
+  updatedAt: number;
+  createdAt?: number;
 }
 
 export interface SystemErrorLog {

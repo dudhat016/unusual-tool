@@ -1,6 +1,7 @@
 import {
   Activity,
   ArrowLeft,
+  BarChart3,
   CheckCircle2,
   CreditCard,
   FileText,
@@ -10,6 +11,7 @@ import {
   Menu,
   Radio,
   Search,
+  Settings,
   Shield,
   ShieldAlert,
   Users,
@@ -62,6 +64,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
       exact: true,
     },
     {
+      label: 'Tool Usage Analytics',
+      path: '/admin/analytics',
+      icon: BarChart3,
+    },
+    {
       label: 'User Management',
       path: '/admin/users',
       icon: Users,
@@ -99,12 +106,22 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
       path: '/admin/flags',
       icon: Flag,
     },
+    {
+      label: 'i18n & Translations',
+      path: '/admin/translations',
+      icon: Globe,
+    },
 
     { sectionTitle: 'SYSTEM DIAGNOSTICS' },
     {
       label: 'SEO Diagnostic Dashboard',
       path: '/admin/seo',
       icon: Globe,
+    },
+    {
+      label: 'System Configuration',
+      path: '/admin/settings',
+      icon: Settings,
     },
     {
       label: 'UI Kit & Design System',
@@ -153,7 +170,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           onToggleCollapse={() => setCollapsed((v) => !v)}
           bottomSection={adminFooterWidget}
           onNavigate={handleNavClick}
-          currentPath={`/admin?tab=${activeTab}`}
+          currentPath={activeTab === 'overview' ? '/admin' : `/admin/${activeTab}`}
         />
       </div>
 
@@ -181,7 +198,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                 onClose={() => setIsMobileOpen(false)}
                 bottomSection={adminFooterWidget}
                 onNavigate={handleNavClick}
-                currentPath={`/admin?tab=${activeTab}`}
+                currentPath={activeTab === 'overview' ? '/admin' : `/admin/${activeTab}`}
               />
             </motion.div>
           </>

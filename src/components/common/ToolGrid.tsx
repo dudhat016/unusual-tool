@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
+import { useApp } from '../../context/AppContext';
 import { ToolDefinition, ToolCategory } from '../../types';
-import { TOOL_CATEGORIES, TOOLS_REGISTRY } from '../../config/tools';
+import { TOOL_CATEGORIES } from '../../config/tools';
 import { ToolCard } from './ToolCard';
 import { Input } from '../ui/Input';
 import { Search, Filter, Sparkles, Zap, Layers } from 'lucide-react';
@@ -22,12 +23,13 @@ export const ToolGrid: React.FC<ToolGridProps> = ({
   limit,
   featuredOnly = false,
 }) => {
+  const { tools } = useApp();
   const [selectedCategory, setSelectedCategory] = useState<ToolCategory>(initialCategory);
   const [searchQuery, setSearchQuery] = useState('');
   const [processingFilter, setProcessingFilter] = useState<'all' | 'browser' | 'ai'>('all');
 
   const filteredTools = useMemo(() => {
-    let result = TOOLS_REGISTRY;
+    let result = tools;
 
     if (featuredOnly) {
       result = result.filter((t) => t.isPopular || t.isAi);

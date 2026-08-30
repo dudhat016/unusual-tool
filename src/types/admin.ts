@@ -59,6 +59,11 @@ export interface SystemSettings {
   googleAdsClient?: string;
   googleAnalyticsId?: string;
   adBlockNoticeEnabled: boolean;
+  theme?: 'light' | 'dark' | 'system';
+  primaryColor?: string;
+  accentColor?: string;
+  radius?: number;
+  sidebarTheme?: 'default' | 'dark' | 'light' | 'gradient';
 }
 
 export interface AdminAuditLog {
@@ -71,6 +76,20 @@ export interface AdminAuditLog {
   newValue?: any;
   timestamp: number;
   ip?: string;
+}
+
+export interface ToolUsageStatItem {
+  id: string;
+  toolId: string;
+  toolName: string;
+  category: string;
+  usageCount: number;
+  successCount: number;
+  failureCount: number;
+  totalBytesProcessed: number;
+  avgDurationMs: number;
+  lastUsedAt: number;
+  isAi?: boolean;
 }
 
 export interface TrafficAnalyticsSnapshot {

@@ -2,7 +2,6 @@ import { ArrowRight, Search, Sparkles, X } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { POPULAR_CONVERTER_PAIRS } from '../../config/converterTools';
 import { EXACT_TARGET_SIZE_ITEMS } from '../../config/targetSizeTools';
-import { TOOLS_REGISTRY } from '../../config/tools';
 import { useApp } from '../../context/AppContext';
 import { DynamicIcon } from './DynamicIcon';
 import { Link } from './Link';
@@ -20,7 +19,7 @@ interface SearchResultItem {
 }
 
 export const QuickSearchModal: React.FC = () => {
-  const { isSearchOpen, setIsSearchOpen, navigate } = useApp();
+  const { isSearchOpen, setIsSearchOpen, navigate, tools } = useApp();
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -34,7 +33,7 @@ export const QuickSearchModal: React.FC = () => {
 
   // Combined searchable index
   const allSearchItems = useMemo<SearchResultItem[]>(() => {
-    const mainTools: SearchResultItem[] = TOOLS_REGISTRY.map((t) => ({
+    const mainTools: SearchResultItem[] = tools.map((t) => ({
       id: `tool-${t.id}`,
       name: t.name,
       description: t.shortDescription,

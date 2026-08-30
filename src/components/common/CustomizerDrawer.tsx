@@ -13,17 +13,9 @@ import {
   ChevronLeft,
   Globe,
 } from 'lucide-react';
+import { PRIMARY_COLOR_PRESETS, RADIUS_PRESETS } from '../../utils/themeHelper';
 
-export const PRIMARY_COLOR_PRESETS = [
-  { id: 'purple', label: 'Royal Purple', value: '258 90% 56%', darkValue: '258 78% 63%', hex: '#8B5CF6' },
-  { id: 'indigo', label: 'Deep Indigo', value: '238 84% 59%', darkValue: '238 84% 65%', hex: '#6366F1' },
-  { id: 'emerald', label: 'Emerald Green', value: '158 64% 45%', darkValue: '158 64% 52%', hex: '#10B981' },
-  { id: 'rose', label: 'Vibrant Rose', value: '346 84% 61%', darkValue: '346 84% 65%', hex: '#F43F5E' },
-  { id: 'amber', label: 'Amber Gold', value: '38 92% 50%', darkValue: '38 92% 55%', hex: '#F59E0B' },
-  { id: 'cyan', label: 'Ocean Cyan', value: '199 89% 48%', darkValue: '199 89% 55%', hex: '#06B6D4' },
-];
-
-export const RADIUS_PRESETS = [0, 4, 8, 12, 16];
+export { PRIMARY_COLOR_PRESETS, RADIUS_PRESETS };
 
 export const CustomizerDrawer: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);

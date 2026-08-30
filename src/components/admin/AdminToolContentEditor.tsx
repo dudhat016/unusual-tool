@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { VisualRichTextEditor } from './VisualRichTextEditor';
-import { ALL_TOOLS } from '../../config/tools';
+import { DynamicToolService } from '../../services/DynamicToolService';
 import { ToolContentService } from '../../services/ToolContentService';
 import { ToolDetailContent, ToolFaqItem } from '../../types/toolCms';
 import { extractTocHeadings } from '../common/TableOfContents';
@@ -60,7 +60,10 @@ export const AdminToolContentEditor: React.FC<AdminToolContentEditorProps> = ({
   onBack,
   showToast,
 }) => {
-  const tool = useMemo(() => ALL_TOOLS.find((t) => t.id === toolId || t.slug === toolId), [toolId]);
+  const tool = useMemo(
+    () => DynamicToolService.getToolBySlug(toolId) || DynamicToolService.getToolById(toolId),
+    [toolId]
+  );
 
   const [locale, setLocale] = useState('en');
   const [content, setContent] = useState<ToolDetailContent | null>(null);

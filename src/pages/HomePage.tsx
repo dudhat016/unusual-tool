@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { TOOLS_REGISTRY, CATEGORIES_METADATA } from '../config/tools';
 import { ToolGrid } from '../components/common/ToolGrid';
 import { DynamicIcon } from '../components/common/DynamicIcon';
 import { UploadZone } from '../components/common/UploadZone';
@@ -24,9 +23,9 @@ import { Link } from '../components/common/Link';
 import { DynamicFaqAccordion } from '../components/common/DynamicFaqAccordion';
 
 export const HomePage: React.FC = () => {
-  const { navigate, setIsSearchOpen } = useApp();
+  const { navigate, setIsSearchOpen, tools } = useApp();
 
-  const popularTools = TOOLS_REGISTRY.filter((t) => t.isPopular);
+  const popularTools = tools.filter((t) => t.isPopular);
 
   const homeFaqs = [
     {

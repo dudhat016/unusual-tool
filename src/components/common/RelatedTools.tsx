@@ -1,6 +1,6 @@
 import React from 'react';
 import { ToolDefinition } from '../../types';
-import { TOOLS_REGISTRY } from '../../config/tools';
+import { DynamicToolService } from '../../services/DynamicToolService';
 import { ToolCard } from './ToolCard';
 
 interface RelatedToolsProps {
@@ -9,7 +9,8 @@ interface RelatedToolsProps {
 }
 
 export const RelatedTools: React.FC<RelatedToolsProps> = ({ currentToolId, category }) => {
-  const related = TOOLS_REGISTRY.filter(
+  const allTools = DynamicToolService.getAllTools();
+  const related = allTools.filter(
     (t) => t.id !== currentToolId && (t.category === category || t.isPopular)
   ).slice(0, 3);
 

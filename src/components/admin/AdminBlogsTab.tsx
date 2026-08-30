@@ -38,6 +38,23 @@ export const AdminBlogsTab: React.FC<AdminBlogsTabProps> = ({ showToast }) => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [activeEditorTab, setActiveEditorTab] = useState<'content' | 'seo'>('content');
+  const [isSeeding, setIsSeeding] = useState(false);
+
+  const handleSeedDefaults = async () => {
+    setIsSeeding(true);
+    try {
+      const ok = await BlogService.seedInitialBlogsToFirestore();
+      if (ok) {
+        showToast('Default articles successfully synchronized to Firestore!', 'success');
+      } else {
+        showToast('Failed to sync articles. Check admin permissions.', 'error');
+      }
+    } catch {
+      showToast('An error occurred while syncing articles.', 'error');
+    } finally {
+      setIsSeeding(false);
+    }
+  };
 
   // Inspect URL parameters for ?edit=:id or ?action=new or /admin/blogs/edit/:id or /admin/blogs/new
   const cleanPath = (currentPath || window.location.pathname).split('?')[0].replace(/\/$/, '');
@@ -56,7 +73,10 @@ export const AdminBlogsTab: React.FC<AdminBlogsTabProps> = ({ showToast }) => {
   };
 
   useEffect(() => {
-    loadPosts();
+    const unsub = BlogService.subscribeAllPosts((livePosts) => {
+      setPosts(livePosts);
+    });
+    return unsub;
   }, []);
 
   // Sync editingPost when editId or action=new changes in URL
@@ -95,31 +115,33 @@ export const AdminBlogsTab: React.FC<AdminBlogsTabProps> = ({ showToast }) => {
     }
   }, [editId, isCreatingNew, posts]);
 
-  const handleDelete = (id: string, title: string) => {
+  const handleDelete = async (id: string, title: string) => {
     if (window.confirm(`Are you sure you want to delete article "${title}"?`)) {
-      BlogService.deletePost(id);
+      await BlogService.deletePost(id);
       loadPosts();
       showToast(`Deleted article "${title}"`, 'info');
     }
   };
 
-  const handleBulkDelete = (selectedIds: string[]) => {
+  const handleBulkDelete = async (selectedIds: string[]) => {
     if (window.confirm(`Are you sure you want to delete ${selectedIds.length} selected article(s)?`)) {
-      selectedIds.forEach((id) => BlogService.deletePost(id));
+      for (const id of selectedIds) {
+        await BlogService.deletePost(id);
+      }
       loadPosts();
       showToast(`Deleted ${selectedIds.length} article(s)`, 'info');
     }
   };
 
-  const handleToggleStatus = (id: string) => {
-    const updated = BlogService.toggleStatus(id);
+  const handleToggleStatus = async (id: string) => {
+    const updated = await BlogService.toggleStatus(id);
     if (updated) {
       loadPosts();
       showToast(`Article status changed to ${updated.status}`, 'success');
     }
   };
 
-  const handleSaveEditor = (statusToSet?: 'published' | 'draft') => {
+  const handleSaveEditor = async (statusToSet?: 'published' | 'draft') => {
     if (!editingPost.title || !editingPost.slug) {
       showToast('Article Title and Slug are required', 'error');
       return;
@@ -153,7 +175,7 @@ export const AdminBlogsTab: React.FC<AdminBlogsTabProps> = ({ showToast }) => {
       featured: editingPost.featured || false,
     };
 
-    BlogService.savePost(postToSave);
+    await BlogService.savePost(postToSave);
     loadPosts();
     showToast(`Saved article "${postToSave.title}" (${postToSave.status})`, 'success');
     navigate('/admin/blogs');
@@ -526,6 +548,16 @@ export const AdminBlogsTab: React.FC<AdminBlogsTabProps> = ({ showToast }) => {
         defaultPageSize={10}
         headerActions={
           <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              leftIcon={Sparkles}
+              disabled={isSeeding}
+              onClick={handleSeedDefaults}
+              title="Push built-in baseline articles to Firestore database"
+            >
+              {isSeeding ? 'Syncing...' : 'Sync Defaults'}
+            </Button>
             <div className="w-44">
               <CustomSelect
                 value={categoryFilter}

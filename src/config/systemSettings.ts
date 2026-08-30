@@ -22,4 +22,9 @@ export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
   googleAdsClient: 'ca-pub-aetherpix-preview',
   googleAnalyticsId: 'G-AETHERPIX01',
   adBlockNoticeEnabled: false,
+  theme: 'dark',
+  primaryColor: 'purple',
+  accentColor: 'purple',
+  radius: 8,
+  sidebarTheme: 'dark',
 };

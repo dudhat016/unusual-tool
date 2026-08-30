@@ -251,6 +251,12 @@ export const CATEGORIES_REGISTRY: CategorySeoEntry[] = [
 ];
 
 export function getCategoryBySlug(slug: string): CategorySeoEntry | undefined {
+  try {
+    const { DynamicCategoryService } = require('../services/DynamicCategoryService');
+    if (DynamicCategoryService) {
+      return DynamicCategoryService.getCategoryBySlug(slug);
+    }
+  } catch {}
   const clean = slug.replace(/^\/+|\/+$/g, '').toLowerCase();
   if (clean === 'tools' || clean === 'all-tools' || clean === 'all' || clean === 'tool') {
     return CATEGORIES_REGISTRY.find((c) => c.id === 'image-tools');

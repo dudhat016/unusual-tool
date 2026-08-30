@@ -2,7 +2,8 @@ import React from 'react';
 import { CategorySeoEntry } from '../types/seo';
 import { Breadcrumbs } from '../components/common/Breadcrumbs';
 import { getBreadcrumbsForRoute } from '../config/seoRegistry';
-import { TOOLS_REGISTRY } from '../config/tools';
+import { DynamicToolService } from '../services/DynamicToolService';
+import { useApp } from '../context/AppContext';
 import { ToolCard } from '../components/common/ToolCard';
 import { Sparkles, CheckCircle, HelpCircle, ChevronDown, Layers, ArrowRight } from 'lucide-react';
 import { DynamicFaqAccordion } from '../components/common/DynamicFaqAccordion';
@@ -12,10 +13,12 @@ interface CategoryPageViewProps {
 }
 
 export const CategoryPageView: React.FC<CategoryPageViewProps> = ({ category }) => {
+  const { tools } = useApp();
+  const allTools = tools && tools.length > 0 ? tools : DynamicToolService.getAllTools();
   const breadcrumbs = getBreadcrumbsForRoute(`/${category.slug}`);
 
   // Match tools belonging to this category
-  const matchingTools = TOOLS_REGISTRY.filter((tool) => {
+  const matchingTools = allTools.filter((tool) => {
     if (tool.id === category.id || tool.slug === category.slug) return false;
     if (category.id === 'image-tools') return true;
     if (category.id === 'image-compressor-tools') return tool.category === 'compress' || tool.id === 'compress-image';
@@ -27,8 +30,46 @@ export const CategoryPageView: React.FC<CategoryPageViewProps> = ({ category }) 
     return tool.category === category.id;
   });
 
+  const categorySchema = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: category.h1,
+    description: category.description,
+    url: `https://aetherpix.studio/${category.slug}`,
+    mainEntity: {
+      '@type': 'ItemList',
+      itemListElement: matchingTools.map((t, idx) => ({
+        '@type': 'ListItem',
+        position: idx + 1,
+        name: t.name,
+        url: `https://aetherpix.studio${t.route}`,
+      })),
+    },
+  };
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbs.map((b, idx) => ({
+      '@type': 'ListItem',
+      position: idx + 1,
+      name: b.name,
+      item: b.url.startsWith('http') ? b.url : `https://aetherpix.studio${b.url}`,
+    })),
+  };
+
   return (
     <div className="space-y-10 py-6 max-w-6xl mx-auto">
+      {/* Dynamic JSON-LD Structured Data Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(categorySchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+
       {/* Breadcrumbs */}
       <Breadcrumbs items={breadcrumbs} />
 
