@@ -11,21 +11,26 @@ export interface ConverterPairItem {
 }
 
 export const POPULAR_CONVERTER_PAIRS: ConverterPairItem[] = [
-  { slug: 'webp-to-png', fromFormat: 'image/webp', toFormat: 'image/png', fromExt: 'WEBP', toExt: 'PNG', title: 'Convert WEBP to PNG', description: 'Convert WebP images to lossless transparent PNG format online.' },
-  { slug: 'webp-to-jpg', fromFormat: 'image/webp', toFormat: 'image/jpeg', fromExt: 'WEBP', toExt: 'JPG', title: 'Convert WEBP to JPG', description: 'Convert modern WebP pictures into universal JPG/JPEG format.' },
-  { slug: 'heic-to-jpg', fromFormat: 'image/heic', toFormat: 'image/jpeg', fromExt: 'HEIC', toExt: 'JPG', title: 'Convert HEIC to JPG', description: 'Convert Apple iPhone HEIC and HEIF photos to high-compatibility JPG.' },
-  { slug: 'heic-to-png', fromFormat: 'image/heic', toFormat: 'image/png', fromExt: 'HEIC', toExt: 'PNG', title: 'Convert HEIC to PNG', description: 'Convert iPhone HEIC photos to lossless PNG with transparency support.' },
-  { slug: 'png-to-svg', fromFormat: 'image/png', toFormat: 'image/svg+xml', fromExt: 'PNG', toExt: 'SVG', title: 'Convert PNG to SVG Vector', description: 'Vectorize raster PNG images into scalable SVG vector graphics.' },
-  { slug: 'jpg-to-svg', fromFormat: 'image/jpeg', toFormat: 'image/svg+xml', fromExt: 'JPG', toExt: 'SVG', title: 'Convert JPG to SVG Vector', description: 'Trace JPG photos into vector SVG paths with clean contour smoothing.' },
-  { slug: 'svg-to-png', fromFormat: 'image/svg+xml', toFormat: 'image/png', fromExt: 'SVG', toExt: 'PNG', title: 'Convert SVG to PNG', description: 'Rasterize vector SVG files into crisp high-resolution PNG images.' },
-  { slug: 'png-to-ico', fromFormat: 'image/png', toFormat: 'image/x-icon', fromExt: 'PNG', toExt: 'ICO', title: 'Convert PNG to ICO Favicon', description: 'Generate multi-resolution Windows ICO favicon files from PNG.' },
-  { slug: 'png-to-pdf', fromFormat: 'image/png', toFormat: 'application/pdf', fromExt: 'PNG', toExt: 'PDF', title: 'Convert PNG to PDF', description: 'Convert single or multiple PNG images into printable PDF documents.' },
-  { slug: 'jpg-to-pdf', fromFormat: 'image/jpeg', toFormat: 'application/pdf', fromExt: 'JPG', toExt: 'PDF', title: 'Convert JPG to PDF', description: 'Turn JPG photos and document scans into clean PDF pages.' },
-  { slug: 'tiff-to-jpg', fromFormat: 'image/tiff', toFormat: 'image/jpeg', fromExt: 'TIFF', toExt: 'JPG', title: 'Convert TIFF to JPG', description: 'Convert multi-page TIFF and TIF image files into lightweight JPG.' },
-  { slug: 'avif-to-jpg', fromFormat: 'image/avif', toFormat: 'image/jpeg', fromExt: 'AVIF', toExt: 'JPG', title: 'Convert AVIF to JPG', description: 'Convert next-generation AVIF images into standard JPEG format.' },
-  { slug: 'avif-to-png', fromFormat: 'image/avif', toFormat: 'image/png', fromExt: 'AVIF', toExt: 'PNG', title: 'Convert AVIF to PNG', description: 'Convert AVIF files to lossless PNG with alpha channel preservation.' },
-  { slug: 'gif-to-png', fromFormat: 'image/gif', toFormat: 'image/png', fromExt: 'GIF', toExt: 'PNG', title: 'Convert GIF to PNG Frames', description: 'Extract and convert animated GIF frames into crisp PNG images.' },
-];
+  { fromExt: 'WEBP', toExt: 'PNG', fromFormat: 'image/webp', toFormat: 'image/png' },
+  { fromExt: 'WEBP', toExt: 'JPG', fromFormat: 'image/webp', toFormat: 'image/jpeg' },
+  { fromExt: 'HEIC', toExt: 'JPG', fromFormat: 'image/heic', toFormat: 'image/jpeg' },
+  { fromExt: 'HEIC', toExt: 'PNG', fromFormat: 'image/heic', toFormat: 'image/png' },
+  { fromExt: 'PNG', toExt: 'SVG', fromFormat: 'image/png', toFormat: 'image/svg+xml' },
+  { fromExt: 'JPG', toExt: 'SVG', fromFormat: 'image/jpeg', toFormat: 'image/svg+xml' },
+  { fromExt: 'SVG', toExt: 'PNG', fromFormat: 'image/svg+xml', toFormat: 'image/png' },
+  { fromExt: 'PNG', toExt: 'ICO', fromFormat: 'image/png', toFormat: 'image/x-icon' },
+  { fromExt: 'PNG', toExt: 'PDF', fromFormat: 'image/png', toFormat: 'application/pdf' },
+  { fromExt: 'JPG', toExt: 'PDF', fromFormat: 'image/jpeg', toFormat: 'application/pdf' },
+  { fromExt: 'AVIF', toExt: 'JPG', fromFormat: 'image/avif', toFormat: 'image/jpeg' },
+].map((p) => ({
+  slug: `${p.fromExt.toLowerCase()}-to-${p.toExt.toLowerCase()}`,
+  fromFormat: p.fromFormat,
+  toFormat: p.toFormat,
+  fromExt: p.fromExt,
+  toExt: p.toExt,
+  title: `Convert ${p.fromExt} to ${p.toExt}`,
+  description: `Convert ${p.fromExt} images directly to ${p.toExt} format online.`
+}));
 
 export function createConverterToolDefinition(
   slug: string,
@@ -88,8 +93,70 @@ export function createConverterToolDefinition(
   };
 }
 
+export function createAudioConverterToolDefinition(
+  slug: string,
+  fromExt: string = 'MP4',
+  toExt: string = 'MP3'
+): ToolDefinition {
+  const cleanSlug = slug.replace(/^\/+|\/+$/g, '');
+  const name = `Convert ${fromExt.toUpperCase()} to ${toExt.toUpperCase()}`;
+
+  return {
+    id: `audio-${cleanSlug}`,
+    slug: cleanSlug,
+    name,
+    shortDescription: `Extract and convert ${fromExt.toUpperCase()} video/audio streams directly to high-quality ${toExt.toUpperCase()} in your browser.`,
+    fullDescription: `Instant 100% in-browser ${fromExt.toUpperCase()} to ${toExt.toUpperCase()} converter. Extract background music, podcast audio, and voice tracks from ${fromExt.toUpperCase()} videos with customizable bitrate options (128k, 192k, 256k, 320k) and zero server uploads.`,
+    category: 'audio',
+    processingType: 'browser',
+    icon: 'Music',
+    route: `/image-converter-tools/${cleanSlug}`,
+    supportsBatch: true,
+    requiresAuth: false,
+    creditCost: 0,
+    supportedFormats: ['video/mp4', 'video/webm', 'video/quicktime', 'audio/mpeg', 'audio/wav', 'audio/x-m4a', 'audio/aac', 'audio/ogg'],
+    maxFileSizeMB: 200,
+    isPopular: true,
+    features: [
+      `100% Client-Side ${fromExt.toUpperCase()} to ${toExt.toUpperCase()} audio extraction`,
+      'Configurable audio bitrate (128 kbps up to 320 kbps studio quality)',
+      'Zero server uploads ensuring absolute privacy',
+      'Built-in audio player and waveform preview',
+    ],
+    howToSteps: [
+      { step: 1, title: `Upload ${fromExt.toUpperCase()} File`, description: `Select your ${fromExt.toUpperCase()} video or audio file.` },
+      { step: 2, title: 'Choose Bitrate', description: 'Select 192 kbps or 320 kbps audio quality.' },
+      { step: 3, title: `Download ${toExt.toUpperCase()}`, description: `Click Convert to export your new ${toExt.toUpperCase()} file.` },
+    ],
+    faqs: [
+      {
+        question: `How do I convert ${fromExt.toUpperCase()} to ${toExt.toUpperCase()}?`,
+        answer: `Drop your file on this page. Our in-browser Web Audio engine extracts the audio and encodes it into ${toExt.toUpperCase()} instantly.`,
+      },
+    ],
+    seo: {
+      title: `${name} Online Free - High Quality Audio Extractor`,
+      description: `Free online ${fromExt.toUpperCase()} to ${toExt.toUpperCase()} converter. Extract high quality ${toExt.toUpperCase()} audio from ${fromExt.toUpperCase()} videos in your browser with 100% privacy.`,
+      keywords: [
+        `${fromExt.toLowerCase()} to ${toExt.toLowerCase()}`,
+        `convert ${fromExt.toLowerCase()} to ${toExt.toLowerCase()}`,
+        `extract audio from ${fromExt.toLowerCase()}`,
+      ],
+      canonicalSlug: cleanSlug,
+    },
+  };
+}
+
 export function parseConverterRoute(path: string): ToolDefinition | undefined {
   const clean = path.replace(/^\/+|\/+$/g, '').toLowerCase();
+
+  // Match Audio & Video Converters (e.g. mp4-to-mp3, video-to-mp3, convert-wav-to-mp3)
+  const audioMatch = clean.match(/^(?:convert-)?(mp4|video|mov|avi|webm|wav|m4a|aac|flac|ogg)-to-(mp3|wav|m4a|ogg)(?:-converter)?$/i);
+  if (audioMatch) {
+    const fromExt = audioMatch[1].toUpperCase();
+    const toExt = audioMatch[2].toUpperCase();
+    return createAudioConverterToolDefinition(clean, fromExt, toExt);
+  }
 
   // Check prefix: convert/xxx-to-yyy or convert-xxx-to-yyy
   let pairSlug = '';

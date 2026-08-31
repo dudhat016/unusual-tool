@@ -17,138 +17,6 @@ import { BlogPostItem } from '../types/blog';
 const COLLECTION_NAME = 'blogs';
 const STORAGE_KEY = 'aetherpix_blog_posts_v2';
 
-// Rich seed blog posts for initial Firestore bootstrapping
-export const SEED_BLOG_POSTS: BlogPostItem[] = [
-  {
-    id: 'how-to-compress-an-image',
-    slug: 'how-to-compress-an-image',
-    title: 'How to Compress an Image Without Losing Quality (2026 Guide)',
-    excerpt: 'To compress an image without losing quality, choose WebP or target JPEG compression between 75%–85%. Use AetherPix Image Compressor to shrink file size by up to 90% right inside your browser.',
-    contentHtml: `
-      <p class="lead">To compress an image without losing quality, choose WebP or target JPEG compression between 75%–85%. Use AetherPix Image Compressor to shrink file size by up to 90% right inside your browser.</p>
-      <h2>Understanding Image Lossy vs Lossless Compression</h2>
-      <p>Image compression falls into two categories: Lossless (reduces file size without discarding visual pixels) and Lossy (selectively removes redundant high-frequency details).</p>
-      <h2>Step-by-Step Compression Process</h2>
-      <p>Follow these steps to minimize photo file size while maintaining pristine visual sharpness for web use.</p>
-      <ol>
-        <li>Upload your JPG or PNG image into the browser workspace.</li>
-        <li>Select your compression level or target file size in KB/MB.</li>
-        <li>Preview visual output and download the optimized asset instantly.</li>
-      </ol>
-      <h2>Recommended Web Formats in 2026</h2>
-      <p>For modern web applications, WebP and AVIF provide up to 35% smaller file sizes than traditional JPEG at equivalent perceptual quality.</p>
-    `,
-    category: 'Format Guides',
-    tags: ['image compression', 'reduce file size', 'webp converter', 'photo optimization'],
-    author: {
-      name: 'AetherPix Editorial Team',
-      role: 'Digital Imaging Specialists',
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
-    },
-    coverImage: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80',
-    readTime: '4 min read',
-    publishedDate: '2026-01-15',
-    updatedDate: '2026-08-20',
-    status: 'published',
-    seo: {
-      seoTitle: 'How to Compress an Image Without Losing Quality (2026 Guide)',
-      metaDescription: 'Learn how to compress photos, PNGs, and JPEGs without quality loss using client-side WebAssembly tools.',
-      h1Title: 'How to Compress an Image Without Losing Quality',
-      canonicalUrl: 'https://aetherpix.studio/blog/how-to-compress-an-image',
-    },
-    views: 1420,
-    featured: true,
-    faqs: [
-      {
-        question: 'Does compression reduce photo resolution?',
-        answer: 'Standard compression optimizes encoding algorithms and reduces byte size without changing pixel dimensions unless you also choose to resize.',
-      },
-      {
-        question: 'Are my images uploaded to an external server?',
-        answer: 'No. All AetherPix browser tools process images client-side directly on your device memory.',
-      },
-    ],
-  },
-  {
-    id: 'how-to-convert-webp-to-png',
-    slug: 'how-to-convert-webp-to-png',
-    title: 'How to Convert WebP to PNG Images Online (Free & Instant)',
-    excerpt: 'Convert WebP photos to transparent PNG or JPG format instantly using browser-based WebAssembly conversion.',
-    contentHtml: `
-      <p class="lead">Convert WebP photos to transparent PNG or JPG format instantly using browser-based WebAssembly conversion.</p>
-      <h2>Why Convert WebP to PNG?</h2>
-      <p>PNG offers universal support across legacy image editors, desktop graphic design suites, and printing platforms that do not natively handle WebP.</p>
-      <h2>Preserving Alpha Transparency</h2>
-      <p>When converting transparent WebP graphics, PNG-32 preserves 8-bit alpha channels for pixel-perfect transparency over any background.</p>
-      <h2>Conversion Steps</h2>
-      <p>Drop your WebP file into the converter, preserve alpha transparency, and download your standard PNG file in milliseconds.</p>
-    `,
-    category: 'Format Guides',
-    tags: ['webp to png', 'convert image', 'image converter', 'transparency'],
-    author: {
-      name: 'AetherPix Editorial Team',
-      role: 'Digital Imaging Specialists',
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
-    },
-    coverImage: 'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?auto=format&fit=crop&w=1200&q=80',
-    readTime: '3 min read',
-    publishedDate: '2026-02-01',
-    updatedDate: '2026-08-22',
-    status: 'published',
-    seo: {
-      seoTitle: 'How to Convert WebP to PNG Images Online (Free & Instant)',
-      metaDescription: 'Convert WebP to PNG online without losing transparency or image resolution.',
-      h1Title: 'How to Convert WebP to PNG',
-      canonicalUrl: 'https://aetherpix.studio/blog/how-to-convert-webp-to-png',
-    },
-    views: 980,
-    featured: false,
-    faqs: [
-      {
-        question: 'Will converting WebP to PNG increase file size?',
-        answer: 'Yes, PNG files are typically larger because PNG uses lossless compression whereas WebP uses advanced predictive encoding.',
-      },
-    ],
-  },
-  {
-    id: 'passport-photo-specifications-guide-2026',
-    slug: 'passport-photo-specifications-guide-2026',
-    title: 'Official Passport & Visa Photo Dimensions Guide (2026 Standards)',
-    excerpt: 'Comprehensive guide to official passport, visa, and ID photo requirements for USA (2x2 in), India, Schengen, UK, and Canada.',
-    contentHtml: `
-      <p class="lead">Getting passport photos rejected due to lighting, background color, or wrong dimensions is common. Here is the verified dimension and composition standard for international travel credentials.</p>
-      <h2>Key International Dimensions</h2>
-      <ul>
-        <li><strong>United States & India Visa:</strong> 2 x 2 inches (51 x 51 mm / 600 x 600 px at 300 DPI)</li>
-        <li><strong>Schengen Visa & UK Passport:</strong> 35 x 45 mm</li>
-        <li><strong>Canada Passport:</strong> 50 x 70 mm</li>
-      </ul>
-      <h2>Composition & Head Size Rules</h2>
-      <p>The head must measure between 50% and 69% of the image total height from the bottom of the chin to the top of the head.</p>
-    `,
-    category: 'Government & ID',
-    tags: ['passport photo', 'visa dimensions', 'photo maker', 'id photo'],
-    author: {
-      name: 'Elena Rostova',
-      role: 'Compliance & Identity Specialist',
-      avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80',
-    },
-    coverImage: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1200&q=80',
-    readTime: '5 min read',
-    publishedDate: '2026-03-10',
-    updatedDate: '2026-08-25',
-    status: 'published',
-    seo: {
-      seoTitle: 'Passport & Visa Photo Dimensions (2026 Official Guide) | AetherPix',
-      metaDescription: 'Complete international standards for 2x2 inch, 35x45mm, and official passport photo requirements.',
-      h1Title: 'Official Passport & Visa Photo Dimensions Guide',
-      canonicalUrl: 'https://aetherpix.studio/blog/passport-photo-specifications-guide-2026',
-    },
-    views: 1840,
-    featured: false,
-  }
-];
-
 export class BlogService {
   private static cachedPosts: BlogPostItem[] = [];
   private static isInitialized = false;
@@ -171,15 +39,7 @@ export class BlogService {
       this.unsubscribeSnapshot = onSnapshot(
         blogsColRef,
         (snapshot) => {
-          if (snapshot.empty) {
-            // Collection is empty in Firestore; populate local cache with default articles
-            // without attempting unauthenticated writes over the wire
-            if (this.cachedPosts.length === 0) {
-              this.cachedPosts = [...SEED_BLOG_POSTS];
-              this.saveToLocalStorage(this.cachedPosts);
-              this.notifyListeners();
-            }
-          } else {
+          if (!snapshot.empty) {
             const firestorePosts: BlogPostItem[] = snapshot.docs.map((docSnap) => {
               const data = docSnap.data() as BlogPostItem;
               return {
@@ -199,13 +59,10 @@ export class BlogService {
             this.saveToLocalStorage(firestorePosts);
             this.notifyListeners();
           }
+          // If empty — keep localStorage cache, no static fallback
         },
         (error) => {
           console.warn('Firestore onSnapshot listener note for blogs collection:', error);
-          if (this.cachedPosts.length === 0) {
-            this.cachedPosts = [...SEED_BLOG_POSTS];
-            this.notifyListeners();
-          }
         }
       );
     } catch (err) {
@@ -214,19 +71,16 @@ export class BlogService {
   }
 
   /**
-   * Seed default blogs directly into Firestore (Admin action)
+   * Seed provided blog posts into Firestore (Admin action)
    */
-  public static async seedInitialBlogsToFirestore(): Promise<boolean> {
+  public static async seedBlogsToFirestore(posts: BlogPostItem[]): Promise<boolean> {
     try {
       const batch = writeBatch(db);
-      for (const post of SEED_BLOG_POSTS) {
+      for (const post of posts) {
         const postRef = doc(db, COLLECTION_NAME, post.id);
         batch.set(postRef, post, { merge: true });
       }
       await batch.commit();
-      this.cachedPosts = [...SEED_BLOG_POSTS];
-      this.saveToLocalStorage(this.cachedPosts);
-      this.notifyListeners();
       return true;
     } catch (e) {
       console.warn('Failed to seed blogs to Firestore:', e);
@@ -235,23 +89,18 @@ export class BlogService {
   }
 
   private static loadFromLocalStorage(): void {
-    if (typeof localStorage === 'undefined') {
-      this.cachedPosts = [...SEED_BLOG_POSTS];
-      return;
-    }
+    if (typeof localStorage === 'undefined') return;
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
           this.cachedPosts = parsed;
-          return;
         }
       }
     } catch (e) {
       console.warn('Error reading blogs from localStorage:', e);
     }
-    this.cachedPosts = [...SEED_BLOG_POSTS];
   }
 
   private static saveToLocalStorage(posts: BlogPostItem[]): void {
@@ -330,11 +179,6 @@ export class BlogService {
         this.saveToLocalStorage(posts);
         this.notifyListeners();
         return posts;
-      } else {
-        if (this.cachedPosts.length === 0) {
-          this.cachedPosts = [...SEED_BLOG_POSTS];
-          this.saveToLocalStorage(this.cachedPosts);
-        }
         return [...this.cachedPosts];
       }
     } catch (error) {

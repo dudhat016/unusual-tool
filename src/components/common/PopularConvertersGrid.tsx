@@ -1,18 +1,15 @@
 import React from 'react';
-import { useApp } from '../../context/AppContext';
 import { POPULAR_CONVERTER_PAIRS } from '../../config/converterTools';
-import { RefreshCw, ArrowRight } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
+import { Link } from './Link';
 
 export const PopularConvertersGrid: React.FC = () => {
-  const { navigate } = useApp();
-
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
       {POPULAR_CONVERTER_PAIRS.map((pair) => (
-        <button
+        <Link
           key={pair.slug}
-          type="button"
-          onClick={() => navigate(`/convert/${pair.slug}`)}
+          href={`/convert-image-tools/${pair.slug}`}
           className="group flex flex-col items-start justify-between rounded-xl border border-slate-200/80 bg-white p-3.5 text-left shadow-2xs hover:border-blue-500 hover:shadow-xs dark:border-slate-800 dark:bg-slate-900 transition-all"
         >
           <div className="flex items-center gap-1.5 mb-1.5 w-full justify-between">
@@ -34,7 +31,7 @@ export const PopularConvertersGrid: React.FC = () => {
           <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">
             {pair.description}
           </p>
-        </button>
+        </Link>
       ))}
     </div>
   );

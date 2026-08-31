@@ -43,9 +43,9 @@ export const AdminBlogsTab: React.FC<AdminBlogsTabProps> = ({ showToast }) => {
   const handleSeedDefaults = async () => {
     setIsSeeding(true);
     try {
-      const ok = await BlogService.seedInitialBlogsToFirestore();
+      const ok = await BlogService.seedBlogsToFirestore(BlogService.getAllPosts());
       if (ok) {
-        showToast('Default articles successfully synchronized to Firestore!', 'success');
+        showToast('Articles successfully synchronized to Firestore!', 'success');
       } else {
         showToast('Failed to sync articles. Check admin permissions.', 'error');
       }

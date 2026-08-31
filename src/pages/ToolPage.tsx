@@ -26,6 +26,7 @@ import { PdfToolView } from '../components/tools/PdfToolView';
 import { ResizeToolView } from '../components/tools/ResizeToolView';
 import { SocialResizeToolView } from '../components/tools/SocialResizeToolView';
 import { WatermarkToolView } from '../components/tools/WatermarkToolView';
+import { AudioToolView } from '../components/tools/AudioToolView';
 import { OnlineNotepadView } from '../views/OnlineNotepadView';
 
 // YouTube Suite Components
@@ -241,11 +242,22 @@ export const ToolPage: React.FC<ToolPageProps> = ({ tool }) => {
       return <AIToolGenericView tool={tool} />;
     }
 
+    // Audio & Video Converters (MP4 to MP3, Video to MP3, WAV to MP3, etc.)
+    if (
+      tool.category === 'audio' ||
+      tool.id.includes('mp3') ||
+      tool.slug.includes('mp3') ||
+      tool.slug.includes('to-mp3')
+    ) {
+      return <AudioToolView tool={tool} />;
+    }
+
     // Default fallback
     return <ResizeToolView />;
   };
 
-  const routePath = tool.route || `/${tool.slug}`;
+  const rawPath = typeof window !== 'undefined' ? window.location.pathname : (tool.route || `/${tool.slug}`);
+  const routePath = rawPath.replace(/^\/(?:en|es|de|fr|hi|ja|zh|pt|it|ar)(?=\/|$)/i, '') || tool.route || `/${tool.slug}`;
   const seoData = getSeoForRoute(routePath);
   const breadcrumbs = getBreadcrumbsForRoute(routePath);
 

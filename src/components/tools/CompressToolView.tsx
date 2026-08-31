@@ -254,29 +254,6 @@ export const CompressToolView: React.FC<CompressToolViewProps> = ({ tool }) => {
 
   return (
     <div className="space-y-10">
-      {/* Top Banner Dimensions bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 rounded-2xl border border-slate-200/90 bg-white px-5 py-3.5 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400">
-            <Sparkles className="h-4 w-4" />
-          </div>
-          <div>
-            <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
-              Intelligent Quality-First Compression Engine
-            </span>
-            <p className="text-[11px] text-slate-400">
-              Multi-pass perceptual scoring with sharp typography & edge preservation
-            </p>
-          </div>
-        </div>
-
-        {parsedTargetConfig.isExactRoute && (
-          <span className="rounded-lg bg-blue-100 px-2.5 py-1 text-xs font-bold text-blue-700 dark:bg-blue-950 dark:text-blue-300">
-            Preset: {parsedTargetConfig.targetKb >= 1000 ? `${parsedTargetConfig.targetKb / 1000}MB` : `${parsedTargetConfig.targetKb}KB`}
-          </span>
-        )}
-      </div>
-
       {files.length === 0 ? (
         <div className="space-y-6">
           <UploadZone

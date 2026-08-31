@@ -9,7 +9,6 @@ import {
   writeBatch
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { ALL_TOOLS } from '../config/tools';
 import { parseTargetSizeRoute } from '../config/targetSizeTools';
 import { parseConverterRoute } from '../config/converterTools';
 import { ToolDefinition } from '../types';
@@ -24,14 +23,14 @@ export class DynamicToolService {
   private static unsubscribeFirestore: Unsubscribe | null = null;
 
   /**
-   * Initializes tool catalog from Local Storage & Firestore.
+   * Initializes tool catalog from localStorage cache and Firestore (Firestore is source of truth).
    */
   public static init(): ToolDefinition[] {
     if (this.isInitialized && this.toolsCache.length > 0) {
       return this.toolsCache;
     }
 
-    // 1. Try local storage cache
+    // Load from localStorage cache (last known Firestore state)
     if (typeof localStorage !== 'undefined') {
       try {
         const cached = localStorage.getItem(STORAGE_KEY);
@@ -46,12 +45,6 @@ export class DynamicToolService {
       }
     }
 
-    // If cache is empty, populate from base registry
-    if (this.toolsCache.length === 0) {
-      this.toolsCache = [...ALL_TOOLS];
-      this.saveToStorage(this.toolsCache);
-    }
-
     this.isInitialized = true;
 
     // Start live Firestore listener in browser environment
@@ -63,7 +56,7 @@ export class DynamicToolService {
   }
 
   /**
-   * Realtime Firestore listener for live admin tool mutations.
+   * Realtime Firestore listener — Firestore is the single source of truth.
    */
   private static startFirestoreListener() {
     try {
@@ -73,35 +66,24 @@ export class DynamicToolService {
         (snapshot) => {
           if (!snapshot.empty) {
             const firestoreTools: (ToolDefinition & { isDeleted?: boolean })[] = snapshot.docs.map((d) => d.data() as any);
-            
-            // Merge firestore tools with base tools so no dynamic route parser is broken
+
+            // Build tool map purely from Firestore — no static merge
             const toolMap = new Map<string, ToolDefinition>();
-            // Add base tools first
-            ALL_TOOLS.forEach((t) => toolMap.set(t.id, t));
-            // Apply firestore tools on top (or delete if marked isDeleted)
             firestoreTools.forEach((t) => {
-              if (t.isDeleted) {
-                toolMap.delete(t.id);
-              } else {
+              if (!t.isDeleted) {
                 toolMap.set(t.id, t);
               }
             });
 
-            const merged = Array.from(toolMap.values());
-            this.toolsCache = merged;
-            this.saveToStorage(merged);
+            const tools = Array.from(toolMap.values());
+            this.toolsCache = tools;
+            this.saveToStorage(tools);
             this.notifyListeners();
-          } else {
-            // If firestore tools collection is empty, retain local baseline tools
-            if (this.toolsCache.length === 0) {
-              this.toolsCache = [...ALL_TOOLS];
-              this.saveToStorage(this.toolsCache);
-              this.notifyListeners();
-            }
           }
+          // If Firestore collection is empty, keep whatever is in localStorage cache
         },
         (error) => {
-          console.warn('Firestore tools subscription warning (using local fallback):', error);
+          console.warn('Firestore tools listener error:', error);
         }
       );
     } catch (e) {
@@ -109,26 +91,7 @@ export class DynamicToolService {
     }
   }
 
-  /**
-   * Seeds Firestore with baseline tools catalog if collection is empty.
-   */
-  public static async seedFirestoreWithBaseTools(): Promise<void> {
-    try {
-      const snap = await getDocs(collection(db, 'tools'));
-      if (snap.empty) {
-        // Batch write first 30 essential tools to avoid exceeding write limits
-        const batch = writeBatch(db);
-        const seedBatch = ALL_TOOLS.slice(0, 30);
-        seedBatch.forEach((tool) => {
-          const docRef = doc(db, 'tools', tool.id);
-          batch.set(docRef, tool, { merge: true });
-        });
-        await batch.commit();
-      }
-    } catch (e) {
-      console.warn('Seed tools to Firestore warning:', e);
-    }
-  }
+
 
   private static saveToStorage(tools: ToolDefinition[]) {
     if (typeof localStorage === 'undefined') return;
@@ -175,34 +138,35 @@ export class DynamicToolService {
    */
   public static getToolBySlug(slug: string): ToolDefinition | undefined {
     const tools = this.init();
-    const cleanSlug = slug.replace(/^\/+/, '');
-    const found = tools.find(
+    const cleanSlug = slug.replace(/^\/+|\/+$/g, '');
+    const segments = cleanSlug.split('/');
+    const lastSegment = segments[segments.length - 1];
+
+    // 1. Direct match on full cleanSlug (e.g., category/tool or tool)
+    const directMatch = tools.find(
       (t) => t.slug === cleanSlug || t.id === cleanSlug || t.route === `/${cleanSlug}`
     );
-    if (found) return found;
+    if (directMatch) return directMatch;
 
-    // Dynamic virtual generator fallbacks
-    const targetSizeTool = parseTargetSizeRoute(cleanSlug);
+    // 2. Match by last segment (tool slug/id)
+    const segmentMatch = tools.find(
+      (t) => t.slug === lastSegment || t.id === lastSegment || t.route === `/${lastSegment}`
+    );
+    if (segmentMatch) return segmentMatch;
+
+    // 3. Dynamic virtual generator fallbacks (target size & format converters)
+    const targetSizeTool = parseTargetSizeRoute(cleanSlug) || parseTargetSizeRoute(lastSegment);
     if (targetSizeTool) return targetSizeTool;
 
-    return parseConverterRoute(cleanSlug);
+    return parseConverterRoute(cleanSlug) || parseConverterRoute(lastSegment);
   }
 
   /**
-   * Look up a tool by its exact route.
+   * Look up a tool by its exact route or hierarchical category route.
    */
   public static getToolByRoute(route: string): ToolDefinition | undefined {
-    const tools = this.init();
-    const clean = route.replace(/\/+$/, '') || '/';
-    const found = tools.find(
-      (t) => t.route === clean || `/${t.slug}` === clean || `/${t.id}` === clean
-    );
-    if (found) return found;
-
-    const targetSizeTool = parseTargetSizeRoute(clean);
-    if (targetSizeTool) return targetSizeTool;
-
-    return parseConverterRoute(clean);
+    const clean = route.replace(/^\/+|\/+$/g, '');
+    return this.getToolBySlug(clean);
   }
 
   /**
@@ -276,13 +240,8 @@ export class DynamicToolService {
     this.notifyListeners();
 
     try {
-      const isBaseTool = ALL_TOOLS.some((t) => t.id === toolId);
-      if (isBaseTool) {
-        // Base tool: write isDeleted: true to Firestore so listener won't revive it
-        await setDoc(doc(db, 'tools', toolId), { id: toolId, isDeleted: true }, { merge: true });
-      } else {
-        await deleteDoc(doc(db, 'tools', toolId));
-      }
+      // All tools are Firestore-managed: hard delete the document
+      await deleteDoc(doc(db, 'tools', toolId));
     } catch (e) {
       console.warn('Failed to delete tool from Firestore', e);
       throw e;
@@ -292,15 +251,14 @@ export class DynamicToolService {
   }
 
   /**
-   * Sync & seed all base tools from static registry directly to Firestore.
+   * Batch-writes an array of tools to Firestore (used by admin import).
    */
-  public static async syncAllBaseToolsToFirestore(): Promise<number> {
+  public static async syncToolsToFirestore(toolsToSync: ToolDefinition[]): Promise<number> {
     this.init();
     try {
-      // Chunk writes in batches of 25 to respect Firestore transaction limits
       const chunkSize = 25;
-      for (let i = 0; i < ALL_TOOLS.length; i += chunkSize) {
-        const chunk = ALL_TOOLS.slice(i, i + chunkSize);
+      for (let i = 0; i < toolsToSync.length; i += chunkSize) {
+        const chunk = toolsToSync.slice(i, i + chunkSize);
         const batch = writeBatch(db);
         chunk.forEach((tool) => {
           const docRef = doc(db, 'tools', tool.id);
@@ -308,11 +266,10 @@ export class DynamicToolService {
         });
         await batch.commit();
       }
-
       await this.refreshFromFirestore();
-      return ALL_TOOLS.length;
+      return toolsToSync.length;
     } catch (e) {
-      console.error('Error syncing all tools to Firestore', e);
+      console.error('Error syncing tools to Firestore', e);
       throw e;
     }
   }
@@ -327,17 +284,14 @@ export class DynamicToolService {
       if (!snap.empty) {
         const firestoreTools: (ToolDefinition & { isDeleted?: boolean })[] = snap.docs.map((d) => d.data() as any);
         const toolMap = new Map<string, ToolDefinition>();
-        ALL_TOOLS.forEach((t) => toolMap.set(t.id, t));
         firestoreTools.forEach((t) => {
-          if (t.isDeleted) {
-            toolMap.delete(t.id);
-          } else {
+          if (!t.isDeleted) {
             toolMap.set(t.id, t);
           }
         });
-        const merged = Array.from(toolMap.values());
-        this.toolsCache = merged;
-        this.saveToStorage(merged);
+        const tools = Array.from(toolMap.values());
+        this.toolsCache = tools;
+        this.saveToStorage(tools);
         this.notifyListeners();
       }
     } catch (e) {

@@ -211,22 +211,22 @@ export const AdminToolsTab: React.FC<AdminToolsTabProps> = ({ showToast }) => {
     }
   };
 
-  // Seed baseline catalog to Firestore
+  // Seed current tool list to Firestore
   const handleSeedFirestore = async () => {
     if (
       !window.confirm(
-        'Are you sure you want to seed/update all baseline tool definitions into the Firestore "tools" collection?'
+        `Are you sure you want to write all ${tools.length} tools to the Firestore "tools" collection?`
       )
     ) {
       return;
     }
     setIsSeeding(true);
     try {
-      const count = await DynamicToolService.syncAllBaseToolsToFirestore();
-      showToast(`Successfully seeded ${count} tools directly to Firestore!`, 'success');
+      const count = await DynamicToolService.syncToolsToFirestore(tools);
+      showToast(`Successfully synced ${count} tools to Firestore!`, 'success');
     } catch (err) {
-      console.error('Error seeding baseline tools', err);
-      showToast('Failed to batch write tools to Firestore', 'error');
+      console.error('Error seeding tools', err);
+      showToast('Failed to write tools to Firestore', 'error');
     } finally {
       setIsSeeding(false);
     }

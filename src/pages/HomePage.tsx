@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
-import { ToolGrid } from '../components/common/ToolGrid';
+import { SaaSDataService } from '../services/SaaSDataService';
 import { DynamicIcon } from '../components/common/DynamicIcon';
-import { UploadZone } from '../components/common/UploadZone';
 import { ExactTargetSizesGrid } from '../components/common/ExactTargetSizesGrid';
 import { PopularConvertersGrid } from '../components/common/PopularConvertersGrid';
+import { SmartDropZone } from '../components/common/SmartDropZone';
+import { RecentAndFavoritesBar } from '../components/common/RecentAndFavoritesBar';
 import {
   Search,
   ShieldCheck,
@@ -13,9 +14,6 @@ import {
   Sparkles,
   Layers,
   ArrowRight,
-  HelpCircle,
-  ChevronDown,
-  Clock,
   Cpu,
 } from 'lucide-react';
 
@@ -24,8 +22,32 @@ import { DynamicFaqAccordion } from '../components/common/DynamicFaqAccordion';
 
 export const HomePage: React.FC = () => {
   const { navigate, setIsSearchOpen, tools } = useApp();
+  const [usageStats, setUsageStats] = useState<Record<string, number>>({});
 
-  const popularTools = tools.filter((t) => t.isPopular);
+  useEffect(() => {
+    const unsubscribe = SaaSDataService.subscribeToToolUsageStats((stats) => {
+      const counts: Record<string, number> = {};
+      stats.forEach((s) => {
+        counts[s.toolId] = s.usageCount || 0;
+      });
+      setUsageStats(counts);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Compute popular tools dynamically based on real-time usage counts from Firestore
+  const popularTools = useMemo(() => {
+    const sorted = [...tools];
+    sorted.sort((a, b) => {
+      const countA = usageStats[a.id] || usageStats[a.slug] || 0;
+      const countB = usageStats[b.id] || usageStats[b.slug] || 0;
+      if (countA !== countB) return countB - countA;
+      if (a.isPopular && !b.isPopular) return -1;
+      if (!a.isPopular && b.isPopular) return 1;
+      return 0;
+    });
+    return sorted.filter((t) => (usageStats[t.id] || 0) > 0 || t.isPopular || t.isAi);
+  }, [tools, usageStats]);
 
   const homeFaqs = [
     {
@@ -34,19 +56,19 @@ export const HomePage: React.FC = () => {
         'Yes! All standard utilities (resizing, compression, cropping, format conversion, effects, borders, watermarks, social media formatting, and metadata stripping) operate completely inside your local web browser using client-side HTML5 Canvas technology. Your photos never leave your device.',
     },
     {
-      question: 'How does client-side browser compression work without uploading?',
+      question: 'How does client-side browser processing work without uploading?',
       answer:
-        'Modern browsers feature powerful JavaScript graphics engines. AetherPix executes native mathematical matrix transforms and quantization directly in your browser memory (RAM), giving you near-instant downloads with zero network latency and maximum privacy.',
+        'Modern browsers feature powerful WebAssembly and HTML5 Canvas engines. AetherPix executes native mathematical matrix transforms and quantization directly in your browser RAM, giving you near-instant downloads with zero network latency and maximum privacy.',
     },
     {
       question: 'What image formats are supported?',
       answer:
-        'AetherPix supports JPEG, PNG (with full alpha transparency), WebP, GIF, SVG, BMP, AVIF, TIFF, HEIC, and ICO files up to 50MB per image, including multi-image batch queues.',
+        'AetherPix supports JPEG, PNG (with full alpha transparency), WebP, GIF, SVG, BMP, AVIF, TIFF, HEIC, ICO, and PDF documents.',
     },
     {
       question: 'Can I process multiple images at the same time?',
       answer:
-        'Yes! Use our Batch Studio or Batch toggles on tools like Format Converter to drop dozens of photos at once and download everything in a single clean ZIP archive.',
+        'Yes! Use our batch queues on tools like Format Converter or Image Compressor to drop dozens of photos at once and download everything in a single clean ZIP archive.',
     },
   ];
 
@@ -73,7 +95,12 @@ export const HomePage: React.FC = () => {
           Ultra-fast browser-side image processing. Resize, compress, crop, convert formats, create passport photos, and enhance images instantly without losing quality.
         </p>
 
-        {/* Quick Search & Action Bar */}
+        {/* Interactive Smart Drop Zone (Competitor Upgrade) */}
+        <div className="pt-2">
+          <SmartDropZone />
+        </div>
+
+        {/* Quick Search & Explore Action Bar */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
           <button
             onClick={() => setIsSearchOpen(true)}
@@ -98,7 +125,7 @@ export const HomePage: React.FC = () => {
         </div>
 
         {/* Trust Badges */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6 text-left">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 text-left">
           <div className="flex items-center gap-2.5 rounded-xl border border-slate-200/80 bg-white/60 p-3 dark:border-slate-800/80 dark:bg-slate-900/40">
             <Cpu className="h-4 w-4 text-primary shrink-0" />
             <div className="min-w-0">
@@ -133,53 +160,58 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
+      {/* User Favorites Quick Access Bar */}
+      <RecentAndFavoritesBar />
+
       {/* Popular Quick Start Grid */}
-      <section className="space-y-4">
+      <section className="space-y-4 max-w-6xl mx-auto">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-              Most Popular Image Tools
+              Most Popular Tools
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Our most frequently used high-speed tools
+              Our most frequently used high-speed image utilities
             </p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {popularTools.map((tool) => (
-            <div
+          {popularTools.slice(0, 6).map((tool) => (
+            <Link
               key={tool.id}
-              onClick={() => navigate(tool.route)}
-              className="group cursor-pointer rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs hover:border-primary hover:shadow-md dark:border-slate-800 dark:bg-slate-900 transition-all"
+              href={tool.route}
+              className="group cursor-pointer rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs hover:border-primary hover:shadow-md dark:border-slate-800 dark:bg-slate-900 transition-all flex flex-col justify-between"
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                  <DynamicIcon name={tool.icon} className="h-5 w-5" />
+              <div>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                    <DynamicIcon name={tool.icon} className="h-5 w-5" />
+                  </div>
+                  <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                    {tool.processingType === 'browser' ? 'Browser' : 'AI'}
+                  </span>
                 </div>
-                <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                  {tool.processingType === 'browser' ? 'Browser' : 'AI'}
-                </span>
+
+                <h3 className="mt-3 text-sm font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
+                  {tool.name}
+                </h3>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
+                  {tool.shortDescription}
+                </p>
               </div>
 
-              <h3 className="mt-3 text-sm font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
-                {tool.name}
-              </h3>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
-                {tool.shortDescription}
-              </p>
-
-              <div className="mt-4 flex items-center gap-1 text-xs font-bold text-primary">
+              <div className="mt-4 flex items-center gap-1 text-xs font-bold text-primary pt-2">
                 <span>Open tool</span>
                 <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </section>
 
       {/* Exact Target Sizes Quick Navigator */}
-      <section className="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900/60 space-y-4">
+      <section className="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900/60 space-y-4 max-w-6xl mx-auto">
         <div>
           <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
             Exact Target Size Compressors
@@ -192,7 +224,7 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* Popular Image Format Converters */}
-      <section className="space-y-4">
+      <section className="space-y-4 max-w-6xl mx-auto">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
@@ -213,22 +245,8 @@ export const HomePage: React.FC = () => {
         <PopularConvertersGrid />
       </section>
 
-      {/* Categorized Full Explorer */}
-      <section className="space-y-6">
-        <div>
-          <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Explore Full Utility Catalog
-          </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Browse all 15+ specialized image tools by category
-          </p>
-        </div>
-
-        <ToolGrid />
-      </section>
-
       {/* Why Choose AetherPix Studio */}
-      <section className="rounded-3xl border border-slate-200 bg-slate-50/50 p-8 sm:p-12 dark:border-slate-800 dark:bg-slate-900/40 space-y-8">
+      <section className="rounded-3xl border border-slate-200 bg-slate-50/50 p-8 sm:p-12 dark:border-slate-800 dark:bg-slate-900/40 space-y-8 max-w-6xl mx-auto">
         <div className="text-center max-w-2xl mx-auto space-y-2">
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
             Engineered for Unmatched Speed and Absolute Privacy

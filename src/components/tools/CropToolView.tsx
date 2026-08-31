@@ -20,6 +20,7 @@ import {
   Eye,
   SlidersHorizontal,
 } from 'lucide-react';
+import { CropModal } from '../common/CropModal';
 
 interface CropOptionsWithExtra extends CropRect {
   targetFormat: 'image/png' | 'image/jpeg' | 'image/webp';
@@ -59,6 +60,7 @@ export const CropToolView: React.FC<CropToolViewProps> = ({ tool }) => {
   const [flipV, setFlipV] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [result, setResult] = useState<ProcessedResult | null>(null);
+  const [isCropModalOpen, setIsCropModalOpen] = useState(false);
 
   const currentFile = files[activeFileIndex] || files[0];
 
@@ -459,13 +461,41 @@ export const CropToolView: React.FC<CropToolViewProps> = ({ tool }) => {
                       </div>
                     </div>
                   </div>
-                  <p className="mt-4 text-xs text-slate-400">
-                    Pick an aspect ratio or click "Apply Crop" to render
-                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-4"
+                    leftIcon={Crop}
+                    onClick={() => setIsCropModalOpen(true)}
+                  >
+                    Open Interactive Crop Canvas Modal
+                  </Button>
                 </div>
               ) : null}
             </div>
           </div>
+
+          {currentFile && (
+            <CropModal
+              isOpen={isCropModalOpen}
+              onClose={() => setIsCropModalOpen(false)}
+              imageSrc={currentFile.previewUrl}
+              originalWidth={currentFile.width || 1000}
+              originalHeight={currentFile.height || 1000}
+              targetWidth={cropRect.width}
+              targetHeight={cropRect.height}
+              onApplyCrop={(cropData) => {
+                setCropRect((prev) => ({
+                  ...prev,
+                  x: cropData.x,
+                  y: cropData.y,
+                  width: cropData.width,
+                  height: cropData.height,
+                }));
+                showToast('Interactive crop coordinates updated!', 'success');
+              }}
+            />
+          )}
         </div>
       )}
     </div>

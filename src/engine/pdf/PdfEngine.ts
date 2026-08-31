@@ -673,23 +673,26 @@ export class PdfEngine {
         const targetBudgetBytes = options.targetKb ? options.targetKb * 1024 : 100 * 1024;
         const targetBytesPerPg = Math.floor(targetBudgetBytes / Math.max(1, totalPages));
 
-        // Intelligently choose initial scale and quality
-        let rasterScale = options.scaleFactor || (options.mode === 'high' ? 0.95 : 0.9);
-        let quality = options.imageQuality || (options.mode === 'high' ? 0.65 : 0.72);
+        // Intelligently choose initial scale and quality based on per-page byte budget
+        let rasterScale = options.scaleFactor || (options.mode === 'high' ? 0.8 : 0.9);
+        let quality = options.imageQuality || (options.mode === 'high' ? 0.55 : 0.72);
 
         if (options.mode === 'target' && options.targetKb) {
-          if (targetBytesPerPg < 25000) {
-            rasterScale = 0.7;
-            quality = 0.55;
-          } else if (targetBytesPerPg < 50000) {
-            rasterScale = 0.8;
-            quality = 0.65;
-          } else if (targetBytesPerPg < 100000) {
-            rasterScale = 0.9;
-            quality = 0.72;
+          if (targetBytesPerPg < 10000) {
+            rasterScale = 0.45;
+            quality = 0.40;
+          } else if (targetBytesPerPg < 20000) {
+            rasterScale = 0.55;
+            quality = 0.50;
+          } else if (targetBytesPerPg < 40000) {
+            rasterScale = 0.70;
+            quality = 0.60;
+          } else if (targetBytesPerPg < 80000) {
+            rasterScale = 0.85;
+            quality = 0.70;
           } else {
             rasterScale = 1.0;
-            quality = 0.8;
+            quality = 0.80;
           }
         }
 
@@ -704,8 +707,8 @@ export class PdfEngine {
               const page = await renderedPdf.getPage(pNum);
               const viewport = page.getViewport({ scale });
               const canvas = document.createElement('canvas');
-              canvas.width = viewport.width;
-              canvas.height = viewport.height;
+              canvas.width = Math.max(1, Math.floor(viewport.width));
+              canvas.height = Math.max(1, Math.floor(viewport.height));
               const ctx = canvas.getContext('2d');
               if (ctx) {
                 ctx.fillStyle = '#ffffff';
@@ -725,20 +728,41 @@ export class PdfEngine {
             return await newDoc.save({ useObjectStreams: true });
           };
 
-          let rasterBytes = await renderDocAtSettings(rasterScale, quality);
+          let currentScale = rasterScale;
+          let currentQuality = quality;
+          let bestBytes = await renderDocAtSettings(currentScale, currentQuality);
 
-          // If still exceeding target budget in target mode, do an aggressive secondary pass
-          if (options.mode === 'target' && options.targetKb && rasterBytes.length > targetBudgetBytes) {
-            const secondaryScale = Math.max(0.55, rasterScale * 0.8);
-            const secondaryQuality = Math.max(0.4, quality * 0.75);
-            const secondPassBytes = await renderDocAtSettings(secondaryScale, secondaryQuality);
-            if (secondPassBytes.length < rasterBytes.length) {
-              rasterBytes = secondPassBytes;
+          // Multi-pass adaptive optimization loop if target budget is not yet satisfied
+          if (options.mode === 'target' && options.targetKb) {
+            let pass = 0;
+            const maxPasses = 5;
+            while (pass < maxPasses && bestBytes.length > targetBudgetBytes) {
+              pass++;
+              onProgress?.(80 + pass * 3);
+              const overflowRatio = bestBytes.length / targetBudgetBytes;
+
+              const newScale = Math.max(0.2, currentScale / Math.sqrt(overflowRatio));
+              const newQuality = Math.max(0.12, currentQuality / Math.pow(overflowRatio, 0.4));
+
+              if (Math.abs(newScale - currentScale) < 0.02 && Math.abs(newQuality - currentQuality) < 0.02) {
+                currentScale = Math.max(0.2, currentScale * 0.75);
+                currentQuality = Math.max(0.12, currentQuality * 0.75);
+              } else {
+                currentScale = newScale;
+                currentQuality = newQuality;
+              }
+
+              const candidateBytes = await renderDocAtSettings(currentScale, currentQuality);
+              if (candidateBytes.length < bestBytes.length) {
+                bestBytes = candidateBytes;
+              } else {
+                break;
+              }
             }
           }
 
-          if (rasterBytes.length < compressedBytes.length) {
-            compressedBytes = rasterBytes;
+          if (bestBytes.length < compressedBytes.length) {
+            compressedBytes = bestBytes;
           }
         }
       } catch (err) {

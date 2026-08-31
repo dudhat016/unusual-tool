@@ -21,7 +21,9 @@ export type ToolCategory =
   | 'pdf-security'
   | 'pdf-image'
   | 'pdf-ocr'
-  | 'pdf-utils';
+  | 'pdf-utils'
+  | 'audio'
+  | 'video';
 
 export * from './types/youtube';
 
@@ -191,6 +193,8 @@ export interface ResizeOptions {
   targetDpi?: number;
   format?: 'image/jpeg' | 'image/png' | 'image/webp';
   quality: number;
+  fitMode?: 'stretch' | 'crop' | 'pad' | 'fill';
+  bgColor?: string;
 }
 
 export interface CompressOptions {

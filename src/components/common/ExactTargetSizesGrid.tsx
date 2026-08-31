@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { EXACT_TARGET_SIZE_ITEMS, EXACT_IMAGE_TARGET_SIZE_ITEMS, EXACT_PDF_TARGET_SIZE_ITEMS } from '../../config/targetSizeTools';
 import { FileText, Image as ImageIcon } from 'lucide-react';
+import { Link } from './Link';
 
 interface ExactTargetSizesGridProps {
   currentSlug?: string;
@@ -88,13 +89,9 @@ export const ExactTargetSizesGrid: React.FC<ExactTargetSizesGridProps> = ({
           const isActive = currentSlug === item.slug;
           const isPdf = item.mediaType === 'pdf' || item.slug.includes('pdf');
           return (
-            <button
+            <Link
               key={item.slug}
-              type="button"
-              onClick={() => {
-                navigate(`/${item.slug}`);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
+              href={`/${isPdf ? 'pdf-tools' : 'compress-image-tools'}/${item.slug}`}
               className={`px-3 py-2.5 text-xs sm:text-sm font-semibold rounded-xl border text-center transition-all flex items-center justify-center gap-1.5 ${
                 isActive
                   ? 'border-primary bg-primary/10 text-primary ring-2 ring-primary/20 shadow-xs font-bold'
@@ -109,7 +106,7 @@ export const ExactTargetSizesGrid: React.FC<ExactTargetSizesGridProps> = ({
                 <ImageIcon className="h-3 w-3 text-emerald-500 shrink-0" />
               )}
               <span className="truncate">{item.label}</span>
-            </button>
+            </Link>
           );
         })}
       </div>

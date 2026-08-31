@@ -13,7 +13,9 @@ import {
   Layers,
   Eye,
   SlidersHorizontal,
+  Crop,
 } from 'lucide-react';
+import { CropModal } from '../common/CropModal';
 
 interface SocialResizeToolViewProps {
   tool?: ToolDefinition;
@@ -34,6 +36,7 @@ export const SocialResizeToolView: React.FC<SocialResizeToolViewProps> = ({ tool
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [result, setResult] = useState<ProcessedResult | null>(null);
+  const [isCropModalOpen, setIsCropModalOpen] = useState(false);
 
   const currentFile = files[activeFileIndex] || files[0];
 
@@ -304,6 +307,20 @@ export const SocialResizeToolView: React.FC<SocialResizeToolViewProps> = ({ tool
               ) : null}
             </div>
           </div>
+          {currentFile && (
+            <CropModal
+              isOpen={isCropModalOpen}
+              onClose={() => setIsCropModalOpen(false)}
+              imageSrc={currentFile.previewUrl}
+              originalWidth={currentFile.width || 1000}
+              originalHeight={currentFile.height || 1000}
+              targetWidth={1080}
+              targetHeight={1080}
+              onApplyCrop={() => {
+                showToast('Crop settings applied!', 'success');
+              }}
+            />
+          )}
         </div>
       )}
     </div>

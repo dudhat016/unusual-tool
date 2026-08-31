@@ -324,13 +324,6 @@ export class BrowserImageProcessor implements IImageProcessor {
       targetH = Math.max(1, Math.round((options.height || 10) * factor));
     }
 
-    if (options.lockAspectRatio && options.mode !== 'percentage' && origW > 0 && origH > 0) {
-      const ratio = origW / origH;
-      if (Math.abs(targetW / targetH - ratio) > 0.01) {
-        targetH = Math.round(targetW / ratio);
-      }
-    }
-
     targetW = Math.max(1, Math.min(16000, targetW));
     targetH = Math.max(1, Math.min(16000, targetH));
 
@@ -347,7 +340,50 @@ export class BrowserImageProcessor implements IImageProcessor {
       ctx.imageSmoothingQuality = 'high';
     }
 
-    ctx.drawImage(img, 0, 0, targetW, targetH);
+    const fitMode = options.fitMode || 'stretch';
+
+    if (fitMode === 'crop' || fitMode === 'fill') {
+      let sx = 0;
+      let sy = 0;
+      let sw = origW;
+      let sh = origH;
+
+      if (options.cropBounds && options.cropBounds.width > 0 && options.cropBounds.height > 0) {
+        sx = options.cropBounds.x;
+        sy = options.cropBounds.y;
+        sw = options.cropBounds.width;
+        sh = options.cropBounds.height;
+      } else {
+        const scale = Math.max(targetW / origW, targetH / origH);
+        sw = targetW / scale;
+        sh = targetH / scale;
+        sx = (origW - sw) / 2;
+        sy = (origH - sh) / 2;
+      }
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, targetW, targetH);
+    } else if (fitMode === 'pad') {
+      // Background padding with blurred image background
+      ctx.fillStyle = options.bgColor || '#1e293b';
+      ctx.fillRect(0, 0, targetW, targetH);
+
+      // Draw blurred backdrop
+      ctx.save();
+      ctx.filter = 'blur(20px) brightness(0.7)';
+      ctx.drawImage(img, -20, -20, targetW + 40, targetH + 40);
+      ctx.restore();
+
+      // Fit contained image
+      const scale = Math.min(targetW / origW, targetH / origH);
+      const dw = origW * scale;
+      const dh = origH * scale;
+      const dx = (targetW - dw) / 2;
+      const dy = (targetH - dh) / 2;
+      ctx.drawImage(img, 0, 0, origW, origH, dx, dy, dw, dh);
+    } else {
+      // Default: stretch to exact targetW & targetH
+      ctx.drawImage(img, 0, 0, targetW, targetH);
+    }
+
     return { canvas, width: targetW, height: targetH };
   }
 

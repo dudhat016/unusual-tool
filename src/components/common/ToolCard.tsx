@@ -20,10 +20,16 @@ export const ToolCard: React.FC<ToolCardProps> = ({ tool, variant = 'standard' }
     toggleFavorite(tool.id);
   };
 
+  const categorySlug = tool.category ? (tool.category.endsWith('-tools') ? tool.category : `${tool.category}-tools`) : 'image-tools';
+  const toolSlug = tool.slug || tool.id;
+  const targetRoute = tool.route && tool.route.split('/').filter(Boolean).length >= 2
+    ? tool.route
+    : `/${categorySlug}/${toolSlug.replace(/^\/+/, '')}`;
+
   if (variant === 'featured') {
     return (
       <Link
-        href={tool.route}
+        href={targetRoute}
         className="group relative cursor-pointer overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm hover:shadow-xl hover:border-primary dark:border-slate-800 dark:bg-slate-900/80 dark:hover:border-primary transition-all duration-300 flex flex-col justify-between"
       >
         <div className="space-y-4">
@@ -73,7 +79,7 @@ export const ToolCard: React.FC<ToolCardProps> = ({ tool, variant = 'standard' }
 
   return (
     <Link
-      href={tool.route}
+      href={targetRoute}
       className="group relative cursor-pointer overflow-hidden rounded-xl border border-slate-200/80 bg-white p-4 sm:p-5 shadow-2xs hover:shadow-md hover:border-primary dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-primary transition-all duration-200 flex flex-col justify-between"
     >
       <div>

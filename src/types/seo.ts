@@ -88,6 +88,7 @@ export interface CategorySeoEntry {
   keyWorkflows: string[];
   faq: SeoFaqItem[];
   indexable: boolean;
+  matchingCategories?: string[];
 }
 
 export interface GuideArticleEntry {

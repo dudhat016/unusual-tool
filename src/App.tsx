@@ -22,6 +22,7 @@ const TrustPageView = lazy(() => import('./views/TrustPageView').then((m) => ({ 
 const UIKitCatalogView = lazy(() => import('./views/UIKitCatalogView').then((m) => ({ default: m.UIKitCatalogView })));
 const BlogHubView = lazy(() => import('./views/BlogHubView').then((m) => ({ default: m.BlogHubView })));
 const BlogPostView = lazy(() => import('./views/BlogPostView').then((m) => ({ default: m.BlogPostView })));
+const SocialMockupHubView = lazy(() => import('./views/SocialMockupHubView').then((m) => ({ default: m.SocialMockupHubView })));
 const NotFoundView = lazy(() => import('./views/NotFoundView').then((m) => ({ default: m.NotFoundView })));
 
 const RouteLoadingSpinner: React.FC = () => (
@@ -112,12 +113,51 @@ const AppRouter: React.FC = () => {
 
 
 
+    // Main Category Hub Pages (e.g. /resize, /resize-image-tools, /compress, /compress-image-tools, /convert, /pdf, /youtube)
+    const isMainCategoryRoute = [
+      '/resize',
+      '/resize-image-tools',
+      '/resize-tools',
+      '/compress',
+      '/compress-image-tools',
+      '/compress-tools',
+      '/convert',
+      '/convert-image-tools',
+      '/convert-tools',
+      '/crop',
+      '/pdf',
+      '/pdf-tools',
+      '/youtube',
+      '/youtube-tools',
+      '/ai',
+      '/ai-image-tools',
+      '/tools',
+      '/image-tools',
+      '/category'
+    ].some(p => normalizedPath === p || normalizedPath.startsWith('/category/'));
+
+    // Social Media Mockup Studio Routes (e.g. /social-mockup, /instagram-dm-generator, /whatsapp-chat-generator)
+    const isMockupRoute =
+      normalizedPath === '/social-mockup' ||
+      normalizedPath.endsWith('-mockup') ||
+      normalizedPath.endsWith('-generator') ||
+      normalizedPath.includes('-mockup/') ||
+      normalizedPath.includes('-generator/');
+
+    if (isMockupRoute) {
+      return (
+        <Suspense fallback={<RouteLoadingSpinner />}>
+          <SocialMockupHubView />
+        </Suspense>
+      );
+    }
+
     // Specific Tool Pages
     if (matchedTool) {
       return <ToolPage tool={matchedTool} />;
     }
 
-    // Category Hub Pages
+    // Category Hub Pages fallback
     if (matchedCategory) {
       return <CategoryPageView category={matchedCategory} />;
     }
