@@ -36,8 +36,7 @@ const RouteLoadingSpinner: React.FC = () => (
 import { Wrench } from 'lucide-react';
 import { DynamicCategoryService } from './services/DynamicCategoryService';
 import { useTranslation } from './i18n';
-
-const SUPPORTED_LOCALES = ['en', 'hi', 'es', 'fr', 'de', 'pt', 'it', 'ja', 'ko', 'zh', 'ar'];
+import { SUPPORTED_LOCALES } from './i18n/config';
 
 const AppRouter: React.FC = () => {
   const { currentPath, isAuthModalOpen, setIsAuthModalOpen, authModalMode, systemSettings, isAdmin, getToolByRoute, getToolBySlug } = useApp();
@@ -47,7 +46,7 @@ const AppRouter: React.FC = () => {
   const rawPath = currentPath.split('?')[0].replace(/\/$/, '') || '/';
   const pathSegments = rawPath.split('/').filter(Boolean);
   const firstSegment = pathSegments[0] || '';
-  const isLocalePrefix = SUPPORTED_LOCALES.includes(firstSegment.toLowerCase());
+  const isLocalePrefix = (SUPPORTED_LOCALES as string[]).includes(firstSegment.toLowerCase());
   const activeUrlLocale = isLocalePrefix ? firstSegment.toLowerCase() : 'en';
 
   const normalizedPath = (isLocalePrefix

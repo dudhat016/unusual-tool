@@ -2,14 +2,17 @@ import React from 'react';
 import { POPULAR_CONVERTER_PAIRS } from '../../config/converterTools';
 import { RefreshCw } from 'lucide-react';
 import { Link } from './Link';
+import { DynamicToolService } from '../../services/DynamicToolService';
 
 export const PopularConvertersGrid: React.FC = () => {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-      {POPULAR_CONVERTER_PAIRS.map((pair) => (
-        <Link
-          key={pair.slug}
-          href={`/convert-image-tools/${pair.slug}`}
+      {POPULAR_CONVERTER_PAIRS.map((pair) => {
+        const targetRoute = DynamicToolService.getToolBySlug(pair.slug)?.route || `/${pair.slug}`;
+        return (
+          <Link
+            key={pair.slug}
+            href={targetRoute}
           className="group flex flex-col items-start justify-between rounded-xl border border-slate-200/80 bg-white p-3.5 text-left shadow-2xs hover:border-blue-500 hover:shadow-xs dark:border-slate-800 dark:bg-slate-900 transition-all"
         >
           <div className="flex items-center gap-1.5 mb-1.5 w-full justify-between">
@@ -32,7 +35,8 @@ export const PopularConvertersGrid: React.FC = () => {
             {pair.description}
           </p>
         </Link>
-      ))}
+        );
+      })}
     </div>
   );
 };

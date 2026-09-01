@@ -1,16 +1,16 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import { Breadcrumbs } from './Breadcrumbs';
-import { ContentRenderer } from './ContentRenderer';
-import { DynamicFaqAccordion } from './DynamicFaqAccordion';
-import { RelatedTools } from './RelatedTools';
-import { RecentlyUsedTools, recordRecentlyUsedTool } from './RecentlyUsedTools';
-import { SeoStructuredData } from './SeoStructuredData';
-import { TableOfContents } from './TableOfContents';
-import { ToolHeaderSEO } from './ToolHeaderSEO';
+import React, { useEffect, useMemo, useState } from 'react';
 import { getBreadcrumbsForRoute } from '../../config/seoRegistry';
 import { ToolContentService } from '../../services/ToolContentService';
 import { ToolDefinition } from '../../types';
 import { ToolDetailContent } from '../../types/toolCms';
+import { Breadcrumbs } from './Breadcrumbs';
+import { ContentRenderer } from './ContentRenderer';
+import { DynamicFaqAccordion } from './DynamicFaqAccordion';
+import { RecentlyUsedTools, recordRecentlyUsedTool } from './RecentlyUsedTools';
+import { RelatedTools } from './RelatedTools';
+import { SeoStructuredData } from './SeoStructuredData';
+import { TableOfContents } from './TableOfContents';
+import { ToolHeaderSEO } from './ToolHeaderSEO';
 
 export interface CommonToolLayoutProps {
   tool: ToolDefinition;
@@ -74,7 +74,7 @@ export const CommonToolLayout: React.FC<CommonToolLayoutProps> = ({
   const breadcrumbs = customBreadcrumbs || getBreadcrumbsForRoute(routePath);
 
   return (
-    <div className={`space-y-8 py-6 max-w-6xl mx-auto px-4 sm:px-6 ${className}`}>
+    <div className={`space-y-10 py-6 max-w-6xl mx-auto ${className}`}>
       {/* Dynamic JSON-LD Structured Data Schema */}
       <SeoStructuredData tool={tool} content={effectiveContent} />
 

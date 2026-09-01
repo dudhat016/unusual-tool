@@ -2,35 +2,31 @@ import {
   CheckCircle2,
   Code2,
   Copy,
+  Edit3,
   FileCode,
+  Globe,
   Layers,
   RefreshCw,
+  Save,
   Search,
   ShieldCheck,
   Sparkles,
-  Edit3,
-  Save,
-  Globe,
-  Plus,
-  Zap,
-  Activity
+  Zap
 } from 'lucide-react';
-import React, { useState, useEffect } from 'react';
-import { Select, Button } from '../components/ui';
+import React, { useEffect, useState } from 'react';
+import { DynamicSitemapDashboard } from '../components/admin/DynamicSitemapDashboard';
+import { SeoAuditDashboard } from '../components/admin/SeoAuditDashboard';
+import { Button, Input, Select, Textarea } from '../components/ui';
 import {
   generateJsonLd,
-  generateRobotsTxt,
-  generateSitemapXml,
   getAllIndexableRoutes,
   runInternalSeoAudit,
-  SITE_DOMAIN,
+  SITE_DOMAIN
 } from '../config/seoRegistry';
-import { DynamicSeoService, GlobalSeoConfig } from '../services/DynamicSeoService';
-import { ToolSeoEntry } from '../types/seo';
 import { useApp } from '../context/AppContext';
-import { SeoAuditDashboard } from '../components/admin/SeoAuditDashboard';
-import { DynamicSitemapDashboard } from '../components/admin/DynamicSitemapDashboard';
+import { DynamicSeoService, GlobalSeoConfig } from '../services/DynamicSeoService';
 import { DynamicSitemapService } from '../services/DynamicSitemapService';
+import { ToolSeoEntry } from '../types/seo';
 
 export const SeoAdminView: React.FC = () => {
   const { showToast } = useApp();
@@ -321,6 +317,7 @@ export const SeoAdminView: React.FC = () => {
 
                 <div className="w-full sm:w-64">
                   <Select
+                    size="sm"
                     value={selectedRoute}
                     onChange={(e) => setSelectedRoute(e.target.value)}
                     options={getAllIndexableRoutes().map((route) => ({
@@ -333,116 +330,94 @@ export const SeoAdminView: React.FC = () => {
 
               <form onSubmit={handleSaveSeo} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      SEO Title (Title Tag) *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={seoForm.title || ''}
-                      onChange={(e) => setSeoForm({ ...seoForm, title: e.target.value })}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      H1 Headline
-                    </label>
-                    <input
-                      type="text"
-                      value={seoForm.h1 || ''}
-                      onChange={(e) => setSeoForm({ ...seoForm, h1: e.target.value })}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Meta Description *
-                  </label>
-                  <textarea
-                    rows={3}
+                  <Input
+                    label="SEO Title (Title Tag) *"
+                    size="sm"
                     required
-                    value={seoForm.metaDescription || ''}
-                    onChange={(e) => setSeoForm({ ...seoForm, metaDescription: e.target.value })}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
+                    value={seoForm.title || ''}
+                    onChange={(e) => setSeoForm({ ...seoForm, title: e.target.value })}
+                  />
+
+                  <Input
+                    label="H1 Headline"
+                    size="sm"
+                    value={seoForm.h1 || ''}
+                    onChange={(e) => setSeoForm({ ...seoForm, h1: e.target.value })}
                   />
                 </div>
+
+                <Textarea
+                  label="Meta Description *"
+                  rows={3}
+                  required
+                  value={seoForm.metaDescription || ''}
+                  onChange={(e) => setSeoForm({ ...seoForm, metaDescription: e.target.value })}
+                />
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Primary Target Keyword
+                  <Input
+                    label="Primary Target Keyword"
+                    size="sm"
+                    value={seoForm.primaryKeyword || ''}
+                    onChange={(e) => setSeoForm({ ...seoForm, primaryKeyword: e.target.value })}
+                  />
+
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                      Search Intent
                     </label>
-                    <input
-                      type="text"
-                      value={seoForm.primaryKeyword || ''}
-                      onChange={(e) => setSeoForm({ ...seoForm, primaryKeyword: e.target.value })}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
+                    <Select
+                      size="sm"
+                      value={seoForm.searchIntent || 'transactional'}
+                      onChange={(e) => setSeoForm({ ...seoForm, searchIntent: e.target.value as any })}
+                      options={[
+                        { label: 'Transactional (Do / Convert)', value: 'transactional' },
+                        { label: 'Informational (Know / Learn)', value: 'informational' },
+                        { label: 'Navigational (Brand / Tool)', value: 'navigational' },
+                      ]}
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Search Intent
-                    </label>
-                    <select
-                      value={seoForm.searchIntent || 'transactional'}
-                      onChange={(e) => setSeoForm({ ...seoForm, searchIntent: e.target.value as any })}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
-                    >
-                      <option value="transactional">Transactional (Do / Convert)</option>
-                      <option value="informational">Informational (Know / Learn)</option>
-                      <option value="navigational">Navigational (Brand / Tool)</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                       Schema Type
                     </label>
-                    <select
+                    <Select
+                      size="sm"
                       value={seoForm.schemaType || 'WebApplication'}
                       onChange={(e) => setSeoForm({ ...seoForm, schemaType: e.target.value as any })}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
-                    >
-                      <option value="WebApplication">WebApplication</option>
-                      <option value="SoftwareApplication">SoftwareApplication</option>
-                      <option value="Article">Article</option>
-                      <option value="CollectionPage">CollectionPage</option>
-                    </select>
+                      options={[
+                        { label: 'WebApplication', value: 'WebApplication' },
+                        { label: 'SoftwareApplication', value: 'SoftwareApplication' },
+                        { label: 'Article', value: 'Article' },
+                        { label: 'CollectionPage', value: 'CollectionPage' },
+                      ]}
+                    />
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    AEO Direct Answer Summary (for AI search engines & featured snippets)
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={seoForm.quickAnswer || ''}
-                    onChange={(e) => setSeoForm({ ...seoForm, quickAnswer: e.target.value })}
-                    placeholder="Concise 2-sentence direct answer explaining how to use this tool."
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
-                  />
-                </div>
+                <Textarea
+                  label="AEO Direct Answer Summary (for AI search engines & featured snippets)"
+                  rows={2}
+                  value={seoForm.quickAnswer || ''}
+                  onChange={(e) => setSeoForm({ ...seoForm, quickAnswer: e.target.value })}
+                  placeholder="Concise 2-sentence direct answer explaining how to use this tool."
+                />
 
                 <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-800">
                   <span className="text-[11px] text-slate-400 font-mono">
                     Route: {selectedRoute}
                   </span>
 
-                  <button
+                  <Button
                     type="submit"
-                    disabled={saving}
-                    className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition-all cursor-pointer"
+                    variant="primary"
+                    size="sm"
+                    isLoading={saving}
+                    leftIcon={<Save className="h-4 w-4" />}
                   >
-                    <Save className="h-4 w-4" />
-                    <span>{saving ? 'Saving to Firestore...' : 'Save SEO to Firestore'}</span>
-                  </button>
+                    Save SEO to Firestore
+                  </Button>
                 </div>
               </form>
             </div>

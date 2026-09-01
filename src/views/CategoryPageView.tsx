@@ -209,26 +209,29 @@ export const CategoryPageView: React.FC<CategoryPageViewProps> = ({ category }) 
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-              {SOCIAL_PRESETS_LIST.map((preset) => (
-                <Link
-                  key={preset.slug}
-                  href={`/resize-image-tools/${preset.slug}`}
-                  className="group flex items-center justify-between p-4 rounded-2xl border border-slate-200/80 bg-white hover:border-primary hover:shadow-md dark:border-slate-800 dark:bg-slate-900 transition-all cursor-pointer"
-                >
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-primary px-2 py-0.5 rounded bg-primary/10">
-                      {preset.platform}
-                    </span>
-                    <p className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
-                      {preset.name}
-                    </p>
-                    <p className="text-xs font-semibold text-slate-500">
-                      {preset.dimensions}
-                    </p>
-                  </div>
-                  <ArrowUpRight className="h-4 w-4 text-slate-400 group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform shrink-0" />
-                </Link>
-              ))}
+              {SOCIAL_PRESETS_LIST.map((preset) => {
+                const targetRoute = DynamicToolService.getToolBySlug(preset.slug)?.route || `/${preset.slug}`;
+                return (
+                  <Link
+                    key={preset.slug}
+                    href={targetRoute}
+                    className="group flex items-center justify-between p-4 rounded-2xl border border-slate-200/80 bg-white hover:border-primary hover:shadow-md dark:border-slate-800 dark:bg-slate-900 transition-all cursor-pointer"
+                  >
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-primary px-2 py-0.5 rounded bg-primary/10">
+                        {preset.platform}
+                      </span>
+                      <p className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
+                        {preset.name}
+                      </p>
+                      <p className="text-xs font-semibold text-slate-500">
+                        {preset.dimensions}
+                      </p>
+                    </div>
+                    <ArrowUpRight className="h-4 w-4 text-slate-400 group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform shrink-0" />
+                  </Link>
+                );
+              })}
             </div>
           </section>
 
@@ -245,20 +248,23 @@ export const CategoryPageView: React.FC<CategoryPageViewProps> = ({ category }) 
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              {PIXEL_DIMENSIONS_LIST.map((item) => (
-                <Link
-                  key={item.slug}
-                  href={`/resize-image-tools/${item.slug}`}
-                  className="group p-3 rounded-xl border border-slate-200/80 bg-white hover:border-emerald-500 hover:shadow-xs dark:border-slate-800 dark:bg-slate-900 text-center transition-all cursor-pointer flex flex-col justify-between"
-                >
-                  <p className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-emerald-500 transition-colors">
-                    {item.label}
-                  </p>
-                  <p className="text-[10px] text-slate-400 mt-1 font-medium">
-                    {item.desc}
-                  </p>
-                </Link>
-              ))}
+              {PIXEL_DIMENSIONS_LIST.map((item) => {
+                const targetRoute = DynamicToolService.getToolBySlug(item.slug)?.route || `/${item.slug}`;
+                return (
+                  <Link
+                    key={item.slug}
+                    href={targetRoute}
+                    className="group p-3 rounded-xl border border-slate-200/80 bg-white hover:border-emerald-500 hover:shadow-xs dark:border-slate-800 dark:bg-slate-900 text-center transition-all cursor-pointer flex flex-col justify-between"
+                  >
+                    <p className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-emerald-500 transition-colors">
+                      {item.label}
+                    </p>
+                    <p className="text-[10px] text-slate-400 mt-1 font-medium">
+                      {item.desc}
+                    </p>
+                  </Link>
+                );
+              })}
             </div>
           </section>
 
@@ -275,23 +281,26 @@ export const CategoryPageView: React.FC<CategoryPageViewProps> = ({ category }) 
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {FORMAT_RESIZE_LIST.map((item) => (
-                <Link
-                  key={item.slug}
-                  href={`/resize-image-tools/${item.slug}`}
-                  className="group p-3.5 rounded-xl border border-slate-200/80 bg-white hover:border-blue-500 hover:shadow-xs dark:border-slate-800 dark:bg-slate-900 flex items-center justify-between transition-all cursor-pointer"
-                >
-                  <div>
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
-                      {item.format}
-                    </span>
-                    <p className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-blue-500 transition-colors mt-1">
-                      {item.label}
-                    </p>
-                  </div>
-                  <ArrowUpRight className="h-4 w-4 text-slate-400 group-hover:text-blue-500 transition-transform shrink-0" />
-                </Link>
-              ))}
+              {FORMAT_RESIZE_LIST.map((item) => {
+                const targetRoute = DynamicToolService.getToolBySlug(item.slug)?.route || `/${item.slug}`;
+                return (
+                  <Link
+                    key={item.slug}
+                    href={targetRoute}
+                    className="group p-3.5 rounded-xl border border-slate-200/80 bg-white hover:border-blue-500 hover:shadow-xs dark:border-slate-800 dark:bg-slate-900 flex items-center justify-between transition-all cursor-pointer"
+                  >
+                    <div>
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                        {item.format}
+                      </span>
+                      <p className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-blue-500 transition-colors mt-1">
+                        {item.label}
+                      </p>
+                    </div>
+                    <ArrowUpRight className="h-4 w-4 text-slate-400 group-hover:text-blue-500 transition-transform shrink-0" />
+                  </Link>
+                );
+              })}
             </div>
 
             <ExactTargetSizesGrid

@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { EXACT_TARGET_SIZE_ITEMS, EXACT_IMAGE_TARGET_SIZE_ITEMS, EXACT_PDF_TARGET_SIZE_ITEMS } from '../../config/targetSizeTools';
 import { FileText, Image as ImageIcon } from 'lucide-react';
 import { Link } from './Link';
+import { DynamicToolService } from '../../services/DynamicToolService';
 
 interface ExactTargetSizesGridProps {
   currentSlug?: string;
@@ -88,10 +89,11 @@ export const ExactTargetSizesGrid: React.FC<ExactTargetSizesGridProps> = ({
         {displayedItems.map((item) => {
           const isActive = currentSlug === item.slug;
           const isPdf = item.mediaType === 'pdf' || item.slug.includes('pdf');
+          const targetRoute = DynamicToolService.getToolBySlug(item.slug)?.route || `/${item.slug}`;
           return (
             <Link
               key={item.slug}
-              href={`/${isPdf ? 'pdf-tools' : 'compress-image-tools'}/${item.slug}`}
+              href={targetRoute}
               className={`px-3 py-2.5 text-xs sm:text-sm font-semibold rounded-xl border text-center transition-all flex items-center justify-center gap-1.5 ${
                 isActive
                   ? 'border-primary bg-primary/10 text-primary ring-2 ring-primary/20 shadow-xs font-bold'

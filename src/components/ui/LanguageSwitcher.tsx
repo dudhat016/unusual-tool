@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation, SupportedLanguage } from '../../i18n';
+import { SUPPORTED_LOCALES } from '../../i18n/config';
 import { Icon } from './Icon';
 import { useApp } from '../../context/AppContext';
 
@@ -22,9 +23,10 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
     setLanguage(langCode);
     setIsOpen(false);
 
+    const localesPattern = new RegExp(`^\\/(${SUPPORTED_LOCALES.join('|')})`, 'i');
     const cleanPathNoLocale = (currentPath || window.location.pathname)
       .split('?')[0]
-      .replace(/^\/(en|hi|es|fr|de|pt|it|ja|ko|zh|ar)/i, '') || '/';
+      .replace(localesPattern, '') || '/';
 
     const targetUrl = `/${langCode}${cleanPathNoLocale === '/' ? '' : cleanPathNoLocale}`;
 

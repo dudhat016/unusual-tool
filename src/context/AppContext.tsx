@@ -20,6 +20,7 @@ import { SaaSDataService } from '../services/SaaSDataService';
 import { SubscriptionManager, ChangePlanParams } from '../services/SubscriptionManager';
 import { DynamicToolService } from '../services/DynamicToolService';
 import { DynamicSeoService } from '../services/DynamicSeoService';
+import { SUPPORTED_LOCALES, DEFAULT_LANGUAGE } from '../i18n/config';
 import { PRIMARY_COLOR_PRESETS, applyGlobalThemeVariables } from '../utils/themeHelper';
 import { RateLimitCheckResult, TrafficProtectionService } from '../services/TrafficProtectionService';
 import { HistoryItem, ToolDefinition, UserCredits } from '../types';
@@ -540,9 +541,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   const navigate = (path: string) => {
-    window.history.pushState({}, '', path);
-    setCurrentPath(path);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const currentSegments = (currentPath || window.location.pathname).split('/').filter(Boolean);
+    const activeLocale = (SUPPORTED_LOCALES as string[]).includes(currentSegments[0]?.toLowerCase())
+      ? currentSegments[0].toLowerCase()
+      : DEFAULT_LANGUAGE;
+
+    const cleanPath = path.replace(/^\/+|\/+$/g, '');
+    const pathSegments = cleanPath.split('/').filter(Boolean);
+    const hasLocalePrefix = (SUPPORTED_LOCALES as string[]).includes(pathSegments[0]?.toLowerCase());
+
+    const targetPath = hasLocalePrefix
+      ? `/${cleanPath}`
+      : `/${activeLocale}${cleanPath ? `/${cleanPath}` : ''}`;
+
+    if (targetPath !== currentPath) {
+      window.history.pushState({}, '', targetPath);
+      setCurrentPath(targetPath);
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
   };
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {

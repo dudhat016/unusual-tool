@@ -6,6 +6,9 @@ import { PlatformCategory, PlatformId, SceneTypeId } from '../types/socialMockup
 import { Sparkles, Search, ArrowRight } from 'lucide-react';
 import { Link } from '../components/common/Link';
 import { DynamicFaqAccordion } from '../components/common/DynamicFaqAccordion';
+import { SUPPORTED_LOCALES } from '../i18n/config';
+
+const LOCALE_REGEX = new RegExp(`^\\/(?:${SUPPORTED_LOCALES.join('|')})(?=\\/|$)`, 'i');
 
 export const SocialMockupHubView: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<PlatformCategory | 'all'>('all');
@@ -15,7 +18,7 @@ export const SocialMockupHubView: React.FC = () => {
   const [activePlatformId, setActivePlatformId] = useState<PlatformId | null>(() => {
     if (typeof window === 'undefined') return null;
     const rawPath = window.location.pathname;
-    const routePath = rawPath.replace(/^\/(?:en|es|de|fr|hi|ja|zh|pt|it|ar)(?=\/|$)/i, '');
+    const routePath = rawPath.replace(LOCALE_REGEX, '');
     const config = getSceneConfigByRoute(routePath);
     return config ? config.platformId : null;
   });
@@ -23,7 +26,7 @@ export const SocialMockupHubView: React.FC = () => {
   const [activeSceneType, setActiveSceneType] = useState<SceneTypeId>(() => {
     if (typeof window === 'undefined') return 'post';
     const rawPath = window.location.pathname;
-    const routePath = rawPath.replace(/^\/(?:en|es|de|fr|hi|ja|zh|pt|it|ar)(?=\/|$)/i, '');
+    const routePath = rawPath.replace(LOCALE_REGEX, '');
     const config = getSceneConfigByRoute(routePath);
     return config ? config.sceneType : 'post';
   });
@@ -31,7 +34,7 @@ export const SocialMockupHubView: React.FC = () => {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const rawPath = window.location.pathname;
-    const routePath = rawPath.replace(/^\/(?:en|es|de|fr|hi|ja|zh|pt|it|ar)(?=\/|$)/i, '');
+    const routePath = rawPath.replace(LOCALE_REGEX, '');
     const config = getSceneConfigByRoute(routePath);
     if (config) {
       setActivePlatformId(config.platformId);

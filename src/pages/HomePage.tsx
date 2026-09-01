@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { SaaSDataService } from '../services/SaaSDataService';
-import { DynamicIcon } from '../components/common/DynamicIcon';
+import { DynamicCategoryService } from '../services/DynamicCategoryService';
+import { CategorySeoEntry } from '../types/seo';
 import { ExactTargetSizesGrid } from '../components/common/ExactTargetSizesGrid';
 import { PopularConvertersGrid } from '../components/common/PopularConvertersGrid';
 import { SmartDropZone } from '../components/common/SmartDropZone';
@@ -15,15 +16,47 @@ import {
   Layers,
   ArrowRight,
   Cpu,
+  LayoutGrid,
+  FileText,
+  Scaling,
+  Minimize2,
+  RefreshCw,
+  Code,
+  Youtube,
+  Share2,
+  Crop,
+  ArrowUpRight,
 } from 'lucide-react';
 
 import { Link } from '../components/common/Link';
 import { DynamicFaqAccordion } from '../components/common/DynamicFaqAccordion';
 import { ToolCard } from '../components/common/ToolCard';
 
+const CATEGORY_ICONS: Record<string, React.ReactNode> = {
+  'pdf-tools': <FileText className="h-5 w-5 text-red-500" />,
+  'youtube-tools': <Youtube className="h-5 w-5 text-red-600" />,
+  'image-resizer-tools': <Scaling className="h-5 w-5 text-emerald-500" />,
+  'image-compressor-tools': <Minimize2 className="h-5 w-5 text-amber-500" />,
+  'image-converter-tools': <RefreshCw className="h-5 w-5 text-blue-500" />,
+  'ai-image-tools': <Sparkles className="h-5 w-5 text-primary" />,
+  'developer-tools': <Code className="h-5 w-5 text-indigo-500" />,
+  'image-editing-tools': <Crop className="h-5 w-5 text-purple-500" />,
+  'social-media-tools': <Share2 className="h-5 w-5 text-sky-500" />,
+};
+
 export const HomePage: React.FC = () => {
   const { navigate, setIsSearchOpen, tools } = useApp();
   const [usageStats, setUsageStats] = useState<Record<string, number>>({});
+  const [categories, setCategories] = useState<CategorySeoEntry[]>(() => DynamicCategoryService.getAllCategories());
+
+  useEffect(() => {
+    const unsubCat = DynamicCategoryService.subscribe((cats) => {
+      if (cats && cats.length > 0) {
+        setCategories(cats);
+      }
+    });
+    return () => unsubCat();
+  }, []);
 
   useEffect(() => {
     const unsubscribe = SaaSDataService.subscribeToToolUsageStats((stats) => {
@@ -154,7 +187,7 @@ export const HomePage: React.FC = () => {
           <div className="flex items-center gap-2.5 rounded-xl border border-slate-200/80 bg-white/60 p-3 dark:border-slate-800/80 dark:bg-slate-900/40">
             <Sparkles className="h-4 w-4 text-primary shrink-0" />
             <div className="min-w-0">
-              <p className="text-xs font-bold text-slate-900 dark:text-white">15+ Pro Tools</p>
+              <p className="text-xs font-bold text-slate-900 dark:text-white">185+ Tools</p>
               <p className="text-[10px] text-slate-500">All-in-one suite</p>
             </div>
           </div>
@@ -163,6 +196,64 @@ export const HomePage: React.FC = () => {
 
       {/* User Favorites Quick Access Bar */}
       <RecentAndFavoritesBar />
+
+      {/* Explore Tool Categories Section */}
+      <section className="space-y-6 max-w-6xl mx-auto px-4 sm:px-0">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/80 dark:border-slate-800 pb-4">
+          <div>
+            <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
+              <LayoutGrid className="h-6 w-6 text-primary" />
+              <span>Explore Tool Categories</span>
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Browse dedicated category hubs powered live by Firebase Firestore
+            </p>
+          </div>
+          <span className="text-xs font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full self-start sm:self-auto">
+            {categories.length} Categories Live
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {categories.map((cat) => {
+            const catIcon = CATEGORY_ICONS[cat.id] || <LayoutGrid className="h-5 w-5 text-primary" />;
+            const catRoute = `/${cat.slug || cat.id}`;
+
+            return (
+              <Link
+                key={cat.id}
+                href={catRoute}
+                className="group relative flex flex-col justify-between p-5 rounded-2xl border border-slate-200/90 bg-white hover:border-primary hover:shadow-lg dark:border-slate-800 dark:bg-slate-900/90 transition-all duration-300 cursor-pointer overflow-hidden"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 group-hover:scale-110 transition-transform duration-300">
+                      {catIcon}
+                    </div>
+                    <ArrowUpRight className="h-4 w-4 text-slate-400 group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                  </div>
+
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
+                      {cat.name || cat.h1}
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-1 leading-relaxed">
+                      {cat.description || cat.metaDescription}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between text-[11px] text-slate-400">
+                  <span className="font-semibold text-primary/90">
+                    Explore Category Hub
+                  </span>
+                  <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform text-primary" />
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
 
       {/* Popular Quick Start Grid */}
       <section className="space-y-4 max-w-6xl mx-auto">

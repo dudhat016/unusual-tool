@@ -11,10 +11,13 @@ import { DynamicCategoryService } from '../services/DynamicCategoryService';
 import { EXACT_TARGET_SIZE_ITEMS } from './targetSizeTools';
 import { POPULAR_CONVERTER_PAIRS } from './converterTools';
 import { BlogService } from '../services/BlogService';
+import { SUPPORTED_LOCALES } from '../i18n/config';
 
 export const SITE_DOMAIN = 'https://aetherpix.studio';
 export const SITE_NAME = 'AetherPix Studio';
 export const SITE_TAGLINE = 'Free Online Image Utility Suite & Creator Tools';
+
+const LOCALE_STRIP_REGEX = new RegExp(`^\\/(?:${SUPPORTED_LOCALES.join('|')})(?=\\/|$)`, 'i');
 
 /**
  * Primary Curated Tool SEO Registry
@@ -25,7 +28,7 @@ export const TOOL_SEO_DATABASE: Record<string, Partial<ToolSeoEntry>> = {};
  * Helper to synthesize SEO metadata for any route (tools, target size, converter pairs, categories, guides, trust pages)
  */
 export function getSeoForRoute(route: string): ToolSeoEntry | undefined {
-  const clean = route.replace(/^\/(?:en|es|de|fr|hi|ja|zh|pt|it|ar)(?=\/|$)/i, '').replace(/\/+$/, '') || '/';
+  const clean = route.replace(LOCALE_STRIP_REGEX, '').replace(/\/+$/, '') || '/';
   const slug = clean.replace(/^\/+/, '');
 
   // 1. Check exact match in curated TOOL_SEO_DATABASE
@@ -301,7 +304,7 @@ function formatSlugToTitle(slug: string): string {
  * Returns JSON-LD BreadcrumbList schemas & UI breadcrumb trails (Home -> Category -> Tool)
  */
 export function getBreadcrumbsForRoute(route: string): SeoBreadcrumbItem[] {
-  const clean = route.replace(/^\/(?:en|es|de|fr|hi|ja|zh|pt|it|ar)(?=\/|$)/i, '').replace(/\/+$/, '') || '/';
+  const clean = route.replace(LOCALE_STRIP_REGEX, '').replace(/\/+$/, '') || '/';
   const breadcrumbs: SeoBreadcrumbItem[] = [
     { name: 'Home', url: '/' }
   ];

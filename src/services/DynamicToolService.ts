@@ -13,8 +13,11 @@ import { parseTargetSizeRoute } from '../config/targetSizeTools';
 import { parseConverterRoute } from '../config/converterTools';
 import { parseSocialMockupRoute } from '../config/socialMockup/sceneRegistry';
 import { ToolDefinition } from '../types';
+import { STORAGE_KEYS } from '../config/storageKeys';
+import { FIREBASE_COLLECTIONS } from '../config/firebaseCollections';
+import { subscribeToFirestoreCollection, saveFirestoreDocument } from './FirestoreStreamHelper';
 
-const STORAGE_KEY = 'aetherpix_dynamic_tools_v2';
+const STORAGE_KEY = STORAGE_KEYS.TOOLS_CACHE;
 const SYNC_TIMESTAMP_KEY = 'aetherpix_tools_last_synced';
 
 export class DynamicToolService {
@@ -60,34 +63,21 @@ export class DynamicToolService {
    * Realtime Firestore listener — Firebase Firestore is the single source of truth.
    */
   private static startFirestoreListener() {
-    try {
-      const toolsCol = collection(db, 'tools');
-      this.unsubscribeFirestore = onSnapshot(
-        toolsCol,
-        (snapshot) => {
-          if (!snapshot.empty) {
-            const firestoreTools: (ToolDefinition & { isDeleted?: boolean })[] = snapshot.docs.map((d) => d.data() as any);
-            const toolMap = new Map<string, ToolDefinition>();
-
-            firestoreTools.forEach((t) => {
-              if (!t.isDeleted) {
-                toolMap.set(t.id, t);
-              }
-            });
-
-            const tools = Array.from(toolMap.values());
-            this.toolsCache = tools;
-            this.saveToStorage(tools);
-            this.notifyListeners();
+    this.unsubscribeFirestore = subscribeToFirestoreCollection<ToolDefinition & { isDeleted?: boolean }>(
+      FIREBASE_COLLECTIONS.TOOLS,
+      (items) => {
+        const toolMap = new Map<string, ToolDefinition>();
+        items.forEach((t) => {
+          if (!t.isDeleted) {
+            toolMap.set(t.id, t);
           }
-        },
-        (error) => {
-          console.warn('Firestore tools listener error:', error);
-        }
-      );
-    } catch (e) {
-      console.warn('Could not establish Firestore tools listener', e);
-    }
+        });
+        const tools = Array.from(toolMap.values());
+        this.toolsCache = tools;
+        this.saveToStorage(tools);
+        this.notifyListeners();
+      }
+    );
   }
 
   private static saveToStorage(tools: ToolDefinition[]) {
