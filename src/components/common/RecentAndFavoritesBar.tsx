@@ -5,7 +5,9 @@ import { Star } from 'lucide-react';
 import { Link } from './Link';
 
 export const RecentAndFavoritesBar: React.FC = () => {
-  const { favorites, tools } = useApp();
+  const { user, favorites, tools } = useApp();
+
+  if (!user) return null;
 
   // Find favorite tool definitions
   const favoriteTools = tools.filter((t) => favorites.includes(t.id));

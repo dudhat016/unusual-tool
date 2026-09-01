@@ -41,6 +41,8 @@ export interface SystemSettings {
   siteUrl: string;
   supportEmail: string;
   logoUrl?: string;
+  faviconUrl?: string;
+  brandTagline?: string;
   defaultCurrency: string;
   defaultPlan: PlanTier;
   anonymousDailyLimit: number;
@@ -64,13 +66,18 @@ export interface SystemSettings {
   accentColor?: string;
   radius?: number;
   sidebarTheme?: 'default' | 'dark' | 'light' | 'gradient';
+  fontFamily?: string;
+  fontDisplay?: string;
+  fontMono?: string;
+  fontScale?: number;
+  customCss?: string;
 }
 
 export interface AdminAuditLog {
   id: string;
   adminEmail: string;
   action: string;
-  targetType: 'tool' | 'plan' | 'user' | 'credits' | 'ads' | 'workflow' | 'feature_flag' | 'settings';
+  targetType: 'tool' | 'plan' | 'user' | 'credits' | 'credit_package' | 'ads' | 'workflow' | 'feature_flag' | 'settings' | 'mockup_template';
   targetId: string;
   previousValue?: any;
   newValue?: any;

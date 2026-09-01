@@ -10,6 +10,7 @@ export interface ConfirmDialogProps {
   title: string;
   message: string;
   confirmLabel?: string;
+  confirmText?: string;
   cancelLabel?: string;
   variant?: 'danger' | 'warning' | 'primary';
   loading?: boolean;
@@ -21,11 +22,13 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   onConfirm,
   title,
   message,
-  confirmLabel = 'Confirm',
+  confirmLabel,
+  confirmText,
   cancelLabel = 'Cancel',
   variant = 'danger',
   loading = false,
 }) => {
+  const resolvedConfirmLabel = confirmLabel || confirmText || 'Confirm';
   return (
     <Modal
       isOpen={isOpen}
@@ -77,7 +80,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             loading={loading}
             onClick={onConfirm}
           >
-            {confirmLabel}
+            {resolvedConfirmLabel}
           </Button>
         </div>
       </div>

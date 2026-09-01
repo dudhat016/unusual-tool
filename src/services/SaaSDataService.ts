@@ -18,6 +18,7 @@ import { DEFAULT_FEATURE_FLAGS } from '../config/featureFlags';
 import { db } from '../config/firebase';
 import { DEFAULT_PLANS } from '../config/plans';
 import { DEFAULT_SYSTEM_SETTINGS } from '../config/systemSettings';
+import { DEFAULT_CREDIT_PACKAGES, CreditTopUpPackage } from '../types/credits';
 import {
   AdminAuditLog,
   FeatureFlag,
@@ -313,28 +314,38 @@ export class SaaSDataService {
     provider: 'stripe' | 'lemonsqueezy' | 'paddle' | 'manual' = 'stripe',
     subscriptionId?: string
   ): Promise<boolean> {
-    const userRef = doc(db, 'users', userId);
-    const planConfig = DEFAULT_PLANS[planId] || DEFAULT_PLANS.free;
+    try {
+      const { SubscriptionManager } = await import('./SubscriptionManager');
+      const res = await SubscriptionManager.changePlan({
+        userId,
+        targetPlanId: planId,
+        provider,
+      });
+      return res.success;
+    } catch {
+      const userRef = doc(db, 'users', userId);
+      const planConfig = DEFAULT_PLANS[planId] || DEFAULT_PLANS.free;
 
-    const result = await this.executeCreditTransaction(
-      userId,
-      'subscription',
-      planConfig.monthlyCredits,
-      `Subscription Plan Update: ${planConfig.name} (${planConfig.monthlyCredits} credits)`
-    );
+      const result = await this.executeCreditTransaction(
+        userId,
+        'subscription',
+        planConfig.monthlyCredits,
+        `Subscription Plan Update: ${planConfig.name} (${planConfig.monthlyCredits} credits)`
+      );
 
-    if (!result.success) return false;
+      if (!result.success) return false;
 
-    await updateDoc(userRef, {
-      plan: planId,
-      'subscription.status': 'active',
-      'subscription.provider': provider,
-      'subscription.subscriptionId': subscriptionId || `sub_${Date.now()}`,
-      'subscription.currentPeriodEnd': Date.now() + 30 * 24 * 3600 * 1000,
-      updatedAt: Date.now(),
-    });
+      await updateDoc(userRef, {
+        plan: planId,
+        'subscription.status': 'active',
+        'subscription.provider': provider,
+        'subscription.subscriptionId': subscriptionId || `sub_${Date.now()}`,
+        'subscription.currentPeriodEnd': Date.now() + 30 * 24 * 3600 * 1000,
+        updatedAt: Date.now(),
+      });
 
-    return true;
+      return true;
+    }
   }
 
   // ================= PRESETS & WORKFLOWS ================= //
@@ -449,14 +460,40 @@ export class SaaSDataService {
       const snap = await getDocs(collection(db, 'feature_flags'));
       if (!snap.empty) {
         return snap.docs.map((d) => d.data() as FeatureFlag);
+      } else {
+        await this.seedFeatureFlagsIfEmpty();
       }
     } catch {}
     return DEFAULT_FEATURE_FLAGS;
   }
 
+  public static subscribeToFeatureFlags(callback: (flags: FeatureFlag[]) => void): () => void {
+    try {
+      const colRef = collection(db, 'feature_flags');
+      return onSnapshot(
+        colRef,
+        (snap) => {
+          if (!snap.empty) {
+            callback(snap.docs.map((d) => d.data() as FeatureFlag));
+          } else {
+            this.seedFeatureFlagsIfEmpty().then(() => callback(DEFAULT_FEATURE_FLAGS));
+          }
+        },
+        (err) => {
+          console.warn('Feature flags snapshot error:', err);
+          callback(DEFAULT_FEATURE_FLAGS);
+        }
+      );
+    } catch (e) {
+      console.warn('Could not subscribe to feature flags in Firestore', e);
+      callback(DEFAULT_FEATURE_FLAGS);
+      return () => {};
+    }
+  }
+
   public static async updateFeatureFlag(flag: FeatureFlag, adminEmail = 'admin'): Promise<boolean> {
     try {
-      await setDoc(doc(db, 'feature_flags', flag.key), flag);
+      await setDoc(doc(db, 'feature_flags', flag.key), flag, { merge: true });
       await this.logAuditAction({
         adminEmail,
         action: 'UPDATE_FEATURE_FLAG',
@@ -467,6 +504,121 @@ export class SaaSDataService {
       return true;
     } catch {
       return false;
+    }
+  }
+
+  public static async deleteFeatureFlag(key: string, adminEmail = 'admin'): Promise<boolean> {
+    try {
+      await deleteDoc(doc(db, 'feature_flags', key));
+      await this.logAuditAction({
+        adminEmail,
+        action: 'DELETE_FEATURE_FLAG',
+        targetType: 'feature_flag',
+        targetId: key,
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  public static async seedFeatureFlagsIfEmpty(): Promise<void> {
+    try {
+      const snap = await getDocs(collection(db, 'feature_flags'));
+      if (snap.empty) {
+        for (const flag of DEFAULT_FEATURE_FLAGS) {
+          await setDoc(doc(db, 'feature_flags', flag.key), flag, { merge: true });
+        }
+      }
+    } catch (e) {
+      console.warn('Could not seed feature flags to Firestore', e);
+    }
+  }
+
+  // ================= DYNAMIC CREDIT PACKAGES (FIRESTORE) ================= //
+
+  public static async getCreditPackages(): Promise<CreditTopUpPackage[]> {
+    try {
+      const snap = await getDocs(collection(db, 'credit_packages'));
+      if (!snap.empty) {
+        return snap.docs.map((d) => d.data() as CreditTopUpPackage);
+      } else {
+        await this.seedCreditPackagesIfEmpty();
+      }
+    } catch (e) {
+      console.warn('Could not fetch credit packages from Firestore:', e);
+    }
+    return DEFAULT_CREDIT_PACKAGES;
+  }
+
+  public static subscribeToCreditPackages(callback: (packages: CreditTopUpPackage[]) => void): () => void {
+    try {
+      const colRef = collection(db, 'credit_packages');
+      return onSnapshot(
+        colRef,
+        (snap) => {
+          if (!snap.empty) {
+            callback(snap.docs.map((d) => d.data() as CreditTopUpPackage));
+          } else {
+            this.seedCreditPackagesIfEmpty().then(() => callback(DEFAULT_CREDIT_PACKAGES));
+          }
+        },
+        (error) => {
+          console.warn('Credit packages snapshot error:', error);
+          callback(DEFAULT_CREDIT_PACKAGES);
+        }
+      );
+    } catch (e) {
+      console.warn('Could not subscribe to credit packages', e);
+      callback(DEFAULT_CREDIT_PACKAGES);
+      return () => {};
+    }
+  }
+
+  public static async saveCreditPackage(pkg: CreditTopUpPackage, adminEmail = 'admin'): Promise<boolean> {
+    try {
+      const docRef = doc(db, 'credit_packages', pkg.id);
+      await setDoc(docRef, pkg, { merge: true });
+      await this.logAuditAction({
+        adminEmail,
+        action: 'UPDATE_CREDIT_PACKAGE',
+        targetType: 'credit_package',
+        targetId: pkg.id,
+        newValue: pkg,
+      });
+      return true;
+    } catch (e) {
+      console.error('Failed to save credit package to Firestore', e);
+      return false;
+    }
+  }
+
+  public static async deleteCreditPackage(pkgId: string, adminEmail = 'admin'): Promise<boolean> {
+    try {
+      await deleteDoc(doc(db, 'credit_packages', pkgId));
+      await this.logAuditAction({
+        adminEmail,
+        action: 'DELETE_CREDIT_PACKAGE',
+        targetType: 'credit_package',
+        targetId: pkgId,
+      });
+      return true;
+    } catch (e) {
+      console.error('Failed to delete credit package from Firestore', e);
+      return false;
+    }
+  }
+
+  public static async seedCreditPackagesIfEmpty(): Promise<void> {
+    try {
+      const snap = await getDocs(collection(db, 'credit_packages'));
+      if (snap.empty) {
+        for (const pkg of DEFAULT_CREDIT_PACKAGES) {
+          await setDoc(doc(db, 'credit_packages', pkg.id), pkg, { merge: true });
+        }
+      }
+    } catch (e) {
+      console.warn('Could not seed credit packages to Firestore', e);
     }
   }
 
@@ -615,6 +767,29 @@ export class SaaSDataService {
       return true;
     } catch (e) {
       console.error('Failed to update user account settings in Firestore', e);
+      return false;
+    }
+  }
+
+  /**
+   * Updates the user's theme preference in the 'users' Firestore document
+   */
+  public static async updateUserTheme(uid: string, theme: 'light' | 'dark' | 'system'): Promise<boolean> {
+    if (!uid) return false;
+    try {
+      const userRef = doc(db, 'users', uid);
+      await setDoc(
+        userRef,
+        {
+          theme,
+          themePreference: theme,
+          updatedAt: Date.now(),
+        },
+        { merge: true }
+      );
+      return true;
+    } catch (e) {
+      console.warn('Failed to update user theme in Firestore', e);
       return false;
     }
   }
@@ -872,14 +1047,40 @@ export class SaaSDataService {
       const snap = await getDocs(collection(db, 'ad_slots'));
       if (!snap.empty) {
         return snap.docs.map((d) => d.data() as AdSlotConfig);
+      } else {
+        await this.seedAdSlotsIfEmpty();
       }
     } catch {}
     return DEFAULT_AD_SLOTS;
   }
 
+  public static subscribeToAdSlots(callback: (slots: AdSlotConfig[]) => void): () => void {
+    try {
+      const colRef = collection(db, 'ad_slots');
+      return onSnapshot(
+        colRef,
+        (snap) => {
+          if (!snap.empty) {
+            callback(snap.docs.map((d) => d.data() as AdSlotConfig));
+          } else {
+            this.seedAdSlotsIfEmpty().then(() => callback(DEFAULT_AD_SLOTS));
+          }
+        },
+        (err) => {
+          console.warn('Ad slots snapshot error:', err);
+          callback(DEFAULT_AD_SLOTS);
+        }
+      );
+    } catch (e) {
+      console.warn('Could not subscribe to ad slots in Firestore', e);
+      callback(DEFAULT_AD_SLOTS);
+      return () => {};
+    }
+  }
+
   public static async updateAdSlot(slot: AdSlotConfig, adminEmail = 'admin'): Promise<boolean> {
     try {
-      await setDoc(doc(db, 'ad_slots', slot.id), slot);
+      await setDoc(doc(db, 'ad_slots', slot.id), slot, { merge: true });
       await this.logAuditAction({
         adminEmail,
         action: 'UPDATE_AD_SLOT',
@@ -890,6 +1091,34 @@ export class SaaSDataService {
       return true;
     } catch {
       return false;
+    }
+  }
+
+  public static async deleteAdSlot(slotId: string, adminEmail = 'admin'): Promise<boolean> {
+    try {
+      await deleteDoc(doc(db, 'ad_slots', slotId));
+      await this.logAuditAction({
+        adminEmail,
+        action: 'DELETE_AD_SLOT',
+        targetType: 'ads',
+        targetId: slotId,
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  public static async seedAdSlotsIfEmpty(): Promise<void> {
+    try {
+      const snap = await getDocs(collection(db, 'ad_slots'));
+      if (snap.empty) {
+        for (const slot of DEFAULT_AD_SLOTS) {
+          await setDoc(doc(db, 'ad_slots', slot.id), slot, { merge: true });
+        }
+      }
+    } catch (e) {
+      console.warn('Could not seed ad slots to Firestore', e);
     }
   }
 
@@ -928,6 +1157,29 @@ export class SaaSDataService {
     }
   }
 
+  public static subscribeToAllUsers(callback: (users: UserProfile[]) => void, limitCount = 150): () => void {
+    try {
+      const q = query(collection(db, 'users'), limit(limitCount));
+      return onSnapshot(
+        q,
+        (snap) => {
+          if (!snap.empty) {
+            callback(snap.docs.map((d) => d.data() as UserProfile));
+          } else {
+            callback([]);
+          }
+        },
+        (err) => {
+          console.warn('All users snapshot error:', err);
+          callback([]);
+        }
+      );
+    } catch (e) {
+      console.warn('Could not subscribe to users in Firestore', e);
+      return () => {};
+    }
+  }
+
   public static async getAllJobs(limitCount = 100): Promise<ProcessingJobRecord[]> {
     try {
       const q = query(collection(db, 'processing_jobs'), orderBy('timestamp', 'desc'), limit(limitCount));
@@ -935,6 +1187,29 @@ export class SaaSDataService {
       return snap.docs.map((d) => d.data() as ProcessingJobRecord);
     } catch {
       return [];
+    }
+  }
+
+  public static subscribeToAllJobs(callback: (jobs: ProcessingJobRecord[]) => void, limitCount = 200): () => void {
+    try {
+      const q = query(collection(db, 'processing_jobs'), orderBy('timestamp', 'desc'), limit(limitCount));
+      return onSnapshot(
+        q,
+        (snap) => {
+          if (!snap.empty) {
+            callback(snap.docs.map((d) => d.data() as ProcessingJobRecord));
+          } else {
+            callback([]);
+          }
+        },
+        (err) => {
+          console.warn('All jobs snapshot error:', err);
+          callback([]);
+        }
+      );
+    } catch (e) {
+      console.warn('Could not subscribe to processing_jobs in Firestore', e);
+      return () => {};
     }
   }
 
@@ -948,6 +1223,29 @@ export class SaaSDataService {
     }
   }
 
+  public static subscribeToAllLedger(callback: (records: CreditLedgerRecord[]) => void, limitCount = 200): () => void {
+    try {
+      const q = query(collection(db, 'credit_ledger'), orderBy('timestamp', 'desc'), limit(limitCount));
+      return onSnapshot(
+        q,
+        (snap) => {
+          if (!snap.empty) {
+            callback(snap.docs.map((d) => d.data() as CreditLedgerRecord));
+          } else {
+            callback([]);
+          }
+        },
+        (err) => {
+          console.warn('All ledger snapshot error:', err);
+          callback([]);
+        }
+      );
+    } catch (e) {
+      console.warn('Could not subscribe to credit_ledger in Firestore', e);
+      return () => {};
+    }
+  }
+
   public static async getAllErrorLogs(limitCount = 50): Promise<SystemErrorLog[]> {
     try {
       const q = query(collection(db, 'error_logs'), orderBy('timestamp', 'desc'), limit(limitCount));
@@ -955,6 +1253,29 @@ export class SaaSDataService {
       return snap.docs.map((d) => d.data() as SystemErrorLog);
     } catch {
       return [];
+    }
+  }
+
+  public static subscribeToAllErrorLogs(callback: (logs: SystemErrorLog[]) => void, limitCount = 100): () => void {
+    try {
+      const q = query(collection(db, 'error_logs'), orderBy('timestamp', 'desc'), limit(limitCount));
+      return onSnapshot(
+        q,
+        (snap) => {
+          if (!snap.empty) {
+            callback(snap.docs.map((d) => d.data() as SystemErrorLog));
+          } else {
+            callback([]);
+          }
+        },
+        (err) => {
+          console.warn('All error logs snapshot error:', err);
+          callback([]);
+        }
+      );
+    } catch (e) {
+      console.warn('Could not subscribe to error_logs in Firestore', e);
+      return () => {};
     }
   }
 
@@ -1091,16 +1412,5 @@ export class SaaSDataService {
       console.warn('Could not fetch tool usage stats from Firestore', e);
     }
     return [];
-  }
-
-  public static async seedToolUsageStats(stats: ToolUsageStatItem[]): Promise<void> {
-    try {
-      for (const item of stats) {
-        const docRef = doc(db, 'tool_usage_stats', item.toolId);
-        await setDoc(docRef, item, { merge: true });
-      }
-    } catch (e) {
-      console.warn('Error seeding tool usage stats to Firestore', e);
-    }
   }
 }

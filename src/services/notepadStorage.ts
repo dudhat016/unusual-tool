@@ -1,4 +1,6 @@
 import { Note } from '../types/notepad';
+import { db, auth } from '../config/firebase';
+import { collection, doc, getDocs, setDoc, deleteDoc } from 'firebase/firestore';
 
 const DB_NAME = 'aetherpix_notepad_db';
 const DB_VERSION = 1;
@@ -155,9 +157,9 @@ class NotepadStorage {
 
   public async saveNote(note: Note): Promise<void> {
     try {
-      const db = await this.getDB();
-      return new Promise<void>((resolve, reject) => {
-        const tx = db.transaction(STORE_NAME, 'readwrite');
+      const dbInstance = await this.getDB();
+      await new Promise<void>((resolve, reject) => {
+        const tx = dbInstance.transaction(STORE_NAME, 'readwrite');
         const store = tx.objectStore(STORE_NAME);
         const req = store.put(note);
 
@@ -180,6 +182,15 @@ class NotepadStorage {
       }
       this.saveToLocalStorage(notes);
     }
+
+    // Async sync to Firestore if user is authenticated
+    try {
+      const user = auth?.currentUser;
+      if (user?.uid) {
+        const docRef = doc(db, 'users', user.uid, 'notes', note.id);
+        setDoc(docRef, note, { merge: true }).catch(() => {});
+      }
+    } catch {}
   }
 
   public async deleteNote(id: string, permanent = false): Promise<void> {
@@ -194,9 +205,9 @@ class NotepadStorage {
     }
 
     try {
-      const db = await this.getDB();
-      return new Promise<void>((resolve, reject) => {
-        const tx = db.transaction(STORE_NAME, 'readwrite');
+      const dbInstance = await this.getDB();
+      await new Promise<void>((resolve, reject) => {
+        const tx = dbInstance.transaction(STORE_NAME, 'readwrite');
         const store = tx.objectStore(STORE_NAME);
         const req = store.delete(id);
 
@@ -206,6 +217,50 @@ class NotepadStorage {
     } catch {
       const notes = this.getFromLocalStorage().filter((n) => n.id !== id);
       this.saveToLocalStorage(notes);
+    }
+
+    // Delete from Firestore if permanent
+    try {
+      const user = auth?.currentUser;
+      if (user?.uid) {
+        const docRef = doc(db, 'users', user.uid, 'notes', id);
+        deleteDoc(docRef).catch(() => {});
+      }
+    } catch {}
+  }
+
+  public async syncWithCloud(userId: string): Promise<Note[]> {
+    if (!userId) return this.getAllNotes();
+
+    try {
+      const notesCol = collection(db, 'users', userId, 'notes');
+      const snap = await getDocs(notesCol);
+      const cloudNotes: Note[] = snap.docs.map((d) => d.data() as Note);
+
+      const localNotes = await this.getAllNotes();
+      const localMap = new Map(localNotes.map((n) => [n.id, n]));
+
+      // Merge cloud notes into local DB
+      for (const cloudNote of cloudNotes) {
+        const local = localMap.get(cloudNote.id);
+        if (!local || (cloudNote.updatedAt || 0) > (local.updatedAt || 0)) {
+          await this.saveNote(cloudNote);
+        }
+      }
+
+      // Push any local notes not in cloud to cloud
+      const cloudIds = new Set(cloudNotes.map((c) => c.id));
+      for (const localNote of localNotes) {
+        if (!cloudIds.has(localNote.id) && localNote.id !== 'welcome-to-aetherpix-notepad') {
+          const docRef = doc(db, 'users', userId, 'notes', localNote.id);
+          await setDoc(docRef, localNote, { merge: true });
+        }
+      }
+
+      return this.getAllNotes();
+    } catch (e) {
+      console.warn('Cloud notes sync notice:', e);
+      return this.getAllNotes();
     }
   }
 

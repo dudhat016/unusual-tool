@@ -548,6 +548,17 @@ export const AdminBlogsTab: React.FC<AdminBlogsTabProps> = ({ showToast }) => {
         defaultPageSize={10}
         headerActions={
           <div className="flex items-center gap-2">
+            <Link href="/admin/seo">
+              <Button
+                variant="outline"
+                size="sm"
+                leftIcon={Sparkles}
+                className="text-blue-600 border-blue-200 dark:border-blue-800 dark:text-blue-400"
+                title="Run SEO Audit across Firestore blogs & tools"
+              >
+                SEO Audit
+              </Button>
+            </Link>
             <Button
               variant="secondary"
               size="sm"

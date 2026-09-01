@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n';
 import {
@@ -16,7 +16,8 @@ import {
   Sliders,
 } from 'lucide-react';
 import { LanguageSwitcher } from '../ui/LanguageSwitcher';
-import { TOOL_CATEGORIES } from '../../config/tools';
+import { DynamicCategoryService } from '../../services/DynamicCategoryService';
+import { DarkModeToggle } from './DarkModeToggle';
 
 import { Link } from './Link';
 
@@ -35,6 +36,14 @@ export const Header: React.FC = () => {
   } = useApp();
   const { t } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [dynamicCategories, setDynamicCategories] = useState(() => DynamicCategoryService.getAllCategories());
+
+  useEffect(() => {
+    const unsub = DynamicCategoryService.subscribe((cats) => {
+      setDynamicCategories(cats);
+    });
+    return unsub;
+  }, []);
 
   const navLinks: { label: string; path: string; badge?: string }[] = [
     { label: t('navigation.allTools'), path: '/tools' },
@@ -110,7 +119,7 @@ export const Header: React.FC = () => {
 
           {/* Credits Badge */}
           <button
-            onClick={() => navigate('/dashboard?tab=credits')}
+            onClick={() => navigate('/dashboard/credits')}
             className="hidden lg:flex items-center gap-1.5 rounded-xl border border-amber-200/80 bg-amber-50/80 px-2.5 py-1 text-xs font-semibold text-amber-800 hover:bg-amber-100 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300 transition-colors cursor-pointer"
             title="Available AI Credits & Ledger"
           >
@@ -160,14 +169,8 @@ export const Header: React.FC = () => {
             </button>
           )}
 
-          {/* Theme Toggle */}
-          <button
-            onClick={toggleTheme}
-            className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-900 transition-colors"
-            aria-label="Toggle theme"
-          >
-            {theme === 'dark' ? <Sun className="h-4 w-4 text-amber-400" /> : <Moon className="h-4 w-4" />}
-          </button>
+          {/* Global Dark Mode Toggle */}
+          <DarkModeToggle id="header-dark-mode-toggle" size="md" />
 
           {/* Mobile Menu Hamburger */}
           <button
@@ -186,7 +189,7 @@ export const Header: React.FC = () => {
           <div className="grid grid-cols-2 gap-2 pb-2">
             <button
               onClick={() => {
-                navigate('/dashboard?tab=credits');
+                navigate('/dashboard/credits');
                 setMobileMenuOpen(false);
               }}
               className="flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 text-xs font-semibold"
@@ -235,7 +238,7 @@ export const Header: React.FC = () => {
           <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">{t('navigation.categories')}</p>
             <div className="grid grid-cols-2 gap-1.5">
-              {TOOL_CATEGORIES.slice(1, 7).map((cat) => (
+              {dynamicCategories.slice(0, 6).map((cat) => (
                 <button
                   key={cat.id}
                   onClick={() => {

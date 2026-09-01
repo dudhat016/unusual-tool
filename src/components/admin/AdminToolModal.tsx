@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ToolDefinition } from '../../types';
+import { DynamicCategoryService } from '../../services/DynamicCategoryService';
 import {
   X,
   Plus,
@@ -142,6 +143,12 @@ export const AdminToolModal: React.FC<AdminToolModalProps> = ({
   const [activeTab, setActiveTab] = useState<'basic' | 'processing' | 'features' | 'seo' | 'flags'>('basic');
   const [iconSearch, setIconSearch] = useState('');
 
+  const dynamicCategories = useMemo(() => {
+    const fromService = DynamicCategoryService.getAllCategories().map((c) => c.id);
+    const fromTools = existingTools.map((t) => t.category);
+    return Array.from(new Set([...fromService, ...fromTools])).filter(Boolean);
+  }, [existingTools]);
+
   // Populate form data when modal opens or editingTool changes
   useEffect(() => {
     if (editingTool) {
@@ -159,7 +166,7 @@ export const AdminToolModal: React.FC<AdminToolModalProps> = ({
         }
       });
 
-      const isKnownCategory = COMMON_CATEGORIES.includes(editingTool.category);
+      const isKnownCategory = dynamicCategories.includes(editingTool.category);
       setUseCustomCategory(!isKnownCategory);
       if (!isKnownCategory) {
         setCustomCategory(editingTool.category);
@@ -554,9 +561,9 @@ export const AdminToolModal: React.FC<AdminToolModalProps> = ({
                       onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
                       className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-white capitalize cursor-pointer"
                     >
-                      {COMMON_CATEGORIES.map((c) => (
+                      {dynamicCategories.map((c) => (
                         <option key={c} value={c}>
-                          {c.charAt(0).toUpperCase() + c.slice(1)}
+                          {c.charAt(0).toUpperCase() + c.slice(1).replace(/-/g, ' ')}
                         </option>
                       ))}
                     </select>

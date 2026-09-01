@@ -1,6 +1,7 @@
 import React, { lazy, Suspense, useEffect } from 'react';
 import { AuthModal } from './components/auth/AuthModal';
 import { CustomizerDrawer } from './components/common/CustomizerDrawer';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { Footer } from './components/common/Footer';
 import { Header } from './components/common/Header';
 import { QuickSearchModal } from './components/common/QuickSearchModal';
@@ -113,38 +114,19 @@ const AppRouter: React.FC = () => {
 
 
 
-    // Main Category Hub Pages (e.g. /resize, /resize-image-tools, /compress, /compress-image-tools, /convert, /pdf, /youtube)
-    const isMainCategoryRoute = [
-      '/resize',
-      '/resize-image-tools',
-      '/resize-tools',
-      '/compress',
-      '/compress-image-tools',
-      '/compress-tools',
-      '/convert',
-      '/convert-image-tools',
-      '/convert-tools',
-      '/crop',
-      '/pdf',
-      '/pdf-tools',
-      '/youtube',
-      '/youtube-tools',
-      '/ai',
-      '/ai-image-tools',
-      '/tools',
-      '/image-tools',
-      '/category'
-    ].some(p => normalizedPath === p || normalizedPath.startsWith('/category/'));
+    // 1. Specific Tool Pages (matched from Firestore database or dynamic resolution)
+    if (matchedTool) {
+      return <ToolPage tool={matchedTool} />;
+    }
 
-    // Social Media Mockup Studio Routes (e.g. /social-mockup, /instagram-dm-generator, /whatsapp-chat-generator)
-    const isMockupRoute =
-      normalizedPath === '/social-mockup' ||
-      normalizedPath.endsWith('-mockup') ||
-      normalizedPath.endsWith('-generator') ||
-      normalizedPath.includes('-mockup/') ||
-      normalizedPath.includes('-generator/');
+    // Fallback tool matching by clean slug
+    const toolBySlugDirect = getToolBySlug(normalizedPath);
+    if (toolBySlugDirect) {
+      return <ToolPage tool={toolBySlugDirect} />;
+    }
 
-    if (isMockupRoute) {
+    // 2. Social Mockup Studio Catalog Hub
+    if (normalizedPath === '/social-mockup' || normalizedPath === '/social-media-mockup' || normalizedPath === '/mockup-hub') {
       return (
         <Suspense fallback={<RouteLoadingSpinner />}>
           <SocialMockupHubView />
@@ -152,23 +134,9 @@ const AppRouter: React.FC = () => {
       );
     }
 
-    // Specific Tool Pages
-    if (matchedTool) {
-      return <ToolPage tool={matchedTool} />;
-    }
-
-    // Category Hub Pages fallback
+    // 3. Dynamic Category Hub Pages (matched from Firestore categories)
     if (matchedCategory) {
       return <CategoryPageView category={matchedCategory} />;
-    }
-
-    // Dynamic Parametric Target Size Tool Route Matcher (e.g. /compress-image-to-15kb, /compress-jpg-to-2mb)
-    const isTargetSizeRoute = /^\/(compress|resize)-(image|jpeg|jpg|png|webp|avif|pdf)?-?(?:between-)?(\d+)?(?:kb|mb)?(?:-to-)?(\d+)(kb|mb|px)$/i.test(normalizedPath);
-    if (isTargetSizeRoute) {
-      const compressTool = getToolByRoute('/compress-image') || getToolByRoute('/compress') || getToolBySlug('compress');
-      if (compressTool) {
-        return <ToolPage tool={compressTool} />;
-      }
     }
 
     // Blog Directory & Article Detail Views
@@ -228,9 +196,11 @@ const AppRouter: React.FC = () => {
     return (
       <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-50 transition-colors">
         <SeoHeadUpdater currentPath={normalizedPath} />
-        <Suspense fallback={<RouteLoadingSpinner />}>
-          {renderContent()}
-        </Suspense>
+        <ErrorBoundary resetKeys={[normalizedPath]}>
+          <Suspense fallback={<RouteLoadingSpinner />}>
+            {renderContent()}
+          </Suspense>
+        </ErrorBoundary>
         <ToastContainer />
         <AuthModal
           isOpen={isAuthModalOpen}
@@ -246,9 +216,11 @@ const AppRouter: React.FC = () => {
       <SeoHeadUpdater currentPath={normalizedPath} />
       <Header />
       <main className="flex-1 w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <Suspense fallback={<RouteLoadingSpinner />}>
-          {renderContent()}
-        </Suspense>
+        <ErrorBoundary resetKeys={[normalizedPath]}>
+          <Suspense fallback={<RouteLoadingSpinner />}>
+            {renderContent()}
+          </Suspense>
+        </ErrorBoundary>
       </main>
       <Footer />
       <QuickSearchModal />

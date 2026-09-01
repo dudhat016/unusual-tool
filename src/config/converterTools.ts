@@ -40,17 +40,18 @@ export function createConverterToolDefinition(
   toFormat: string
 ): ToolDefinition {
   const name = `Convert ${fromExt.toUpperCase()} to ${toExt.toUpperCase()}`;
+  const cleanSlug = slug.replace(/^(?:convert-image-tools\/|convert\/|convert-)/i, '');
 
   return {
-    id: `convert-${slug}`,
-    slug: `convert/${slug}`,
+    id: `convert-${cleanSlug}`,
+    slug: cleanSlug,
     name,
     shortDescription: `Convert ${fromExt.toUpperCase()} images directly to ${toExt.toUpperCase()} format in your browser with zero quality loss.`,
     fullDescription: `Instant browser-side ${fromExt.toUpperCase()} to ${toExt.toUpperCase()} converter. Transform files locally without uploading them to any remote server. Features high-speed canvas rasterization, alpha preservation, and instant downloads.`,
     category: 'convert',
     processingType: 'browser',
     icon: 'RefreshCw',
-    route: `/convert/${slug}`,
+    route: `/convert-image-tools/${cleanSlug}`,
     supportsBatch: true,
     requiresAuth: false,
     creditCost: 0,
@@ -151,20 +152,19 @@ export function parseConverterRoute(path: string): ToolDefinition | undefined {
   const clean = path.replace(/^\/+|\/+$/g, '').toLowerCase();
 
   // Match Audio & Video Converters (e.g. mp4-to-mp3, video-to-mp3, convert-wav-to-mp3)
-  const audioMatch = clean.match(/^(?:convert-)?(mp4|video|mov|avi|webm|wav|m4a|aac|flac|ogg)-to-(mp3|wav|m4a|ogg)(?:-converter)?$/i);
+  const audioMatch = clean.match(/^(?:convert-image-tools\/|convert\/|convert-)?(mp4|video|mov|avi|webm|wav|m4a|aac|flac|ogg)-to-(mp3|wav|m4a|ogg)(?:-converter)?$/i);
   if (audioMatch) {
     const fromExt = audioMatch[1].toUpperCase();
     const toExt = audioMatch[2].toUpperCase();
     return createAudioConverterToolDefinition(clean, fromExt, toExt);
   }
 
-  // Check prefix: convert/xxx-to-yyy or convert-xxx-to-yyy
-  let pairSlug = '';
-  if (clean.startsWith('convert/')) {
-    pairSlug = clean.replace('convert/', '');
-  } else if (clean.startsWith('convert-')) {
-    pairSlug = clean.replace('convert-', '');
-  }
+  // Strip known converter prefixes: convert-image-tools/, image-converter-tools/, convert/, or convert-
+  let pairSlug = clean
+    .replace(/^convert-image-tools\//, '')
+    .replace(/^image-converter-tools\//, '')
+    .replace(/^convert\//, '')
+    .replace(/^convert-/, '');
 
   if (!pairSlug) return undefined;
 

@@ -1,4 +1,5 @@
 import { PlatformId, SceneTypeId, SceneConfig, SceneState } from '../../types/socialMockup';
+import { ToolDefinition } from '../../types';
 
 export interface SceneRouteMapping {
   route: string;
@@ -254,6 +255,64 @@ export const ALL_SCENE_ROUTES: SceneRouteMapping[] = [
 export function getSceneConfigByRoute(path: string): SceneRouteMapping | undefined {
   const clean = path.replace(/^\/+|\/+$/g, '').toLowerCase();
   return ALL_SCENE_ROUTES.find((r) => r.route.replace(/^\/+/, '').toLowerCase() === clean);
+}
+
+export function createSocialMockupToolDefinition(scene: SceneRouteMapping): ToolDefinition {
+  const cleanSlug = scene.route.replace(/^\/+/, '');
+  return {
+    id: cleanSlug,
+    slug: cleanSlug,
+    name: scene.name,
+    shortDescription: scene.seoDescription,
+    fullDescription: `${scene.seoTitle}. High-fidelity browser-side generator for ${scene.name}. Customize text, media, timestamps, metrics, badges, and device frames with instant high-resolution PNG export.`,
+    category: 'social',
+    processingType: 'browser',
+    icon: 'Sparkles',
+    route: scene.route,
+    supportsBatch: false,
+    requiresAuth: false,
+    creditCost: 0,
+    supportedFormats: ['image/png', 'image/jpeg'],
+    maxFileSizeMB: 50,
+    isPopular: true,
+    platformId: scene.platformId,
+    sceneType: scene.sceneType,
+    features: [
+      `Pixel-accurate ${scene.name} layout and typography`,
+      'Custom dark / light mode interface toggle',
+      'Realistic metric counters, badges, and timestamps',
+      'Instant client-side 2x/3x high-resolution PNG export',
+    ],
+    howToSteps: [
+      { step: 1, title: 'Customize Scene', description: 'Enter message text, upload avatar or media, and adjust engagement metrics.' },
+      { step: 2, title: 'Select Device Frame', description: 'Choose iOS, Android, or frameless canvas display options.' },
+      { step: 3, title: 'Export High-Res Mockup', description: 'Download crisp, high-resolution PNG image directly in your browser.' },
+    ],
+    faqs: [
+      {
+        question: `Is this ${scene.name} free to use?`,
+        answer: 'Yes, 100% free with unlimited exports and zero watermarks.',
+      },
+      {
+        question: 'Are my generated images stored online?',
+        answer: 'No, all generation happens 100% locally in your browser memory for maximum privacy.',
+      },
+    ],
+    seo: {
+      title: scene.seoTitle,
+      description: scene.seoDescription,
+      keywords: [cleanSlug.replace(/-/g, ' '), scene.name.toLowerCase(), 'mockup generator', 'fake chat generator'],
+      canonicalSlug: cleanSlug,
+    },
+  };
+}
+
+export function parseSocialMockupRoute(path: string): ToolDefinition | undefined {
+  const config = getSceneConfigByRoute(path);
+  if (config) {
+    return createSocialMockupToolDefinition(config);
+  }
+  return undefined;
 }
 
 export function getRouteForPlatformScene(platformId: PlatformId, sceneType: SceneTypeId = 'post'): string {

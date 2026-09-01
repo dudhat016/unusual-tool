@@ -18,7 +18,7 @@ export const LinkedInRenderer: React.FC<RendererProps> = ({ sceneState, onElemen
   const activeHeadline = sceneState.post?.headline || 'Lead Product Designer at AetherPix Studio | Building AI Design Tools';
 
   // LINKEDIN INMAIL / MESSAGE VIEW
-  if (sceneState.sceneType === 'message' || sceneState.sceneType === 'dm' || sceneState.sceneType === 'chat') {
+  if ((sceneState.sceneType as string) === 'message' || sceneState.sceneType === 'dm' || sceneState.sceneType === 'chat') {
     const conv = sceneState.conversation || {
       conversationId: 'li1',
       chatTitle: activeName,
@@ -134,7 +134,7 @@ export const LinkedInRenderer: React.FC<RendererProps> = ({ sceneState, onElemen
   }
 
   // LINKEDIN FEED POST VIEW
-  const post = sceneState.post || {
+  const post: any = sceneState.post || {
     author: {
       name: activeName,
       username: activeHandle,

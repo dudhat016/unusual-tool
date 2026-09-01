@@ -226,12 +226,156 @@
         "updatedAt": { "type": "number", "description": "Timestamp of last modification." }
       },
       "required": ["id", "userId", "toolIds", "updatedAt"]
+    },
+    "PlanConfigItem": {
+      "title": "PlanConfigItem",
+      "description": "Configurable SaaS subscription pricing tiers, quotas, credit limits, and capabilities stored in plans collection.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Plan key (e.g. free, pro, business)." },
+        "name": { "type": "string", "description": "Display name of tier." },
+        "priceMonthly": { "type": "number", "description": "Monthly price in currency." },
+        "priceYearly": { "type": "number", "description": "Yearly price in currency." },
+        "currency": { "type": "string", "description": "Three letter currency code (e.g. USD)." },
+        "monthlyCredits": { "type": "number", "description": "Monthly AI & processing credits allocation." },
+        "dailyImagesLimit": { "type": "number", "description": "Daily max processing limit." },
+        "maxFileSizeMB": { "type": "number", "description": "Max file upload size in MB." },
+        "maxBatchSize": { "type": "number", "description": "Max files per batch." },
+        "maxResolutionMegapixels": { "type": "number", "description": "Max resolution supported in MP." },
+        "maxProcessingTimeMs": { "type": "number", "description": "Max job processing timeout in ms." },
+        "aiRateLimitPerMin": { "type": "number", "description": "Max AI requests per minute." },
+        "adsEnabled": { "type": "boolean", "description": "Whether ads are displayed." },
+        "allowPriorityQueue": { "type": "boolean", "description": "Priority queue access." },
+        "allowBulkZip": { "type": "boolean", "description": "Bulk ZIP download access." },
+        "allowServerEngines": { "type": "boolean", "description": "Server-side high fidelity engines access." },
+        "priority": { "type": "number", "description": "Display sort priority." },
+        "features": { "type": "array", "description": "List of feature highlight bullet points." }
+      },
+      "required": ["id", "name", "priceMonthly", "priceYearly", "monthlyCredits", "maxFileSizeMB", "maxBatchSize"]
+    },
+    "UserSubscriptionRecord": {
+      "title": "UserSubscriptionRecord",
+      "description": "User subscription sub-collection record tracking tier, billing cycle, active status, period dates, and invoice history.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique subscription document ID." },
+        "userId": { "type": "string", "description": "UID of the user." },
+        "planId": { "type": "string", "description": "Subscribed plan tier ID." },
+        "planName": { "type": "string", "description": "Subscribed plan display name." },
+        "billingCycle": { "type": "string", "enum": ["monthly", "yearly"], "description": "Billing cadence." },
+        "status": { "type": "string", "enum": ["active", "canceled", "past_due", "trialing", "expired"], "description": "Current subscription lifecycle state." },
+        "provider": { "type": "string", "description": "Payment provider (e.g. stripe, lemonsqueezy, paddle, manual)." },
+        "subscriptionId": { "type": "string", "description": "Provider or internal subscription reference ID." },
+        "pricePaid": { "type": "number", "description": "Amount billed for current cycle." },
+        "currency": { "type": "string", "description": "Billing currency code." },
+        "currentPeriodStart": { "type": "number", "description": "Epoch timestamp of period start." },
+        "currentPeriodEnd": { "type": "number", "description": "Epoch timestamp of period renewal/expiry." },
+        "cancelAtPeriodEnd": { "type": "boolean", "description": "Whether plan will cancel at end of period." },
+        "monthlyCreditsAllotted": { "type": "number", "description": "Credits granted per cycle." },
+        "paymentMethodSummary": { "type": "object", "description": "Summary of active payment card." },
+        "invoiceHistory": { "type": "array", "description": "Historical invoice and charge receipts." },
+        "createdAt": { "type": "number", "description": "Creation timestamp." },
+        "updatedAt": { "type": "number", "description": "Last updated timestamp." }
+      },
+      "required": ["id", "userId", "planId", "billingCycle", "status", "currentPeriodStart", "currentPeriodEnd", "createdAt", "updatedAt"]
+    },
+    "CreditTopUpPackage": {
+      "title": "CreditTopUpPackage",
+      "description": "Configurable credit top-up pack for instant balance purchase.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Package identifier." },
+        "name": { "type": "string", "description": "Package title." },
+        "credits": { "type": "number", "description": "Base credits granted." },
+        "bonusCredits": { "type": "number", "description": "Bonus credits granted." },
+        "price": { "type": "number", "description": "Price in currency." },
+        "currency": { "type": "string", "description": "Currency code." },
+        "popular": { "type": "boolean", "description": "Highlighted as popular pack." },
+        "badge": { "type": "string", "description": "Promotional badge text." },
+        "description": { "type": "string", "description": "Package description." }
+      },
+      "required": ["id", "name", "credits", "price", "currency"]
+    },
+    "FeatureFlag": {
+      "title": "FeatureFlag",
+      "description": "Dynamic feature toggle controlled by admin.",
+      "type": "object",
+      "properties": {
+        "key": { "type": "string", "description": "Unique feature flag key." },
+        "name": { "type": "string", "description": "Human readable name." },
+        "description": { "type": "string", "description": "Feature explanation." },
+        "category": { "type": "string", "description": "Feature category." },
+        "status": { "type": "string", "enum": ["enabled", "disabled", "premium_only", "coming_soon"], "description": "Current activation status." },
+        "updatedAt": { "type": "number", "description": "Last modified timestamp." }
+      },
+      "required": ["key", "name", "status"]
+    },
+    "AdSlotConfig": {
+      "title": "AdSlotConfig",
+      "description": "Dynamic advertisement placement configuration.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Slot identifier." },
+        "name": { "type": "string", "description": "Display name." },
+        "placement": { "type": "string", "description": "Placement route or position." },
+        "format": { "type": "string", "description": "Banner or native format." },
+        "enabled": { "type": "boolean", "description": "Whether slot is active." },
+        "device": { "type": "string", "enum": ["all", "desktop", "mobile"], "description": "Device target." },
+        "estimatedCpm": { "type": "number", "description": "Estimated CPM value." }
+      },
+      "required": ["id", "name", "placement", "enabled"]
+    },
+    "UserNoteItem": {
+      "title": "UserNoteItem",
+      "description": "User notepad document persisted in cloud.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Note unique ID." },
+        "title": { "type": "string", "description": "Note title." },
+        "content": { "type": "string", "description": "Rich HTML content." },
+        "plainText": { "type": "string", "description": "Plain text content." },
+        "isPinned": { "type": "boolean", "description": "Whether note is pinned." },
+        "isTrashed": { "type": "boolean", "description": "Whether note is in trash." },
+        "createdAt": { "type": "number", "description": "Creation timestamp." },
+        "updatedAt": { "type": "number", "description": "Last update timestamp." }
+      },
+      "required": ["id", "title", "content", "createdAt", "updatedAt"]
+    },
+    "SocialMockupTemplateItem": {
+      "title": "SocialMockupTemplateItem",
+      "description": "Pre-built or custom social media mockup generator scenes.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Template identifier." },
+        "name": { "type": "string", "description": "Template title." },
+        "description": { "type": "string", "description": "Description of scene." },
+        "platformId": { "type": "string", "description": "Platform key." },
+        "sceneType": { "type": "string", "description": "Scene format." },
+        "sceneState": { "type": "object", "description": "Saved scene parameters and messages." }
+      },
+      "required": ["id", "name", "platformId", "sceneType", "sceneState"]
     }
   },
   "firestore": {
     "/users/{userId}": {
       "schema": "UserProfile",
       "description": "Individual user profiles, plan status, and credit balance."
+    },
+    "/users/{userId}/subscriptions/{subscriptionId}": {
+      "schema": "UserSubscriptionRecord",
+      "description": "User subscriptions sub-collection recording active plan contracts, renewals, and invoice records."
+    },
+    "/users/{userId}/notes/{noteId}": {
+      "schema": "UserNoteItem",
+      "description": "User notepad notes synchronized across devices in cloud."
+    },
+    "/plans/{planId}": {
+      "schema": "PlanConfigItem",
+      "description": "Configurable SaaS subscription pricing tiers and quota settings."
+    },
+    "/credit_packages/{packageId}": {
+      "schema": "CreditTopUpPackage",
+      "description": "Admin configurable credit top-up packages available for user purchase."
     },
     "/favorites/{favoriteId}": {
       "schema": "UserFavorites",
@@ -276,6 +420,18 @@
     "/tool_usage_stats/{statId}": {
       "schema": "ToolUsageStat",
       "description": "Aggregated tool analytics and execution counts stored in Firestore."
+    },
+    "/feature_flags/{flagId}": {
+      "schema": "FeatureFlag",
+      "description": "Dynamic feature toggles."
+    },
+    "/ad_slots/{slotId}": {
+      "schema": "AdSlotConfig",
+      "description": "Dynamic ad placements."
+    },
+    "/social_mockup_templates/{templateId}": {
+      "schema": "SocialMockupTemplateItem",
+      "description": "Social media generator mockup templates."
     }
   }
 }

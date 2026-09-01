@@ -4,17 +4,20 @@ import {
   BarChart3,
   CheckCircle2,
   CreditCard,
+  Eye,
   FileText,
   Flag,
   Globe,
   Layers,
   Menu,
+  Palette,
   Radio,
   Search,
   Settings,
   Shield,
   ShieldAlert,
   Users,
+  Wrench,
   Zap
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -22,6 +25,7 @@ import React, { useEffect, useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Input } from '../ui/Input';
 import { NavItem, Sidebar } from './Sidebar';
+import { DarkModeToggle } from '../common/DarkModeToggle';
 
 export interface AdminLayoutProps {
   children: React.ReactNode;
@@ -58,7 +62,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   const adminNavItems: NavItem[] = [
     { sectionTitle: 'OPERATIONS CONSOLE' },
     {
-      label: 'Overview & Metrics',
+      label: 'Overview & Telemetry',
       path: '/admin',
       icon: Activity,
       exact: true,
@@ -67,79 +71,157 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
       label: 'Tool Usage Analytics',
       path: '/admin/analytics',
       icon: BarChart3,
+      exact: true,
     },
     {
       label: 'User Management',
       path: '/admin/users',
       icon: Users,
       badge: userCount > 0 ? userCount : undefined,
-    },
-    {
-      label: 'Tool Catalog Config',
-      path: '/admin/tools',
-      icon: Layers,
-    },
-    {
-      label: 'Blog & Article CMS',
-      path: '/admin/blogs',
-      icon: FileText,
-    },
-    {
-      label: 'Plans & Pricing Tiers',
-      path: '/admin/plans',
-      icon: CreditCard,
+      exact: true,
     },
 
-    { sectionTitle: 'MONETIZATION & TRAFFIC' },
-    {
-      label: 'Ad Network Settings',
-      path: '/admin/ads',
-      icon: Radio,
-    },
-    {
-      label: 'Traffic Protection & Rate Limits',
-      path: '/admin/traffic',
-      icon: Zap,
-    },
-    {
-      label: 'Feature Toggles & Rollouts',
-      path: '/admin/flags',
-      icon: Flag,
-    },
-    {
-      label: 'i18n & Translations',
-      path: '/admin/translations',
-      icon: Globe,
-    },
-
-    { sectionTitle: 'SYSTEM DIAGNOSTICS' },
-    {
-      label: 'SEO Diagnostic Dashboard',
-      path: '/admin/seo',
-      icon: Globe,
-    },
+    { sectionTitle: 'PLATFORM MANAGEMENT' },
     {
       label: 'System Configuration',
-      path: '/admin/settings',
       icon: Settings,
+      children: [
+        {
+          label: 'General & Branding',
+          path: '/admin/settings?section=general',
+          icon: Globe,
+          exact: true,
+        },
+        {
+          label: 'Theme & Accent Colors',
+          path: '/admin/settings?section=theme',
+          icon: Palette,
+          exact: true,
+        },
+        {
+          label: 'Maintenance Mode',
+          path: '/admin/settings?section=maintenance',
+          icon: Wrench,
+          exact: true,
+        },
+        {
+          label: 'Rate Limits & Quotas',
+          path: '/admin/settings?section=traffic',
+          icon: Zap,
+          exact: true,
+        },
+        {
+          label: 'Emergency Killswitches',
+          path: '/admin/settings?section=emergency',
+          icon: ShieldAlert,
+          exact: true,
+        },
+        {
+          label: 'Monetization & Analytics',
+          path: '/admin/settings?section=monetization',
+          icon: Activity,
+          exact: true,
+        },
+        {
+          label: 'Live Visitor Preview',
+          path: '/admin/settings?section=preview',
+          icon: Eye,
+          exact: true,
+        },
+      ],
     },
     {
-      label: 'UI Kit & Design System',
-      path: '/admin/ui-kit',
+      label: 'Catalog & Content',
       icon: Layers,
+      children: [
+        {
+          label: 'Tool Catalog Config',
+          path: '/admin/tools',
+          icon: Layers,
+          exact: true,
+        },
+        {
+          label: 'Blog & Article CMS',
+          path: '/admin/blogs',
+          icon: FileText,
+          exact: true,
+        },
+        {
+          label: 'Plans & Pricing Tiers',
+          path: '/admin/plans',
+          icon: CreditCard,
+          exact: true,
+        },
+      ],
     },
     {
-      label: 'System Audit & Error Logs',
-      path: '/admin/audit',
-      icon: ShieldAlert,
-      badge: errorLogCount > 0 ? errorLogCount : undefined,
-      badgeVariant: 'danger',
+      label: 'Traffic & Monetization',
+      icon: Zap,
+      children: [
+        {
+          label: 'Ad Network Settings',
+          path: '/admin/ads',
+          icon: Radio,
+          exact: true,
+        },
+        {
+          label: 'Traffic & Rate Limits',
+          path: '/admin/traffic',
+          icon: Zap,
+          exact: true,
+        },
+        {
+          label: 'Feature Flags & Toggles',
+          path: '/admin/flags',
+          icon: Flag,
+          exact: true,
+        },
+        {
+          label: 'i18n & Translations',
+          path: '/admin/translations',
+          icon: Globe,
+          exact: true,
+        },
+      ],
+    },
+    {
+      label: 'System & Diagnostics',
+      icon: Shield,
+      children: [
+        {
+          label: 'SEO Diagnostic Dashboard',
+          path: '/admin/seo',
+          icon: Globe,
+          exact: true,
+        },
+        {
+          label: 'UI Kit & Design System',
+          path: '/admin/ui-kit',
+          icon: Palette,
+          exact: true,
+        },
+        {
+          label: 'Audit & Error Logs',
+          path: '/admin/audit',
+          icon: ShieldAlert,
+          badge: errorLogCount > 0 ? errorLogCount : undefined,
+          badgeVariant: 'danger',
+          exact: true,
+        },
+      ],
     },
   ];
 
   const handleNavClick = (path: string) => {
     navigate(path);
   };
+
+  const currentRoutePath =
+    typeof window !== 'undefined'
+      ? window.location.pathname + window.location.search
+      : activeTab === 'overview'
+      ? '/admin'
+      : `/admin/${activeTab}`;
 
   const adminFooterWidget = (
     <div className="flex items-center gap-3 px-2 py-1.5">
@@ -170,7 +252,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           onToggleCollapse={() => setCollapsed((v) => !v)}
           bottomSection={adminFooterWidget}
           onNavigate={handleNavClick}
-          currentPath={activeTab === 'overview' ? '/admin' : `/admin/${activeTab}`}
+          currentPath={currentRoutePath}
         />
       </div>
 
@@ -198,7 +280,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                 onClose={() => setIsMobileOpen(false)}
                 bottomSection={adminFooterWidget}
                 onNavigate={handleNavClick}
-                currentPath={activeTab === 'overview' ? '/admin' : `/admin/${activeTab}`}
+                currentPath={currentRoutePath}
               />
             </motion.div>
           </>
@@ -230,6 +312,9 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
 
           {/* Quick Actions Bar */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Global Dark Mode Toggle */}
+            <DarkModeToggle id="admin-dark-mode-toggle" size="sm" />
+
             {/* Quick Search Button */}
             <button
               onClick={() => setSearchOpen(true)}

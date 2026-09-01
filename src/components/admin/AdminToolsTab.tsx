@@ -57,7 +57,6 @@ export const AdminToolsTab: React.FC<AdminToolsTabProps> = ({ showToast }) => {
 
   // Sync state
   const [isSyncing, setIsSyncing] = useState(false);
-  const [isSeeding, setIsSeeding] = useState(false);
 
   // Subscribe to dynamic tool updates from Firestore & local cache
   useEffect(() => {
@@ -208,27 +207,6 @@ export const AdminToolsTab: React.FC<AdminToolsTabProps> = ({ showToast }) => {
       showToast('Could not refresh from Firestore', 'error');
     } finally {
       setIsSyncing(false);
-    }
-  };
-
-  // Seed current tool list to Firestore
-  const handleSeedFirestore = async () => {
-    if (
-      !window.confirm(
-        `Are you sure you want to write all ${tools.length} tools to the Firestore "tools" collection?`
-      )
-    ) {
-      return;
-    }
-    setIsSeeding(true);
-    try {
-      const count = await DynamicToolService.syncToolsToFirestore(tools);
-      showToast(`Successfully synced ${count} tools to Firestore!`, 'success');
-    } catch (err) {
-      console.error('Error seeding tools', err);
-      showToast('Failed to write tools to Firestore', 'error');
-    } finally {
-      setIsSeeding(false);
     }
   };
 
@@ -560,13 +538,12 @@ export const AdminToolsTab: React.FC<AdminToolsTabProps> = ({ showToast }) => {
           </button>
 
           <button
-            onClick={handleSeedFirestore}
-            disabled={isSeeding}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-750 transition-all cursor-pointer disabled:opacity-50"
-            title="Seed/update base tool definitions into Firestore collection"
+            onClick={() => navigate('/admin/seo')}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-blue-200 dark:border-blue-800/60 bg-blue-50/70 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 text-xs font-bold hover:bg-blue-100 transition-all cursor-pointer"
+            title="Open SEO Audit Dashboard for tools & blogs"
           >
-            <Database className="h-3.5 w-3.5 text-indigo-500" />
-            <span>{isSeeding ? 'Seeding...' : 'Seed to Firestore'}</span>
+            <Sparkles className="h-3.5 w-3.5 text-blue-600" />
+            <span>SEO Audit</span>
           </button>
 
           <button

@@ -11,6 +11,7 @@ export type ToolCategory =
   | 'social'
   | 'effects'
   | 'metadata'
+  | 'developer'
   | 'batch'
   | 'youtube'
   | 'pdf'
@@ -77,6 +78,11 @@ export interface ToolDefinition {
   faqs?: FAQItem[];
   howToSteps?: UsageStep[];
   features?: string[];
+  platformId?: string;
+  sceneType?: string;
+  targetSizeKb?: number;
+  isPremiumOnly?: boolean;
+  maintenanceMode?: boolean;
 }
 
 export interface UploadedFileItem {
@@ -90,7 +96,7 @@ export interface UploadedFileItem {
   height: number;
   aspectRatio: number;
   previewUrl: string;
-  lastModified: number;
+  lastModified?: number;
 }
 
 export interface QualityMetrics {
@@ -187,6 +193,8 @@ export interface ResizeOptions {
   unit?: 'cm' | 'mm' | 'inches';
   width: number;
   height: number;
+  widthUnit?: number;
+  heightUnit?: number;
   percentage: number;
   lockAspectRatio: boolean;
   interpolation: 'bilinear' | 'bicubic' | 'nearest' | 'crisp';

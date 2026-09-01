@@ -1,6 +1,7 @@
 import React, { forwardRef } from 'react';
 
 export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  label?: string;
   error?: boolean | string;
   helperText?: string;
   maxCharacters?: number;
@@ -9,6 +10,7 @@ export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextArea
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
   (
     {
+      label,
       error = false,
       helperText,
       maxCharacters,
@@ -25,6 +27,11 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
 
     return (
       <div className="w-full space-y-1.5">
+        {label && (
+          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+            {label}
+          </label>
+        )}
         <textarea
           ref={ref}
           disabled={disabled}

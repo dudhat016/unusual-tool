@@ -16,6 +16,7 @@ export const TOOL_CATEGORIES = [
   { id: 'edit', name: 'Borders & Watermark', icon: 'Stamp' },
   { id: 'ocr', name: 'OCR / Text', icon: 'FileText' },
   { id: 'metadata', name: 'Metadata & EXIF', icon: 'Info' },
+  { id: 'developer', name: 'Developer Tools', icon: 'Code', badge: 'New' },
   { id: 'youtube', name: 'YouTube Tools', icon: 'Video', badge: 'New' },
   { id: 'pdf', name: 'PDF Tools', icon: 'FileText', badge: 'Hot' }
 ];

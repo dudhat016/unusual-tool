@@ -15,7 +15,9 @@ import { auth, googleProvider } from '../config/firebase';
 import { DEFAULT_PLANS, IPaymentProvider, MockPaymentProviderAdapter } from '../config/plans';
 import { DEFAULT_SYSTEM_SETTINGS } from '../config/systemSettings';
 import { AbusePreventionService } from '../services/AbusePreventionService';
+import { CreditManager } from '../services/CreditManager';
 import { SaaSDataService } from '../services/SaaSDataService';
+import { SubscriptionManager, ChangePlanParams } from '../services/SubscriptionManager';
 import { DynamicToolService } from '../services/DynamicToolService';
 import { DynamicSeoService } from '../services/DynamicSeoService';
 import { PRIMARY_COLOR_PRESETS, applyGlobalThemeVariables } from '../utils/themeHelper';
@@ -23,17 +25,28 @@ import { RateLimitCheckResult, TrafficProtectionService } from '../services/Traf
 import { HistoryItem, ToolDefinition, UserCredits } from '../types';
 import { ToolSeoEntry } from '../types/seo';
 import {
+  CreditAnalyticsSummary,
+  CreditCheckResult,
+  CreditCostEstimate,
+  CreditTopUpPackage,
+  DEFAULT_CREDIT_PACKAGES,
+  TransactionType,
+} from '../types/credits';
+import {
   FeatureFlag,
   SystemSettings,
 } from '../types/admin';
 import { AdSlotConfig } from '../types/ads';
 import {
+  BillingCycle,
   CreditLedgerRecord,
+  InvoiceItem,
   PlanConfig,
   PlanTier,
   ProcessingJobRecord,
   SavedPreset,
   UserProfile,
+  UserSubscriptionRecord,
 } from '../types/saas';
 
 interface Toast {
@@ -89,6 +102,7 @@ interface AppContextType {
     photoURL?: string;
     avatar?: string;
     preferredLanguage?: string;
+    theme?: 'light' | 'dark' | 'system';
     privacySettings?: Partial<UserProfile['privacySettings']>;
   }) => Promise<boolean>;
   refreshUserProfile: () => Promise<void>;
@@ -100,12 +114,18 @@ interface AppContextType {
   logout: () => Promise<void>;
   isAdmin: boolean;
 
-  // SaaS Credits & Ledger
+  // SaaS Credits & Ledger (CreditManager)
   credits: UserCredits;
   activePlanConfig: PlanConfig;
   creditLedger: CreditLedgerRecord[];
   refreshLedger: () => Promise<void>;
   consumeCredits: (amount: number, description?: string, toolId?: string, jobId?: string) => Promise<boolean>;
+  grantCredits: (amount: number, type?: TransactionType, description?: string) => Promise<boolean>;
+  refundCredits: (amount: number, reason: string, jobId?: string, toolId?: string) => Promise<boolean>;
+  checkCreditAvailability: (requiredAmount: number) => Promise<CreditCheckResult>;
+  purchaseCreditPackage: (packageId: string) => Promise<boolean>;
+  estimateToolCost: (toolId: string, options?: { isAi?: boolean; batchSize?: number; resolutionMegapixels?: number }) => CreditCostEstimate;
+  getCreditAnalytics: () => Promise<CreditAnalyticsSummary>;
 
   // SaaS Jobs & Telemetry
   processingJobs: ProcessingJobRecord[];
@@ -126,9 +146,21 @@ interface AppContextType {
   // Ad Monetization Slots
   adSlots: AdSlotConfig[];
 
-  // Subscriptions & Payment Adapter
+  // Dynamic Credit Top-Up Packages
+  creditPackages: CreditTopUpPackage[];
+
+  // Subscriptions, Plans & Billing Manager
+  plans: Record<string, PlanConfig>;
+  userSubscriptions: UserSubscriptionRecord[];
+  activeSubscription: UserSubscriptionRecord | null;
+  invoices: InvoiceItem[];
   paymentProvider: IPaymentProvider;
   upgradePlan: (planId: PlanTier, interval?: 'monthly' | 'yearly') => Promise<boolean>;
+  changePlan: (params: Omit<ChangePlanParams, 'userId'>) => Promise<boolean>;
+  cancelSubscription: (subscriptionId?: string, cancelAtPeriodEnd?: boolean) => Promise<boolean>;
+  resumeSubscription: (subscriptionId?: string) => Promise<boolean>;
+  updatePaymentMethod: (paymentMethod: { brand: string; last4: string; expMonth: number; expYear: number }, subscriptionId?: string) => Promise<boolean>;
+  refreshSubscriptions: () => Promise<void>;
 
   // Traffic & Abuse checks
   checkExecutionAllowed: (fileCount?: number, isAi?: boolean) => RateLimitCheckResult;
@@ -152,6 +184,41 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [processingJobs, setProcessingJobs] = useState<ProcessingJobRecord[]>([]);
   const [presets, setPresets] = useState<SavedPreset[]>([]);
 
+  // SaaS Plans from Firestore 'plans' collection & User Subscriptions sub-collection
+  const [plans, setPlans] = useState<Record<string, PlanConfig>>(DEFAULT_PLANS);
+  const [userSubscriptions, setUserSubscriptions] = useState<UserSubscriptionRecord[]>([]);
+  const [invoices, setInvoices] = useState<InvoiceItem[]>([]);
+
+  // Real-time listener for top-level 'plans' Firestore collection
+  useEffect(() => {
+    const unsub = SubscriptionManager.subscribeToPlans((livePlans) => {
+      setPlans(livePlans);
+    });
+    return unsub;
+  }, []);
+
+  // Real-time listener for user's subscriptions sub-collection (/users/{userId}/subscriptions)
+  useEffect(() => {
+    if (!user?.uid) {
+      setUserSubscriptions([]);
+      setInvoices([]);
+      return;
+    }
+
+    const unsub = SubscriptionManager.subscribeToUserSubscriptions(user.uid, (subs) => {
+      setUserSubscriptions(subs);
+      const allInvs: InvoiceItem[] = [];
+      subs.forEach((s) => {
+        if (s.invoiceHistory && Array.isArray(s.invoiceHistory)) {
+          allInvs.push(...s.invoiceHistory);
+        }
+      });
+      setInvoices(allInvs.sort((a, b) => b.date - a.date));
+    });
+
+    return unsub;
+  }, [user?.uid]);
+
   // Dynamic Tools & SEO state
   const [tools, setTools] = useState<ToolDefinition[]>(() => DynamicToolService.getAllTools());
 
@@ -170,17 +237,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [systemSettings, setSystemSettings] = useState<SystemSettings>(DEFAULT_SYSTEM_SETTINGS);
   const [featureFlags, setFeatureFlags] = useState<FeatureFlag[]>(DEFAULT_FEATURE_FLAGS);
   const [adSlots, setAdSlots] = useState<AdSlotConfig[]>(DEFAULT_AD_SLOTS);
+  const [creditPackages, setCreditPackages] = useState<CreditTopUpPackage[]>(DEFAULT_CREDIT_PACKAGES);
+
+  // Live Firestore subscriptions for system settings, feature flags, ad slots, and credit packages
+  useEffect(() => {
+    const unsubSettings = SaaSDataService.subscribeToSystemSettings((liveSettings) => {
+      setSystemSettings(liveSettings);
+    });
+    const unsubFlags = SaaSDataService.subscribeToFeatureFlags((liveFlags) => {
+      setFeatureFlags(liveFlags);
+    });
+    const unsubAds = SaaSDataService.subscribeToAdSlots((liveAds) => {
+      setAdSlots(liveAds);
+    });
+    const unsubPackages = SaaSDataService.subscribeToCreditPackages((livePackages) => {
+      setCreditPackages(livePackages);
+    });
+
+    return () => {
+      unsubSettings();
+      unsubFlags();
+      unsubAds();
+      unsubPackages();
+    };
+  }, []);
 
   const [paymentProvider] = useState<IPaymentProvider>(() => new MockPaymentProviderAdapter());
 
-  const [favorites, setFavorites] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem('aetherpix_favorites');
-      return saved ? JSON.parse(saved) : ['resize-image', 'compress-image', 'convert-image', 'ai-background-remover'];
-    } catch {
-      return ['resize-image', 'compress-image'];
-    }
-  });
+  // Cloud-synced user favorites (Empty for guests; requires Firebase login)
+  const [favorites, setFavorites] = useState<string[]>([]);
 
   const [history, setHistory] = useState<HistoryItem[]>(() => {
     try {
@@ -246,12 +331,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch {}
   }, [theme, radius, primaryColor, sidebarTheme]);
 
+  const handleSetTheme = (newTheme: 'light' | 'dark') => {
+    setTheme(newTheme);
+    try {
+      localStorage.setItem('aetherpix_theme', newTheme);
+    } catch {}
+
+    // Immediately synchronize the Tailwind 'dark' class and design tokens across the DOM
+    applyGlobalThemeVariables({
+      theme: newTheme,
+      primaryColor,
+      radius,
+      sidebarTheme,
+    });
+
+    // Update the user's theme preference in the 'users' Firestore document if authenticated
+    if (user?.uid) {
+      setUserProfile((prev) => (prev ? { ...prev, theme: newTheme, themePreference: newTheme } : null));
+      SaaSDataService.updateUserTheme(user.uid, newTheme).catch((err) => {
+        console.warn('Failed to sync theme preference to Firestore user document:', err);
+      });
+    }
+  };
+
   const toggleTheme = () => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+    const nextTheme: 'light' | 'dark' = theme === 'dark' ? 'light' : 'dark';
+    handleSetTheme(nextTheme);
   };
 
   const resetThemeConfig = () => {
-    setTheme('dark');
+    handleSetTheme('dark');
     setPrimaryColor('purple');
     setRadius(8);
     setSidebarTheme('dark');
@@ -290,6 +399,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         primaryColor: liveSettings.primaryColor || liveSettings.accentColor,
         radius: liveSettings.radius,
         sidebarTheme: liveSettings.sidebarTheme,
+        fontFamily: liveSettings.fontFamily,
+        fontDisplay: liveSettings.fontDisplay,
+        fontMono: liveSettings.fontMono,
+        fontScale: liveSettings.fontScale,
+        siteName: liveSettings.siteName,
+        logoUrl: liveSettings.logoUrl,
+        faviconUrl: liveSettings.faviconUrl,
+        customCss: liveSettings.customCss,
       });
     });
 
@@ -330,6 +447,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           );
           setUserProfile(profile);
 
+          if (profile.theme && (profile.theme === 'light' || profile.theme === 'dark')) {
+            setTheme(profile.theme);
+          }
+
           refreshLedger(firebaseUser.uid);
           refreshJobs(firebaseUser.uid);
           refreshPresets(firebaseUser.uid);
@@ -354,38 +475,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (!isSubscribed) return;
       if (cloudProfile) {
         setUserProfile(cloudProfile);
+        if (cloudProfile.theme && (cloudProfile.theme === 'light' || cloudProfile.theme === 'dark')) {
+          setTheme(cloudProfile.theme);
+        }
       }
+    });
+
+    // Real-time Firestore Ledger listener via CreditManager
+    const unsubLedger = CreditManager.subscribeToLedger(user.uid, (records) => {
+      if (!isSubscribed) return;
+      setCreditLedger(records);
     });
 
     return () => {
       isSubscribed = false;
       unsubscribe();
+      unsubLedger();
     };
   }, [user?.uid]);
 
-  // Cross-device User Favorites Listener via Firestore 'favorites' collection
+  // Cross-device User Favorites Listener via Firestore 'favorites' collection (Requires Auth)
   useEffect(() => {
-    if (!user?.uid) return;
+    if (!user?.uid) {
+      setFavorites([]);
+      try {
+        localStorage.removeItem('aetherpix_favorites');
+      } catch {}
+      return;
+    }
 
     let isSubscribed = true;
     const unsubscribe = SaaSDataService.subscribeToUserFavorites(user.uid, (cloudFavorites) => {
       if (!isSubscribed) return;
       if (cloudFavorites && Array.isArray(cloudFavorites)) {
-        if (cloudFavorites.length > 0) {
-          setFavorites(cloudFavorites);
-          try {
-            localStorage.setItem('aetherpix_favorites', JSON.stringify(cloudFavorites));
-          } catch {}
-        } else {
-          // If user has local favorites, migrate them to cloud favorites collection
-          try {
-            const saved = localStorage.getItem('aetherpix_favorites');
-            const localFavs: string[] = saved ? JSON.parse(saved) : [];
-            if (localFavs.length > 0) {
-              SaaSDataService.updateUserFavorites(user.uid, localFavs);
-            }
-          } catch {}
-        }
+        setFavorites(cloudFavorites);
       }
     });
 
@@ -507,20 +630,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } finally {
       setUserProfile(null);
       setUser(null);
+      setFavorites([]);
+      try {
+        localStorage.removeItem('aetherpix_favorites');
+      } catch {}
       showToast('Signed out successfully.', 'info');
     }
   };
 
-  // Derive current plan configuration
+  // Derive current plan configuration from Firestore live plans or fallback
   const currentPlanTier: PlanTier = userProfile?.plan || 'free';
-  const activePlanConfig: PlanConfig = DEFAULT_PLANS[currentPlanTier] || DEFAULT_PLANS.free;
+  const activePlanConfig: PlanConfig = plans[currentPlanTier] || DEFAULT_PLANS[currentPlanTier] || DEFAULT_PLANS.free;
+
+  // Active user subscription from sub-collection
+  const activeSubscription: UserSubscriptionRecord | null =
+    userSubscriptions.find((s) => s.status === 'active' || s.status === 'trialing') ||
+    userSubscriptions[0] ||
+    null;
 
   // Credits representation
   const credits: UserCredits = {
     total: activePlanConfig.monthlyCredits,
     used: userProfile ? Math.max(0, activePlanConfig.monthlyCredits - userProfile.credits) : 0,
     plan: currentPlanTier === 'business' ? 'business' : currentPlanTier === 'pro' ? 'pro' : 'free',
-    resetsAt: userProfile?.subscription?.currentPeriodEnd || Date.now() + 30 * 24 * 3600 * 1000,
+    resetsAt: activeSubscription?.currentPeriodEnd || userProfile?.subscription?.currentPeriodEnd || (Date.now() + 30 * 24 * 3600 * 1000),
   };
 
   const isAdmin =
@@ -600,6 +733,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     photoURL?: string;
     avatar?: string;
     preferredLanguage?: string;
+    theme?: 'light' | 'dark' | 'system';
     privacySettings?: Partial<UserProfile['privacySettings']>;
   }): Promise<boolean> => {
     const payload: Partial<UserProfile> = {};
@@ -607,6 +741,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (prefs.photoURL !== undefined) payload.photoURL = prefs.photoURL;
     if (prefs.avatar !== undefined) payload.avatar = prefs.avatar;
     if (prefs.preferredLanguage !== undefined) payload.preferredLanguage = prefs.preferredLanguage;
+    if (prefs.theme !== undefined) {
+      payload.theme = prefs.theme;
+      payload.themePreference = prefs.theme;
+      if (prefs.theme === 'light' || prefs.theme === 'dark') {
+        handleSetTheme(prefs.theme);
+      }
+    }
     if (prefs.privacySettings !== undefined) {
       payload.privacySettings = {
         ...(userProfile?.privacySettings || { telemetryOptIn: true, autoPurgeHistoryMinutes: 0 }),
@@ -681,7 +822,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   /**
-   * Consume credits with Ledger Record Enforcement
+   * Centralized CreditManager Operations (Firestore Atomic Transactions)
    */
   const consumeCredits = async (
     amount: number,
@@ -702,23 +843,123 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return false;
     }
 
-    const res = await SaaSDataService.executeCreditTransaction(
-      user.uid,
-      'usage',
-      -amount,
+    const res = await CreditManager.consumeCredits({
+      userId: user.uid,
+      amount,
       description,
       toolId,
-      jobId
-    );
+      jobId,
+      userEmail: user.email || undefined,
+    });
 
     if (res.success) {
       setUserProfile((prev) => (prev ? { ...prev, credits: res.newBalance } : null));
-      refreshLedger();
       return true;
     } else {
       showToast(res.error || 'Failed to process credit transaction', 'error');
       return false;
     }
+  };
+
+  const grantCredits = async (
+    amount: number,
+    type: TransactionType = 'bonus',
+    description = 'Credit Grant'
+  ): Promise<boolean> => {
+    if (!user) return false;
+    const res = await CreditManager.grantCredits({
+      userId: user.uid,
+      amount,
+      type,
+      description,
+      adminEmail: user.email || undefined,
+    });
+    if (res.success) {
+      setUserProfile((prev) => (prev ? { ...prev, credits: res.newBalance } : null));
+      showToast(`Added +${amount} credits to your account!`, 'success');
+      return true;
+    } else {
+      showToast(res.error || 'Failed to grant credits', 'error');
+      return false;
+    }
+  };
+
+  const refundCredits = async (
+    amount: number,
+    reason: string,
+    jobId?: string,
+    toolId?: string
+  ): Promise<boolean> => {
+    if (!user) return false;
+    const res = await CreditManager.refundCredits({
+      userId: user.uid,
+      amount,
+      reason,
+      jobId,
+      toolId,
+    });
+    if (res.success) {
+      setUserProfile((prev) => (prev ? { ...prev, credits: res.newBalance } : null));
+      showToast(`Refunded +${amount} credits for failed operation.`, 'info');
+      return true;
+    }
+    return false;
+  };
+
+  const checkCreditAvailability = async (requiredAmount: number): Promise<CreditCheckResult> => {
+    if (!user) {
+      return {
+        allowed: false,
+        currentBalance: 0,
+        requiredAmount,
+        deficit: requiredAmount,
+        userPlan: 'free',
+      };
+    }
+    return CreditManager.checkCreditAvailability(user.uid, requiredAmount);
+  };
+
+  const purchaseCreditPackage = async (packageId: string): Promise<boolean> => {
+    if (!user) {
+      showToast('Please sign in to purchase credit packs.', 'info');
+      openAuthModal('signin');
+      return false;
+    }
+    const res = await CreditManager.purchaseTopUpPackage(user.uid, packageId);
+    if (res.success) {
+      setUserProfile((prev) => (prev ? { ...prev, credits: res.newBalance } : null));
+      showToast(`Successfully purchased +${res.creditsAdded} credits!`, 'success');
+      return true;
+    } else {
+      showToast(res.error || 'Failed to complete credit purchase.', 'error');
+      return false;
+    }
+  };
+
+  const estimateToolCost = (
+    toolId: string,
+    options?: { isAi?: boolean; batchSize?: number; resolutionMegapixels?: number }
+  ): CreditCostEstimate => {
+    return CreditManager.calculateCost(toolId, options);
+  };
+
+  const getCreditAnalytics = async (): Promise<CreditAnalyticsSummary> => {
+    if (!user?.uid) {
+      return {
+        currentBalance: 0,
+        totalEarned: 0,
+        totalSpent: 0,
+        spentToday: 0,
+        spentThisMonth: 0,
+        transactionsCount: 0,
+        byToolBreakdown: {},
+        byTypeBreakdown: {},
+        dailySpendHistory: [],
+        burnRatePerDay: 0,
+        projectedRunwayDays: null,
+      };
+    }
+    return CreditManager.getCreditAnalytics(user.uid, creditLedger);
   };
 
   const logJob = async (job: Omit<ProcessingJobRecord, 'id' | 'userId' | 'timestamp'>) => {
@@ -753,26 +994,137 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const upgradePlan = async (planId: PlanTier, interval: 'monthly' | 'yearly' = 'monthly'): Promise<boolean> => {
+  const refreshSubscriptions = async () => {
+    if (!user?.uid) return;
+    try {
+      const subs = await SubscriptionManager.getUserSubscriptions(user.uid);
+      setUserSubscriptions(subs);
+      const allInvs: InvoiceItem[] = [];
+      subs.forEach((s) => {
+        if (s.invoiceHistory && Array.isArray(s.invoiceHistory)) {
+          allInvs.push(...s.invoiceHistory);
+        }
+      });
+      setInvoices(allInvs.sort((a, b) => b.date - a.date));
+    } catch (err) {
+      console.warn('Could not refresh subscriptions', err);
+    }
+  };
+
+  const changePlan = async (params: Omit<ChangePlanParams, 'userId'>): Promise<boolean> => {
     if (!user) {
       openAuthModal('signup');
       return false;
     }
 
     try {
-      await paymentProvider.createCheckoutSession(planId, interval, user.uid, user.email || undefined);
-      const success = await SaaSDataService.updateUserPlan(user.uid, planId, 'stripe');
-      if (success) {
-        setUserProfile((prev) => (prev ? { ...prev, plan: planId } : null));
-        showToast(`Successfully updated plan to ${DEFAULT_PLANS[planId]?.name || planId}!`, 'success');
-        refreshLedger();
+      const res = await SubscriptionManager.changePlan({
+        userId: user.uid,
+        userEmail: user.email,
+        ...params,
+      });
+
+      if (res.success) {
+        setUserProfile((prev) => (prev ? { ...prev, plan: params.targetPlanId } : null));
+        const planName = plans[params.targetPlanId]?.name || DEFAULT_PLANS[params.targetPlanId]?.name || params.targetPlanId;
+        showToast(`Successfully upgraded/downgraded to ${planName}!`, 'success');
+        refreshLedger(user.uid);
+        refreshSubscriptions();
         return true;
       }
+      showToast(res.error || 'Failed to update subscription', 'error');
       return false;
     } catch {
-      showToast('Payment processing error', 'error');
+      showToast('Subscription processing error', 'error');
       return false;
     }
+  };
+
+  const cancelSubscription = async (subscriptionId?: string, cancelAtPeriodEnd = true): Promise<boolean> => {
+    if (!user) {
+      openAuthModal('signin');
+      return false;
+    }
+    const targetSubId = subscriptionId || activeSubscription?.id;
+    if (!targetSubId) {
+      showToast('No active subscription found to cancel', 'error');
+      return false;
+    }
+
+    try {
+      const success = await SubscriptionManager.cancelSubscription(user.uid, targetSubId, cancelAtPeriodEnd);
+      if (success) {
+        showToast(
+          cancelAtPeriodEnd
+            ? 'Subscription scheduled for cancellation at the end of the billing period.'
+            : 'Subscription canceled immediately.',
+          'info'
+        );
+        refreshSubscriptions();
+        refreshUserProfile();
+        return true;
+      }
+      showToast('Failed to cancel subscription', 'error');
+      return false;
+    } catch {
+      showToast('Error processing cancellation request', 'error');
+      return false;
+    }
+  };
+
+  const resumeSubscription = async (subscriptionId?: string): Promise<boolean> => {
+    if (!user) return false;
+    const targetSubId = subscriptionId || activeSubscription?.id;
+    if (!targetSubId) return false;
+
+    try {
+      const success = await SubscriptionManager.resumeSubscription(user.uid, targetSubId);
+      if (success) {
+        showToast('Subscription renewed and active auto-billing resumed!', 'success');
+        refreshSubscriptions();
+        refreshUserProfile();
+        return true;
+      }
+      showToast('Failed to resume subscription', 'error');
+      return false;
+    } catch {
+      showToast('Error resuming subscription', 'error');
+      return false;
+    }
+  };
+
+  const updatePaymentMethod = async (
+    paymentMethod: { brand: string; last4: string; expMonth: number; expYear: number },
+    subscriptionId?: string
+  ): Promise<boolean> => {
+    if (!user) return false;
+    const targetSubId = subscriptionId || activeSubscription?.id;
+    if (!targetSubId) {
+      showToast('No subscription found to update payment method', 'error');
+      return false;
+    }
+
+    try {
+      const success = await SubscriptionManager.updatePaymentMethod(user.uid, targetSubId, paymentMethod);
+      if (success) {
+        showToast('Payment method updated successfully!', 'success');
+        refreshSubscriptions();
+        return true;
+      }
+      showToast('Failed to update payment method', 'error');
+      return false;
+    } catch {
+      showToast('Error updating payment method', 'error');
+      return false;
+    }
+  };
+
+  const upgradePlan = async (planId: PlanTier, interval: 'monthly' | 'yearly' = 'monthly'): Promise<boolean> => {
+    return changePlan({
+      targetPlanId: planId,
+      billingCycle: interval,
+      provider: 'stripe',
+    });
   };
 
   // Traffic Protection Checks
@@ -792,28 +1144,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const checkAiQuota = () => AbusePreventionService.checkAiRateLimit(user?.uid || 'guest', activePlanConfig);
 
   const toggleFavorite = async (toolId: string) => {
+    if (!user?.uid) {
+      showToast('Please sign in to save favorite tools to your account', 'info');
+      openAuthModal('signin');
+      return;
+    }
+
     const isAdding = !favorites.includes(toolId);
     const next = isAdding
       ? [...favorites, toolId]
       : favorites.filter((id) => id !== toolId);
 
+    // Optimistic UI state update
     setFavorites(next);
+
     try {
-      localStorage.setItem('aetherpix_favorites', JSON.stringify(next));
-    } catch {}
-
-    if (user?.uid) {
-      try {
-        await SaaSDataService.updateUserFavorites(user.uid, next);
-      } catch (err) {
-        console.warn('Failed to sync favorite to Firestore', err);
+      const success = await SaaSDataService.updateUserFavorites(user.uid, next);
+      if (success) {
+        showToast(isAdding ? 'Added to your favorites' : 'Removed from favorites', 'success');
+      } else {
+        // Revert on failure
+        setFavorites(favorites);
+        showToast('Failed to sync favorite to cloud database', 'error');
       }
+    } catch (err) {
+      console.warn('Failed to sync favorite to Firestore', err);
+      setFavorites(favorites);
+      showToast('Failed to sync favorite to cloud database', 'error');
     }
-
-    showToast(isAdding ? 'Added to favorites' : 'Removed from favorites', 'info');
   };
 
-  const isFavorite = (toolId: string) => favorites.includes(toolId);
+  const isFavorite = (toolId: string) => {
+    if (!user?.uid) return false;
+    return favorites.includes(toolId);
+  };
 
   const addToHistory = (item: Omit<HistoryItem, 'id' | 'timestamp'>) => {
     const newItem: HistoryItem = {
@@ -865,7 +1229,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isSearchOpen,
         setIsSearchOpen,
         theme,
-        setTheme,
+        setTheme: handleSetTheme,
         toggleTheme,
         primaryColor,
         setPrimaryColor,
@@ -900,6 +1264,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         creditLedger,
         refreshLedger,
         consumeCredits,
+        grantCredits,
+        refundCredits,
+        checkCreditAvailability,
+        purchaseCreditPackage,
+        estimateToolCost,
+        getCreditAnalytics,
         processingJobs,
         logJob,
         refreshJobs,
@@ -911,8 +1281,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         featureFlags,
         isFeatureEnabled,
         adSlots,
+        creditPackages,
+        plans,
+        userSubscriptions,
+        activeSubscription,
+        invoices,
         paymentProvider,
         upgradePlan,
+        changePlan,
+        cancelSubscription,
+        resumeSubscription,
+        updatePaymentMethod,
+        refreshSubscriptions,
         checkExecutionAllowed,
         recordSuccessfulProcess,
         checkFileSize,

@@ -100,7 +100,7 @@ export const ThreadsRenderer: React.FC<RendererProps> = ({ sceneState, onElement
   }
 
   // THREADS POST VIEW
-  const post = sceneState.post || {
+  const post: any = sceneState.post || {
     author: {
       name: activeName,
       username: activeHandle,

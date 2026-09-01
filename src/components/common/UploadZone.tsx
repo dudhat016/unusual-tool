@@ -12,6 +12,8 @@ export interface UploadZoneProps {
   acceptMultiple?: boolean;
   maxFileSizeMB?: number;
   acceptedFormats?: string[];
+  accept?: string;
+  maxFiles?: number;
   currentFiles?: UploadedFileItem[];
   files?: UploadedFileItem[];
   onRemoveFile?: ((id: string) => void) | ((index: number) => void);

@@ -16,7 +16,7 @@ export const FacebookRenderer: React.FC<RendererProps> = ({ sceneState, onElemen
   const activeAvatar = author?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
 
   // FACEBOOK MESSENGER CHAT VIEW
-  if (sceneState.sceneType === 'messenger' || sceneState.sceneType === 'dm' || sceneState.sceneType === 'chat') {
+  if ((sceneState.sceneType as string) === 'messenger' || sceneState.sceneType === 'dm' || sceneState.sceneType === 'chat') {
     const conv = sceneState.conversation || {
       conversationId: 'fb1',
       chatTitle: activeName,
@@ -72,7 +72,7 @@ export const FacebookRenderer: React.FC<RendererProps> = ({ sceneState, onElemen
   }
 
   // FACEBOOK FEED POST VIEW
-  const post = sceneState.post || {
+  const post: any = sceneState.post || {
     author: {
       name: activeName,
       username: 'alex_rivera',

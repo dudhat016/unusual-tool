@@ -7,6 +7,9 @@ import { DynamicIcon } from '../components/common/DynamicIcon';
 import { DataTable, DataTableColumn, Input, Button } from '../components/ui';
 import { SaaSDataService } from '../services/SaaSDataService';
 import { useTranslation, SUPPORTED_LANGUAGES, SupportedLanguage } from '../i18n';
+import { AccountSettings } from '../components/account/AccountSettings';
+import { CreditManagementView } from '../components/credits/CreditManagementView';
+import { ToolCard } from '../components/common/ToolCard';
 import {
   User,
   Zap,
@@ -85,14 +88,14 @@ export const DashboardPage: React.FC = () => {
   const creditBalance = typeof credits === 'number' ? credits : Math.max(0, (credits?.total ?? 0) - (credits?.used ?? 0));
 
   // Derive active tab from URL route path (e.g. /en/pricing -> 'subscription', /dashboard/credits -> 'credits')
-  const getActiveTabFromRoute = (): 'overview' | 'usage' | 'credits' | 'history' | 'favorites' | 'presets' | 'subscription' | 'settings' => {
+  const getActiveTabFromRoute = (): 'overview' | 'usage' | 'credits' | 'history' | 'favorites' | 'presets' | 'subscription' | 'billing' | 'settings' | 'profile' | 'privacy' => {
     const raw = (currentPath || window.location.pathname).split('?')[0].replace(/\/$/, '');
     const cleanPath = raw.replace(/^\/(en|hi|es|fr|de|pt|it|ja|ko|zh|ar)/i, '') || '/';
 
     const segments = cleanPath.split('/').filter(Boolean);
     const subRoute = segments[1] || '';
 
-    const validTabs = ['overview', 'usage', 'credits', 'history', 'favorites', 'presets', 'subscription', 'settings'];
+    const validTabs = ['overview', 'usage', 'credits', 'history', 'favorites', 'presets', 'subscription', 'billing', 'settings', 'profile', 'privacy'];
 
     if (subRoute && validTabs.includes(subRoute)) {
       return subRoute as any;
@@ -174,72 +177,6 @@ export const DashboardPage: React.FC = () => {
       onTabChange={handleTabChange}
     >
       <div className="space-y-8">
-        {/* User Profile Header Card */}
-        <div className="rounded-3xl border border-primary/20 bg-white dark:bg-slate-900 p-6 sm:p-8 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              {(userProfile?.photoURL || userProfile?.avatar || user.photoURL) ? (
-                <img
-                  src={userProfile?.photoURL || userProfile?.avatar || user.photoURL || ''}
-                  alt="Profile"
-                  className="h-16 w-16 rounded-2xl object-cover border-2 border-primary shadow-xs"
-                />
-              ) : (
-                <div className="h-16 w-16 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground text-2xl font-black shadow-md">
-                  {((userProfile?.displayName || user.displayName || user.email || 'U')[0]).toUpperCase()}
-                </div>
-              )}
-              <span
-                className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900"
-                title="Online & Synced to Firestore"
-              />
-            </div>
-
-            <div>
-              <div className="flex items-center gap-2.5">
-                <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-                  {userProfile?.displayName || user.displayName || user.email?.split('@')[0]}
-                </h1>
-                <span className="rounded-full bg-primary text-primary-foreground text-[10px] uppercase font-extrabold px-2.5 py-0.5 tracking-wider">
-                  {activePlanConfig.name}
-                </span>
-                {isAdmin && (
-                  <span className="rounded-full bg-primary/10 text-primary border border-primary/20 text-[10px] uppercase font-extrabold px-2 py-0.5">
-                    Admin
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-mono">{user.email}</p>
-              <p className="text-[11px] text-slate-400 mt-1">
-                Member since {new Date(userProfile?.createdAt || Date.now()).toLocaleDateString()}
-              </p>
-            </div>
-          </div>
-
-          {/* Quick Balance & Actions */}
-          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-start md:justify-end">
-            <div className="rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 p-3.5 flex items-center gap-3">
-              <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                <Zap className="h-5 w-5 fill-primary text-primary" />
-              </div>
-              <div>
-                <span className="text-[10px] uppercase font-bold text-slate-400 block">Ledger Balance</span>
-                <span className="text-base font-black text-slate-900 dark:text-white font-mono">
-                  {creditBalance} / {activePlanConfig.monthlyCredits}
-                </span>
-              </div>
-            </div>
-
-            <button
-              onClick={() => handleTabChange('subscription')}
-              className="px-4 py-3 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs shadow-md shadow-primary/20 transition-all flex items-center gap-1.5 cursor-pointer"
-            >
-              <CreditCard className="h-4 w-4" />
-              <span>Manage Plan</span>
-            </button>
-          </div>
-        </div>
-
         {/* Tab Panels */}
         {activeTab === 'overview' && (
           <div className="space-y-6">
@@ -311,75 +248,6 @@ export const DashboardPage: React.FC = () => {
           </div>
         )}
 
-        {/* Subscription Tab View */}
-        {activeTab === 'subscription' && (
-          <div className="space-y-6">
-            <h3 className="text-lg font-black text-slate-900 dark:text-white">Subscription & Plan Tiers</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {Object.values(DEFAULT_PLANS).map((plan) => {
-                const isCurrent = plan.id === activePlanConfig.id;
-                return (
-                  <div
-                    key={plan.id}
-                    className={`p-6 rounded-3xl border ${
-                      isCurrent
-                        ? 'border-primary bg-primary/5 shadow-lg shadow-primary/10'
-                        : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'
-                    } flex flex-col justify-between space-y-6`}
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-lg font-black text-slate-900 dark:text-white">{plan.name}</h4>
-                        {isCurrent && (
-                          <span className="px-2.5 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-extrabold uppercase">
-                            Active Plan
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-3xl font-black text-slate-900 dark:text-white font-mono">
-                          ${plan.priceMonthly}
-                        </span>
-                        <span className="text-xs text-slate-400 font-semibold">/ month</span>
-                      </div>
-                    </div>
-
-                    <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-300">
-                      <li className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                        <span>{plan.monthlyCredits} AI Credits per month</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                        <span>{plan.maxBatchSize} max batch files</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                        <span>Up to {plan.maxFileSizeMB} MB per file size</span>
-                      </li>
-                    </ul>
-
-                    <button
-                      disabled={isCurrent}
-                      onClick={async () => {
-                        await upgradePlan(plan.id);
-                        showToast(`Upgraded to ${plan.name} plan!`, 'success');
-                      }}
-                      className={`w-full py-3 rounded-2xl text-xs font-bold transition-all ${
-                        isCurrent
-                          ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-default'
-                          : 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-md shadow-primary/25 cursor-pointer'
-                      }`}
-                    >
-                      {isCurrent ? 'Current Tier' : `Switch to ${plan.name}`}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         {/* Favorites Tab View */}
         {activeTab === 'favorites' && (
           <div className="space-y-6">
@@ -423,50 +291,7 @@ export const DashboardPage: React.FC = () => {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {favoriteTools.map((tool) => (
-                  <div
-                    key={tool.id}
-                    className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-primary/50 transition-all flex flex-col justify-between space-y-4 group"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                        <DynamicIcon name={tool.icon} className="w-5 h-5" />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          toggleFavorite(tool.id);
-                        }}
-                        className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
-                        title="Remove from favorites"
-                      >
-                        <Heart className="w-4 h-4 fill-rose-500" />
-                      </button>
-                    </div>
-
-                    <div>
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
-                        {tool.name}
-                      </h4>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
-                        {tool.shortDescription}
-                      </p>
-                    </div>
-
-                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
-                      <span className="text-[10px] uppercase font-bold text-slate-400">
-                        {tool.category}
-                      </span>
-                      <button
-                        onClick={() => navigate(tool.route || `/${tool.slug}`)}
-                        className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
-                      >
-                        <span>Open Tool</span>
-                        <ArrowRight className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </div>
+                  <ToolCard key={tool.id} tool={tool} />
                 ))}
               </div>
             )}
@@ -551,81 +376,6 @@ export const DashboardPage: React.FC = () => {
           </div>
         )}
 
-        {/* Credits Ledger Tab View */}
-        {activeTab === 'credits' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Credits Ledger</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Available Credits: <span className="font-bold text-primary">{creditBalance} AI Credits</span>
-                </p>
-              </div>
-              <button
-                onClick={() => handleTabChange('subscription')}
-                className="px-3.5 py-1.5 rounded-xl bg-primary text-primary-foreground font-bold text-xs shadow-sm hover:bg-primary/90 transition-all cursor-pointer"
-              >
-                Get More Credits
-              </button>
-            </div>
-
-            <DataTable
-              data={ledgerList}
-              keyExtractor={(item, index) => item.id || `ledger-${index}`}
-              searchPlaceholder="Search credit transactions..."
-              exportFileName="aetherpix_credits_ledger"
-              defaultPageSize={10}
-              columns={[
-                {
-                  id: 'description',
-                  header: 'TRANSACTION',
-                  accessorKey: 'description',
-                  sortable: true,
-                  cell: ({ row }) => (
-                    <div>
-                      <p className="font-bold text-slate-900 dark:text-white text-xs">{row.description}</p>
-                      <span className="text-[10px] text-slate-400 font-mono uppercase">{row.transactionType}</span>
-                    </div>
-                  ),
-                },
-                {
-                  id: 'amount',
-                  header: 'CREDITS',
-                  accessorKey: 'amount',
-                  sortable: true,
-                  cell: ({ row }) => (
-                    <span className={`font-mono text-xs font-bold ${row.amount >= 0 ? 'text-emerald-500' : 'text-slate-900 dark:text-white'}`}>
-                      {row.amount > 0 ? `+${row.amount}` : row.amount}
-                    </span>
-                  ),
-                },
-                {
-                  id: 'balanceAfter',
-                  header: 'BALANCE AFTER',
-                  accessorKey: 'balanceAfter',
-                  sortable: true,
-                  cell: ({ row }) => (
-                    <span className="font-mono text-xs text-slate-500 dark:text-slate-400">
-                      {row.balanceAfter}
-                    </span>
-                  ),
-                },
-                {
-                  id: 'date',
-                  header: 'DATE',
-                  accessorKey: 'timestamp',
-                  sortable: true,
-                  cell: ({ row }) => (
-                    <span className="font-mono text-xs text-slate-500 dark:text-slate-400">
-                      {new Date(row.timestamp).toLocaleString()}
-                    </span>
-                  ),
-                },
-              ]}
-            />
-          </div>
-        )}
-
         {/* History Tab View */}
         {activeTab === 'history' && (
           <div className="space-y-4">
@@ -678,256 +428,36 @@ export const DashboardPage: React.FC = () => {
           </div>
         )}
 
-        {/* Settings Tab View */}
-        {activeTab === 'settings' && (
-          <div className="space-y-8 max-w-3xl">
-            {/* Main Profile Info Card */}
-            <div className="p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-6 shadow-sm">
-              <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
-                <div>
-                  <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
-                    <User className="h-5 w-5 text-primary" />
-                    Profile & Account Identity
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Manage your personal display name, avatar, and preferred interface settings synced with Firestore.
-                  </p>
-                </div>
-                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                  <span>Firestore Synced</span>
-                </div>
-              </div>
+        {/* Credits Ledger Tab View */}
+        {activeTab === 'credits' && (
+          <CreditManagementView onUpgradeClick={() => handleTabChange('subscription')} />
+        )}
 
-              {/* Avatar Selection & Preview */}
-              <div className="space-y-3">
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                  <ImageIcon className="h-4 w-4 text-primary" />
-                  Profile Avatar
-                </label>
+        {/* Subscription Tab View */}
+        {activeTab === 'subscription' && (
+          <div className="space-y-4">
+            <AccountSettings initialTab="subscription" hideTabBar />
+          </div>
+        )}
 
-                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                  {/* Live Avatar Preview */}
-                  <div className="relative shrink-0">
-                    {avatarUrl ? (
-                      <img
-                        src={avatarUrl}
-                        alt="Avatar preview"
-                        className="h-20 w-20 rounded-2xl object-cover border-2 border-primary shadow-md"
-                        onError={(e) => {
-                          (e.target as HTMLElement).style.display = 'none';
-                        }}
-                      />
-                    ) : (
-                      <div className="h-20 w-20 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground text-3xl font-black shadow-md">
-                        {((displayName || user.displayName || user.email || 'U')[0]).toUpperCase()}
-                      </div>
-                    )}
-                  </div>
+        {/* Billing Tab View */}
+        {activeTab === 'billing' && (
+          <div className="space-y-4">
+            <AccountSettings initialTab="billing" hideTabBar />
+          </div>
+        )}
 
-                  {/* Preset Avatar Selection */}
-                  <div className="flex-1 space-y-2">
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Choose an avatar preset or enter a custom image URL:
-                    </p>
-                    <div className="flex flex-wrap items-center gap-2">
-                      {[
-                        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-                        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-                        'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
-                        'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80',
-                        'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80',
-                      ].map((presetUrl, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => setAvatarUrl(presetUrl)}
-                          className={`relative h-10 w-10 rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
-                            avatarUrl === presetUrl ? 'border-primary ring-2 ring-primary/30 scale-105' : 'border-slate-200 dark:border-slate-700 hover:border-primary/50'
-                          }`}
-                        >
-                          <img src={presetUrl} alt={`Preset ${idx + 1}`} className="h-full w-full object-cover" />
-                          {avatarUrl === presetUrl && (
-                            <div className="absolute inset-0 bg-primary/30 flex items-center justify-center text-white">
-                              <Check className="h-4 w-4 stroke-[3]" />
-                            </div>
-                          )}
-                        </button>
-                      ))}
-                      {avatarUrl && (
-                        <button
-                          type="button"
-                          onClick={() => setAvatarUrl('')}
-                          className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-400 cursor-pointer"
-                        >
-                          Clear Avatar
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
+        {/* Settings / Profile Tab View */}
+        {(activeTab === 'settings' || activeTab === 'profile') && (
+          <div className="space-y-4">
+            <AccountSettings initialTab="profile" hideTabBar />
+          </div>
+        )}
 
-                {/* Custom Avatar URL input */}
-                <div className="pt-1">
-                  <Input
-                    label="Custom Avatar Image URL"
-                    type="url"
-                    placeholder="https://example.com/avatar.jpg"
-                    value={avatarUrl}
-                    onChange={(e) => setAvatarUrl(e.target.value)}
-                    helperText="Direct image URL (JPEG, PNG, WebP) to display as your user icon."
-                  />
-                </div>
-              </div>
-
-              {/* Display Name and Email Fields */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Input
-                  label="Display Name"
-                  type="text"
-                  placeholder="Your Name or Studio Name"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  helperText="Visible in tool processing logs, exports, and shared headers."
-                />
-
-                <Input
-                  label="Account Email"
-                  type="email"
-                  disabled
-                  value={user.email || ''}
-                  helperText="Primary email linked to your Firebase account."
-                />
-              </div>
-            </div>
-
-            {/* Language & Regional Settings Card */}
-            <div className="p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-6 shadow-sm">
-              <div className="pb-4 border-b border-slate-100 dark:border-slate-800">
-                <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
-                  <Globe className="h-5 w-5 text-primary" />
-                  Preferred Language & Localization
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Choose your preferred workspace language. This setting is saved directly to your cloud profile.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {SUPPORTED_LANGUAGES.map((lang) => {
-                  const isSelected = selectedLanguage === lang.code;
-                  return (
-                    <button
-                      key={lang.code}
-                      type="button"
-                      onClick={() => setSelectedLanguage(lang.code as SupportedLanguage)}
-                      className={`flex items-center gap-3 p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
-                        isSelected
-                          ? 'border-primary bg-primary/5 ring-2 ring-primary/20 shadow-xs'
-                          : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50'
-                      }`}
-                    >
-                      <span className="text-2xl">{lang.flag}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                          {lang.nativeName}
-                        </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                          {lang.name} ({lang.code.toUpperCase()})
-                        </p>
-                      </div>
-                      {isSelected && <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Privacy & Data Settings Card */}
-            <div className="p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-6 shadow-sm">
-              <div className="pb-4 border-b border-slate-100 dark:border-slate-800">
-                <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-primary" />
-                  Privacy & Data Retention
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Configure anonymous telemetry and automated processing history cleanup.
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
-                  <div className="space-y-0.5">
-                    <p className="text-sm font-bold text-slate-900 dark:text-white">
-                      Anonymous Telemetry & Usage Analytics
-                    </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Share anonymous performance metrics to help optimize client-side canvas transformations.
-                    </p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={telemetryOptIn}
-                    onChange={(e) => setTelemetryOptIn(e.target.checked)}
-                    className="h-5 w-5 rounded-md border-slate-300 text-primary focus:ring-primary cursor-pointer"
-                  />
-                </div>
-
-                <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-2">
-                  <label className="text-sm font-bold text-slate-900 dark:text-white block">
-                    Auto-Purge Processing History
-                  </label>
-                  <select
-                    value={autoPurgeHistoryMinutes}
-                    onChange={(e) => setAutoPurgeHistoryMinutes(Number(e.target.value))}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 font-medium focus:ring-2 focus:ring-primary focus:outline-hidden"
-                  >
-                    <option value={0}>Never (Keep history indefinitely)</option>
-                    <option value={60}>After 1 hour</option>
-                    <option value={1440}>After 24 hours</option>
-                    <option value={10080}>After 7 days</option>
-                  </select>
-                  <p className="text-[11px] text-slate-400">
-                    Automatically clears browser local image transforms and thumbnails after the chosen interval.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Action Bar */}
-            <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
-              <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-                Changes will be saved to Firestore and updated immediately across all your devices.
-              </p>
-              <Button
-                onClick={async () => {
-                  setIsSaving(true);
-                  try {
-                    const ok = await updateUserProfile({
-                      displayName: displayName.trim(),
-                      avatar: avatarUrl.trim(),
-                      photoURL: avatarUrl.trim(),
-                      preferredLanguage: selectedLanguage,
-                      privacySettings: {
-                        telemetryOptIn,
-                        autoPurgeHistoryMinutes: Number(autoPurgeHistoryMinutes),
-                      },
-                    });
-                    if (ok && selectedLanguage !== language) {
-                      setLanguage(selectedLanguage);
-                    }
-                  } finally {
-                    setIsSaving(false);
-                  }
-                }}
-                disabled={isSaving}
-                variant="primary"
-                size="md"
-              >
-                <Save className="h-4 w-4 mr-1.5" />
-                {isSaving ? 'Saving to Firestore...' : 'Save Preferences'}
-              </Button>
-            </div>
+        {/* Privacy Tab View */}
+        {activeTab === 'privacy' && (
+          <div className="space-y-4">
+            <AccountSettings initialTab="privacy" hideTabBar />
           </div>
         )}
       </div>

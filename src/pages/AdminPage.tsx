@@ -17,7 +17,7 @@ import { AnalyticsDashboard } from '../views/AnalyticsDashboard';
 import { SeoAdminView } from '../views/SeoAdminView';
 import { UIKitCatalogView } from '../views/UIKitCatalogView';
 import { AdminLayout } from '../components/layout/AdminLayout';
-import { Lock, RefreshCw, Compass } from 'lucide-react';
+import { Lock } from 'lucide-react';
 
 export const AdminPage: React.FC = () => {
   const { user, isAdmin, navigate, showToast, systemSettings, updateSystemSettings, currentPath } = useApp();
@@ -115,38 +115,6 @@ export const AdminPage: React.FC = () => {
       errorLogCount={logs.length}
     >
       <div className="space-y-6">
-        {/* Top Header Controls Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-3xl border border-primary/20 bg-primary/5 dark:bg-slate-900/60">
-          <div>
-            <h2 className="text-lg font-extrabold text-slate-900 dark:text-white capitalize">
-              {activeTab === 'overview'
-                ? 'System Analytics & Platform Health'
-                : `${activeTab} Management Console`}
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Live SaaS telemetry, rate limiting controls, monetization settings, and tools configuration.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigate('/admin/seo')}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition-colors cursor-pointer"
-            >
-              <Compass className="h-3.5 w-3.5" />
-              <span>SEO Diagnostic Hub</span>
-            </button>
-
-            <button
-              onClick={loadData}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 shadow-xs"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
-              <span>Sync Data</span>
-            </button>
-          </div>
-        </div>
-
         {/* Tab Panels */}
         {activeTab === 'overview' && (
           <AdminOverviewTab
@@ -162,6 +130,8 @@ export const AdminPage: React.FC = () => {
           <AnalyticsDashboard
             users={users}
             jobs={jobs}
+            ledger={ledger}
+            errorLogs={logs}
             showToast={showToast}
             navigate={navigate}
           />

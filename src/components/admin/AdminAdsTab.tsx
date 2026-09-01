@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AdSlotConfig } from '../../types/ads';
 import { DEFAULT_AD_SLOTS } from '../../config/adSlots';
+import { SaaSDataService } from '../../services/SaaSDataService';
+import { Button } from '../ui/Button';
 import {
   Sparkles,
   CheckCircle,
@@ -10,6 +12,7 @@ import {
   DollarSign,
   Smartphone,
   Monitor,
+  RefreshCw,
 } from 'lucide-react';
 
 interface AdminAdsTabProps {
@@ -18,27 +21,94 @@ interface AdminAdsTabProps {
 
 export const AdminAdsTab: React.FC<AdminAdsTabProps> = ({ showToast }) => {
   const [adSlots, setAdSlots] = useState<AdSlotConfig[]>(DEFAULT_AD_SLOTS);
+  const [isSyncing, setIsSyncing] = useState(false);
 
-  const handleToggleSlot = (slotId: string) => {
+  // Live Firestore subscription
+  useEffect(() => {
+    const unsub = SaaSDataService.subscribeToAdSlots((liveSlots) => {
+      setAdSlots(liveSlots);
+    });
+    return unsub;
+  }, []);
+
+  const handleToggleSlot = async (slotId: string) => {
+    const slot = adSlots.find((s) => s.id === slotId);
+    if (!slot) return;
+
+    const updated: AdSlotConfig = {
+      ...slot,
+      enabled: !slot.enabled,
+    };
+
     setAdSlots((prev) =>
-      prev.map((s) => (s.id === slotId ? { ...s, enabled: !s.enabled } : s))
+      prev.map((s) => (s.id === slotId ? updated : s))
     );
-    showToast(`Toggled ad slot ${slotId}`, 'success');
+
+    const ok = await SaaSDataService.updateAdSlot(updated);
+    if (ok) {
+      showToast(`Ad slot ${slotId} is now ${updated.enabled ? 'Enabled' : 'Disabled'} in Firestore`, 'success');
+    } else {
+      showToast(`Failed to update ad slot ${slotId} in Firestore`, 'error');
+    }
   };
 
-  const handleUpdateDevice = (slotId: string, dev: 'all' | 'desktop' | 'mobile') => {
+  const handleUpdateDevice = async (slotId: string, dev: 'all' | 'desktop' | 'mobile') => {
+    const slot = adSlots.find((s) => s.id === slotId);
+    if (!slot) return;
+
+    const updated: AdSlotConfig = {
+      ...slot,
+      device: dev,
+    };
+
     setAdSlots((prev) =>
-      prev.map((s) => (s.id === slotId ? { ...s, device: dev } : s))
+      prev.map((s) => (s.id === slotId ? updated : s))
     );
+
+    const ok = await SaaSDataService.updateAdSlot(updated);
+    if (ok) {
+      showToast(`Ad slot ${slotId} target set to ${dev}`, 'success');
+    } else {
+      showToast(`Failed to update device target for ${slotId}`, 'error');
+    }
+  };
+
+  const handleSeedDefaults = async () => {
+    setIsSyncing(true);
+    try {
+      await SaaSDataService.seedAdSlotsIfEmpty();
+      showToast('Ad slots synchronized with Firestore!', 'success');
+    } catch {
+      showToast('Failed to synchronize ad slots', 'error');
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-base font-bold text-slate-900 dark:text-white">Ad Monetization & Placements</h3>
-        <p className="text-xs text-slate-500">
-          Manage non-intrusive ad banners, placement frequency, and device targeting across tools.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <span>Ad Monetization & Placements</span>
+            <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">
+              Live Firestore Sync
+            </span>
+          </h3>
+          <p className="text-xs text-slate-500">
+            Manage non-intrusive ad banners, placement frequency, and device targeting across tools dynamically.
+          </p>
+        </div>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleSeedDefaults}
+          isLoading={isSyncing}
+          leftIcon={<RefreshCw className="h-3.5 w-3.5" />}
+        >
+          Sync Firestore
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

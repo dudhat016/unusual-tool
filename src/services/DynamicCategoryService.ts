@@ -136,6 +136,11 @@ export class DynamicCategoryService {
       'youtube-tools': 'youtube-tools',
       'pdf': 'pdf-tools',
       'pdf-tools': 'pdf-tools',
+      'developer': 'developer-tools',
+      'developer-tools': 'developer-tools',
+      'dev-tools': 'developer-tools',
+      'metadata': 'developer-tools',
+      'metadata-tools': 'developer-tools',
     };
 
     const mappedId = shortCategoryMap[clean];

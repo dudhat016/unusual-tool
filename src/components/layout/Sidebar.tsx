@@ -177,15 +177,48 @@ const SidebarItemRow: React.FC<SidebarItemRowProps> = ({
 
   const checkActive = (path?: string, exact = false): boolean => {
     if (!path) return false;
-    const rawCurrent = currentPath.split('?')[0].replace(/\/$/, '') || '/';
-    const cleanCurrent = rawCurrent.replace(/^\/(en|hi|es|fr|de|pt|it|ja|ko|zh|ar)/i, '') || '/';
-    const cleanPath = path.split('?')[0].replace(/\/$/, '') || '/';
-    if (exact) return cleanCurrent === cleanPath;
-    return cleanCurrent === cleanPath || cleanCurrent.startsWith(cleanPath + '/');
+    const [rawCurrentPath, rawCurrentQuery] = (currentPath || (typeof window !== 'undefined' ? window.location.pathname + window.location.search : '')).split('?');
+    const cleanCurrent = (rawCurrentPath.replace(/\/$/, '') || '/').replace(/^\/(en|hi|es|fr|de|pt|it|ja|ko|zh|ar)/i, '') || '/';
+    
+    const [rawItemPath, rawItemQuery] = path.split('?');
+    const cleanItem = (rawItemPath.replace(/\/$/, '') || '/').replace(/^\/(en|hi|es|fr|de|pt|it|ja|ko|zh|ar)/i, '') || '/';
+
+    // If item specified a query param, require matching query param
+    if (rawItemQuery) {
+      if (cleanCurrent !== cleanItem) return false;
+      const currentParams = new URLSearchParams(rawCurrentQuery || '');
+      const itemParams = new URLSearchParams(rawItemQuery);
+      let match = true;
+      itemParams.forEach((val, key) => {
+        const currVal = currentParams.get(key) || (key === 'section' && cleanCurrent === '/admin/settings' ? 'general' : null);
+        if (currVal !== val) match = false;
+      });
+      return match;
+    }
+
+    // Support legacy tab query parameter matching (e.g. /dashboard?tab=subscription matching /dashboard/subscription)
+    if (rawCurrentQuery) {
+      const currentParams = new URLSearchParams(rawCurrentQuery);
+      const currentTab = currentParams.get('tab');
+      if (currentTab && cleanCurrent === '/dashboard') {
+        const simulatedPath = currentTab === 'overview' ? '/dashboard' : `/dashboard/${currentTab}`;
+        if (simulatedPath === cleanItem) return true;
+      }
+      if (currentTab && cleanCurrent === '/admin') {
+        const simulatedPath = currentTab === 'overview' ? '/admin' : `/admin/${currentTab}`;
+        if (simulatedPath === cleanItem) return true;
+      }
+    }
+
+    if (exact || cleanItem === '/dashboard' || cleanItem === '/admin' || cleanItem === '/') {
+      return cleanCurrent === cleanItem;
+    }
+
+    return cleanCurrent === cleanItem || cleanCurrent.startsWith(cleanItem + '/');
   };
 
   const isActive = checkActive(item.path, item.exact);
-  const anyChildActive = item.children?.some(c => checkActive(c.path, c.exact)) ?? false;
+  const anyChildActive = item.children?.some(c => checkActive(c.path, c.exact) || (c.children?.some(cc => checkActive(cc.path, cc.exact)) ?? false)) ?? false;
   const [isOpen, setIsOpen] = useState(isActive || anyChildActive);
 
   useEffect(() => {
@@ -213,12 +246,13 @@ const SidebarItemRow: React.FC<SidebarItemRowProps> = ({
     return (
       <div>
         <button
+          type="button"
           onClick={() => setIsOpen(o => !o)}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold h-10 transition-all ${
+          className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold h-10 transition-all cursor-pointer ${
             parentActive
               ? isGradient
-                ? 'bg-white/20 text-white shadow-sm'
-                : 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
+                ? 'bg-white/20 text-white shadow-xs font-bold'
+                : 'bg-primary/10 text-primary dark:bg-primary/15 font-bold'
               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'
           } ${collapsed ? 'justify-center px-0' : ''}`}
         >
@@ -233,7 +267,7 @@ const SidebarItemRow: React.FC<SidebarItemRowProps> = ({
                       ? 'bg-rose-500 text-white'
                       : item.badgeVariant === 'warning'
                       ? 'bg-amber-500 text-white'
-                      : 'bg-purple-600 text-white'
+                      : 'bg-primary text-primary-foreground'
                   }`}
                 >
                   {item.badge}
@@ -260,7 +294,7 @@ const SidebarItemRow: React.FC<SidebarItemRowProps> = ({
               <div className="ml-4 pl-3 mt-1 space-y-1 border-l border-slate-200 dark:border-slate-800">
                 {item.children?.map((child, idx) => (
                   <SidebarItemRow
-                    key={(child.label || 'sub') + idx}
+                    key={(child.label || child.path || 'sub') + idx}
                     item={child}
                     collapsed={false}
                     currentPath={currentPath}

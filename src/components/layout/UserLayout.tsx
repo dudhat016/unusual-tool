@@ -17,6 +17,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { NavItem, Sidebar } from './Sidebar';
+import { DarkModeToggle } from '../common/DarkModeToggle';
 
 export interface UserLayoutProps {
   children: React.ReactNode;
@@ -59,19 +60,14 @@ export const UserLayout: React.FC<UserLayoutProps> = ({
       label: 'AI Usage Stats',
       path: '/dashboard/usage',
       icon: Zap,
-    },
-    {
-      label: 'Credits Ledger',
-      path: '/dashboard/credits',
-      icon: CreditCard,
-      badge: `${creditBalance} AI`,
-      badgeVariant: creditBalance > 20 ? 'primary' : 'warning',
+      exact: true,
     },
     {
       label: 'Processing History',
       path: '/dashboard/history',
       icon: History,
       badge: history?.length > 0 ? history.length : undefined,
+      exact: true,
     },
 
     { sectionTitle: 'SAVED & FAVORITES' },
@@ -80,24 +76,54 @@ export const UserLayout: React.FC<UserLayoutProps> = ({
       path: '/dashboard/favorites',
       icon: Heart,
       badge: favorites?.length > 0 ? favorites.length : undefined,
+      exact: true,
     },
     {
       label: 'Saved Tool Presets',
       path: '/dashboard/presets',
       icon: Bookmark,
       badge: presets?.length > 0 ? presets.length : undefined,
+      exact: true,
     },
 
     { sectionTitle: 'ACCOUNT & BILLING' },
     {
-      label: 'Subscription Plan',
-      path: '/dashboard/subscription',
-      icon: Crown,
-    },
-    {
-      label: 'Account Settings',
-      path: '/dashboard/settings',
-      icon: Settings,
+      label: 'Account & Settings',
+      icon: User,
+      children: [
+        {
+          label: 'Subscription & Plans',
+          path: '/dashboard/subscription',
+          icon: Crown,
+          exact: true,
+        },
+        {
+          label: 'AI Credits & Ledger',
+          path: '/dashboard/credits',
+          icon: Sparkles,
+          badge: `${creditBalance} AI`,
+          badgeVariant: creditBalance > 20 ? 'primary' : 'warning',
+          exact: true,
+        },
+        {
+          label: 'Billing & Invoices',
+          path: '/dashboard/billing',
+          icon: CreditCard,
+          exact: true,
+        },
+        {
+          label: 'Profile Settings',
+          path: '/dashboard/settings',
+          icon: Settings,
+          exact: true,
+        },
+        {
+          label: 'Privacy & Data Retention',
+          path: '/dashboard/privacy',
+          icon: ShieldCheck,
+          exact: true,
+        },
+      ],
     },
   ];
 
@@ -117,6 +143,13 @@ export const UserLayout: React.FC<UserLayoutProps> = ({
   const handleNavClick = (path: string) => {
     navigate(path);
   };
+
+  const currentRoutePath =
+    typeof window !== 'undefined'
+      ? window.location.pathname + window.location.search
+      : activeTab === 'overview'
+      ? '/dashboard'
+      : `/dashboard/${activeTab}`;
 
   const userFooterWidget = (
     <div className="space-y-3">
@@ -158,7 +191,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({
           onToggleCollapse={() => setCollapsed((v) => !v)}
           bottomSection={userFooterWidget}
           onNavigate={handleNavClick}
-          currentPath={`/dashboard?tab=${activeTab}`}
+          currentPath={currentRoutePath}
         />
       </div>
 
@@ -186,7 +219,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({
                 onClose={() => setIsMobileOpen(false)}
                 bottomSection={userFooterWidget}
                 onNavigate={handleNavClick}
-                currentPath={`/dashboard?tab=${activeTab}`}
+                currentPath={currentRoutePath}
               />
             </motion.div>
           </>
@@ -216,6 +249,9 @@ export const UserLayout: React.FC<UserLayoutProps> = ({
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Global Dark Mode Toggle */}
+            <DarkModeToggle id="user-layout-dark-mode-toggle" size="sm" />
+
             {/* Plan Badge */}
             <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold">
               <Crown className="w-3.5 h-3.5" />

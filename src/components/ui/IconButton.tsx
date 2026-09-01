@@ -4,7 +4,7 @@ import { Spinner } from './Spinner';
 import { ButtonVariant, ButtonSize } from './Button';
 
 export interface IconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  icon: IconName | React.ReactNode;
+  icon: IconName | React.ReactNode | React.ComponentType<{ className?: string }> | any;
   'aria-label': string;
   variant?: ButtonVariant;
   size?: ButtonSize;
@@ -76,7 +76,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
         ) : React.isValidElement(icon) ? (
           React.cloneElement(icon as React.ReactElement<any>, { 'aria-hidden': 'true' })
         ) : typeof icon === 'function' || (typeof icon === 'object' && icon !== null) ? (
-          React.createElement(icon as React.ComponentType<{ className?: string; 'aria-hidden'?: string }>, {
+          React.createElement(icon as any, {
             className: 'w-4 h-4 shrink-0',
             'aria-hidden': 'true',
           })

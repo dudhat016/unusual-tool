@@ -416,10 +416,10 @@ export const UniversalBatchQueue: React.FC<UniversalBatchQueueProps> = ({
                   value={concurrency}
                   onChange={(e) => handleConcurrencyChange(Number(e.target.value))}
                   options={[
-                    { value: 2, label: '2 Workers' },
-                    { value: 4, label: '4 Workers (Rec.)' },
-                    { value: 6, label: '6 Workers' },
-                    { value: 8, label: '8 Workers (Fast)' },
+                    { value: '2', label: '2 Workers' },
+                    { value: '4', label: '4 Workers (Rec.)' },
+                    { value: '6', label: '6 Workers' },
+                    { value: '8', label: '8 Workers (Fast)' },
                   ]}
                 />
               </div>

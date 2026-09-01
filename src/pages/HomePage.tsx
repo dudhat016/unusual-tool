@@ -19,6 +19,7 @@ import {
 
 import { Link } from '../components/common/Link';
 import { DynamicFaqAccordion } from '../components/common/DynamicFaqAccordion';
+import { ToolCard } from '../components/common/ToolCard';
 
 export const HomePage: React.FC = () => {
   const { navigate, setIsSearchOpen, tools } = useApp();
@@ -178,34 +179,7 @@ export const HomePage: React.FC = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {popularTools.slice(0, 6).map((tool) => (
-            <Link
-              key={tool.id}
-              href={tool.route}
-              className="group cursor-pointer rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs hover:border-primary hover:shadow-md dark:border-slate-800 dark:bg-slate-900 transition-all flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                    <DynamicIcon name={tool.icon} className="h-5 w-5" />
-                  </div>
-                  <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                    {tool.processingType === 'browser' ? 'Browser' : 'AI'}
-                  </span>
-                </div>
-
-                <h3 className="mt-3 text-sm font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
-                  {tool.name}
-                </h3>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
-                  {tool.shortDescription}
-                </p>
-              </div>
-
-              <div className="mt-4 flex items-center gap-1 text-xs font-bold text-primary pt-2">
-                <span>Open tool</span>
-                <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </Link>
+            <ToolCard key={tool.id} tool={tool} />
           ))}
         </div>
       </section>

@@ -11,7 +11,9 @@ import {
   Edit3,
   Save,
   Globe,
-  Plus
+  Plus,
+  Zap,
+  Activity
 } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { Select, Button } from '../components/ui';
@@ -26,12 +28,15 @@ import {
 import { DynamicSeoService, GlobalSeoConfig } from '../services/DynamicSeoService';
 import { ToolSeoEntry } from '../types/seo';
 import { useApp } from '../context/AppContext';
+import { SeoAuditDashboard } from '../components/admin/SeoAuditDashboard';
+import { DynamicSitemapDashboard } from '../components/admin/DynamicSitemapDashboard';
+import { DynamicSitemapService } from '../services/DynamicSitemapService';
 
 export const SeoAdminView: React.FC = () => {
   const { showToast } = useApp();
   const [report, setReport] = useState(() => runInternalSeoAudit());
   const [selectedRoute, setSelectedRoute] = useState<string>('/compress');
-  const [activeTab, setActiveTab] = useState<'overview' | 'editor' | 'inspector' | 'global' | 'sitemap' | 'robots'>('overview');
+  const [activeTab, setActiveTab] = useState<'audit' | 'overview' | 'editor' | 'inspector' | 'global' | 'sitemap' | 'robots'>('audit');
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -186,6 +191,7 @@ export const SeoAdminView: React.FC = () => {
               SEO Engine Sections
             </div>
             {[
+              { id: 'audit', label: 'Firestore SEO Audit', icon: Zap },
               { id: 'overview', label: 'Health Audit Checklist', icon: ShieldCheck },
               { id: 'editor', label: 'Firestore SEO Editor', icon: Edit3 },
               { id: 'global', label: 'Global Search Config', icon: Globe },
@@ -215,6 +221,11 @@ export const SeoAdminView: React.FC = () => {
 
         {/* Right Main Content Area */}
         <main className="lg:col-span-9 min-w-0 space-y-6">
+          {/* TAB 0: REAL-TIME FIRESTORE SEO AUDIT DASHBOARD */}
+          {activeTab === 'audit' && (
+            <SeoAuditDashboard />
+          )}
+
           {/* TAB 1: OVERVIEW & HEALTH CHECKLIST */}
           {activeTab === 'overview' && (
             <div className="space-y-6">
@@ -607,27 +618,8 @@ export const SeoAdminView: React.FC = () => {
             </div>
           )}
 
-          {/* TAB 5: SITEMAP.XML PREVIEW */}
-          {activeTab === 'sitemap' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-slate-500">
-                  Live output of <code className="text-blue-600 font-bold">/sitemap.xml</code> generated dynamically.
-                </p>
-                <Button
-                  variant="outline"
-                  size="xs"
-                  leftIcon={Copy}
-                  onClick={() => copyToClipboard(generateSitemapXml(SITE_DOMAIN))}
-                >
-                  {copied ? 'Copied!' : 'Copy XML'}
-                </Button>
-              </div>
-              <pre className="max-h-96 overflow-y-auto rounded-2xl bg-slate-950 p-5 font-mono text-xs text-emerald-400">
-                {generateSitemapXml(SITE_DOMAIN)}
-              </pre>
-            </div>
-          )}
+          {/* TAB 5: DYNAMIC SITEMAP.XML ENGINE */}
+          {activeTab === 'sitemap' && <DynamicSitemapDashboard />}
 
           {/* TAB 6: ROBOTS.TXT PREVIEW */}
           {activeTab === 'robots' && (
@@ -640,13 +632,13 @@ export const SeoAdminView: React.FC = () => {
                   variant="outline"
                   size="xs"
                   leftIcon={Copy}
-                  onClick={() => copyToClipboard(generateRobotsTxt(SITE_DOMAIN))}
+                  onClick={() => copyToClipboard(DynamicSitemapService.generateRobotsTxt(SITE_DOMAIN))}
                 >
                   {copied ? 'Copied!' : 'Copy TXT'}
                 </Button>
               </div>
               <pre className="max-h-96 overflow-y-auto rounded-2xl bg-slate-950 p-5 font-mono text-xs text-blue-300">
-                {generateRobotsTxt(SITE_DOMAIN)}
+                {DynamicSitemapService.generateRobotsTxt(SITE_DOMAIN)}
               </pre>
             </div>
           )}

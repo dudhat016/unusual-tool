@@ -26,6 +26,18 @@ service cloud.firestore {
         request.auth.uid == userId || isAdmin()
       );
       allow delete: if isAdmin();
+
+      // User Subscriptions Sub-collection
+      match /subscriptions/{subscriptionId} {
+        allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+        allow create, update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+        allow delete: if isAdmin();
+      }
+
+      // User Notepad Notes Sub-collection (Cloud Sync)
+      match /notes/{noteId} {
+        allow read, write: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      }
     }
 
     // User Favorites (Cross-device persistence)
@@ -140,6 +152,18 @@ service cloud.firestore {
 
     // Configurable SaaS Plans (Public Read, Admin Write)
     match /plans/{planId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Configurable Credit Top-Up Packages (Public Read, Admin Write)
+    match /credit_packages/{packageId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Social Media Mockup Generator Templates (Public Read, Admin Write)
+    match /social_mockup_templates/{templateId} {
       allow read: if true;
       allow write: if isAdmin();
     }

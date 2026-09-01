@@ -21,6 +21,8 @@ export interface ToolFormatSpecs {
   pricing: 'Free ($0.00)' | 'Freemium (Free Credits Available)';
 }
 
+export * from './sitemap';
+
 export interface SeoFaqItem {
   question: string;
   answer: string;

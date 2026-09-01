@@ -37,7 +37,7 @@ import { useApp } from '../context/AppContext';
 import { SaaSDataService } from '../services/SaaSDataService';
 import { SystemSettings } from '../types/admin';
 import { PlanTier } from '../types/saas';
-import { PRIMARY_COLOR_PRESETS, RADIUS_PRESETS, resolvePrimaryHsl } from '../utils/themeHelper';
+import { PRIMARY_COLOR_PRESETS, RADIUS_PRESETS, FONT_PRESETS, resolvePrimaryHsl, applyGlobalThemeVariables } from '../utils/themeHelper';
 
 export const AdminSettingsView: React.FC = () => {
   const {
@@ -47,8 +47,27 @@ export const AdminSettingsView: React.FC = () => {
     updateSystemSettings,
     showToast,
     navigate,
+    currentPath,
     tools
   } = useApp();
+
+  const getSectionFromUrl = (): 'general' | 'theme' | 'maintenance' | 'traffic' | 'monetization' | 'emergency' | 'preview' => {
+    if (typeof window === 'undefined') return 'general';
+    const params = new URLSearchParams(window.location.search);
+    const sec = params.get('section') || params.get('tab');
+    if (sec && ['general', 'theme', 'maintenance', 'traffic', 'monetization', 'emergency', 'preview'].includes(sec)) {
+      return sec as any;
+    }
+    const cleanPath = (window.location.pathname.replace(/\/$/, '') || '/').replace(/^\/(en|hi|es|fr|de|pt|it|ja|ko|zh|ar)/i, '') || '/';
+    const segments = cleanPath.split('/').filter(Boolean);
+    if (segments[0] === 'admin' && segments[1] === 'settings' && segments[2]) {
+      const sub = segments[2];
+      if (['general', 'theme', 'maintenance', 'traffic', 'monetization', 'emergency', 'preview'].includes(sub)) {
+        return sub as any;
+      }
+    }
+    return 'general';
+  };
 
   // Local form state initialized with current system settings
   const [formData, setFormData] = useState<SystemSettings>(() => ({
@@ -58,8 +77,19 @@ export const AdminSettingsView: React.FC = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<'general' | 'theme' | 'maintenance' | 'traffic' | 'monetization' | 'emergency' | 'preview'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'theme' | 'maintenance' | 'traffic' | 'monetization' | 'emergency' | 'preview'>(getSectionFromUrl);
   const [lastSavedTime, setLastSavedTime] = useState<number | null>(null);
+
+  // Sync active tab whenever URL route changes
+  useEffect(() => {
+    const section = getSectionFromUrl();
+    setActiveTab(section);
+  }, [currentPath]);
+
+  const handleTabSelect = (tab: 'general' | 'theme' | 'maintenance' | 'traffic' | 'monetization' | 'emergency' | 'preview') => {
+    setActiveTab(tab);
+    navigate(`/admin/settings?section=${tab}`);
+  };
 
   // Sync form data whenever global settings update from Firestore
   useEffect(() => {
@@ -303,7 +333,7 @@ export const AdminSettingsView: React.FC = () => {
       {/* Navigation Tabs */}
       <div className="flex items-center gap-1.5 overflow-x-auto border-b border-slate-200 dark:border-slate-800 pb-2 scrollbar-none">
         <button
-          onClick={() => setActiveTab('general')}
+          onClick={() => handleTabSelect('general')}
           className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'general'
               ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
@@ -315,7 +345,7 @@ export const AdminSettingsView: React.FC = () => {
         </button>
 
         <button
-          onClick={() => setActiveTab('theme')}
+          onClick={() => handleTabSelect('theme')}
           className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'theme'
               ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
@@ -327,7 +357,7 @@ export const AdminSettingsView: React.FC = () => {
         </button>
 
         <button
-          onClick={() => setActiveTab('maintenance')}
+          onClick={() => handleTabSelect('maintenance')}
           className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'maintenance'
               ? 'bg-amber-600 text-white shadow-sm shadow-amber-600/20'
@@ -344,7 +374,7 @@ export const AdminSettingsView: React.FC = () => {
         </button>
 
         <button
-          onClick={() => setActiveTab('traffic')}
+          onClick={() => handleTabSelect('traffic')}
           className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'traffic'
               ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
@@ -356,7 +386,7 @@ export const AdminSettingsView: React.FC = () => {
         </button>
 
         <button
-          onClick={() => setActiveTab('emergency')}
+          onClick={() => handleTabSelect('emergency')}
           className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'emergency'
               ? 'bg-rose-600 text-white shadow-sm shadow-rose-600/20'
@@ -368,7 +398,7 @@ export const AdminSettingsView: React.FC = () => {
         </button>
 
         <button
-          onClick={() => setActiveTab('monetization')}
+          onClick={() => handleTabSelect('monetization')}
           className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'monetization'
               ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
@@ -380,7 +410,7 @@ export const AdminSettingsView: React.FC = () => {
         </button>
 
         <button
-          onClick={() => setActiveTab('preview')}
+          onClick={() => handleTabSelect('preview')}
           className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'preview'
               ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
@@ -699,6 +729,88 @@ export const AdminSettingsView: React.FC = () => {
                     ))}
                   </div>
                 </div>
+
+                {/* 5. Typography & Font Family Stacks */}
+                <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-slate-800">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    Typography & Font Family (Google Fonts)
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {FONT_PRESETS.map((font) => {
+                      const isSelected = (formData.fontFamily || 'Inter').toLowerCase() === font.name.toLowerCase() || (formData.fontFamily || 'Inter').toLowerCase() === font.id.toLowerCase();
+                      return (
+                        <button
+                          key={font.id}
+                          type="button"
+                          onClick={() => {
+                            handleTextChange('fontFamily', font.name);
+                            if (font.category === 'display') {
+                              handleTextChange('fontDisplay', font.name);
+                            }
+                          }}
+                          className={`p-2.5 rounded-xl border-2 text-left transition-all cursor-pointer ${
+                            isSelected
+                              ? 'border-primary bg-primary/10 text-slate-900 dark:text-white shadow-xs'
+                              : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300'
+                          }`}
+                        >
+                          <div className="text-xs font-bold truncate" style={{ fontFamily: font.cssValue }}>
+                            {font.name}
+                          </div>
+                          <div className="text-[10px] text-slate-400 uppercase tracking-wider">
+                            {font.category}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 6. Branding & Assets */}
+                <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-slate-800">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    Brand Assets & Taglines
+                  </label>
+                  <div className="space-y-2">
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-500 block mb-1">
+                        Brand Logo URL
+                      </label>
+                      <Input
+                        value={formData.logoUrl || ''}
+                        onChange={(e) => handleTextChange('logoUrl', e.target.value)}
+                        placeholder="https://example.com/logo.png"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-500 block mb-1">
+                        Favicon URL (.ico, .png, .svg)
+                      </label>
+                      <Input
+                        value={formData.faviconUrl || ''}
+                        onChange={(e) => handleTextChange('faviconUrl', e.target.value)}
+                        placeholder="https://example.com/favicon.ico"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 7. Custom CSS Root Injection */}
+                <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    Custom CSS Override Rules
+                  </label>
+                  <textarea
+                    value={formData.customCss || ''}
+                    onChange={(e) => handleTextChange('customCss', e.target.value)}
+                    rows={3}
+                    placeholder=":root { --custom-accent: #8b5cf6; }"
+                    className="w-full px-3 py-2 text-xs font-mono rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                  <p className="text-[11px] text-slate-400">
+                    Directly injected into document header as dynamic stylesheet.
+                  </p>
+                </div>
               </div>
 
               {/* Right Column: Live Design Token Preview */}
@@ -761,6 +873,7 @@ export const AdminSettingsView: React.FC = () => {
                   <div className="p-3.5 rounded-xl bg-slate-100 dark:bg-slate-900 text-[11px] font-mono text-slate-600 dark:text-slate-400 space-y-1 border border-slate-200 dark:border-slate-800">
                     <div>--primary: <span className="text-primary font-bold">{resolvePrimaryHsl(formData.primaryColor || formData.accentColor, formData.theme !== 'light').primaryHsl}</span></div>
                     <div>--radius: <span className="text-primary font-bold">{formData.radius ?? 8}px</span></div>
+                    <div>--font-sans: <span className="text-primary font-bold">{formData.fontFamily || 'Inter'}</span></div>
                     <div>--sidebar: <span className="text-primary font-bold">{formData.sidebarTheme || 'dark'}</span></div>
                   </div>
                 </div>

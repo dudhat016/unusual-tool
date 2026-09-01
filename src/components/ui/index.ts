@@ -36,3 +36,5 @@ export * from './CopyButton';
 export * from './DownloadButton';
 export * from './Accordion';
 export * from './FileUploader';
+export * from './DarkModeToggle';
+export * from '../common/ErrorBoundary';

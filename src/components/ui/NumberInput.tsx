@@ -2,6 +2,7 @@ import React, { forwardRef } from 'react';
 import { Icon } from './Icon';
 
 export interface NumberInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size' | 'onChange'> {
+  label?: string;
   value: number;
   onChange: (value: number) => void;
   min?: number;
@@ -16,6 +17,7 @@ export interface NumberInputProps extends Omit<React.InputHTMLAttributes<HTMLInp
 export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
   (
     {
+      label,
       value,
       onChange,
       min = -Infinity,
@@ -54,6 +56,11 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
 
     return (
       <div className="w-full space-y-1">
+        {label && (
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+            {label}
+          </label>
+        )}
         <div className="flex items-center rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
           <input
             ref={ref}

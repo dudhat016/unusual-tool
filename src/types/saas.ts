@@ -49,6 +49,53 @@ export interface UserUsageStats {
   currentMonth: string; // YYYY-MM
 }
 
+export type SubscriptionStatus = 'active' | 'canceled' | 'past_due' | 'trialing' | 'expired';
+export type BillingCycle = 'monthly' | 'yearly';
+export type PaymentProvider = 'stripe' | 'lemonsqueezy' | 'paddle' | 'manual';
+
+export interface InvoiceItem {
+  id: string;
+  subscriptionId?: string;
+  amount: number;
+  currency: string;
+  date: number;
+  status: 'paid' | 'pending' | 'failed';
+  planName: string;
+  billingCycle: BillingCycle;
+  pdfUrl?: string;
+  description: string;
+  paymentMethod?: string;
+}
+
+export interface UserSubscriptionRecord {
+  id: string;
+  userId: string;
+  planId: PlanTier;
+  planName: string;
+  billingCycle: BillingCycle;
+  status: SubscriptionStatus;
+  provider: PaymentProvider;
+  subscriptionId: string;
+  customerId?: string;
+  pricePaid: number;
+  currency: string;
+  currentPeriodStart: number;
+  currentPeriodEnd: number;
+  cancelAtPeriodEnd?: boolean;
+  canceledAt?: number | null;
+  monthlyCreditsAllotted: number;
+  paymentMethodSummary?: {
+    brand?: string;
+    last4?: string;
+    expMonth?: number;
+    expYear?: number;
+  };
+  invoiceHistory?: InvoiceItem[];
+  metadata?: Record<string, any>;
+  createdAt: number;
+  updatedAt: number;
+}
+
 export interface UserProfile {
   uid: string;
   email: string | null;
@@ -62,10 +109,12 @@ export interface UserProfile {
   isSuspended?: boolean;
   suspensionReason?: string;
   subscription?: {
-    status: 'active' | 'canceled' | 'past_due' | 'trialing';
-    provider: 'stripe' | 'lemonsqueezy' | 'paddle' | 'manual';
+    status: SubscriptionStatus;
+    provider: PaymentProvider;
     subscriptionId?: string;
     customerId?: string;
+    billingCycle?: BillingCycle;
+    currentPeriodStart?: number;
     currentPeriodEnd?: number;
     cancelAtPeriodEnd?: boolean;
   };
@@ -74,6 +123,10 @@ export interface UserProfile {
     autoPurgeHistoryMinutes: number; // 0 for persistent
   };
   preferredLanguage?: string;
+  theme?: 'light' | 'dark' | 'system';
+  themePreference?: 'light' | 'dark' | 'system';
+  favoriteTools?: string[];
+  customSettings?: Record<string, any>;
   createdAt: number;
   updatedAt: number;
 }

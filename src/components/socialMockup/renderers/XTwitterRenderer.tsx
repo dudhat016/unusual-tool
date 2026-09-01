@@ -113,7 +113,7 @@ export const XTwitterRenderer: React.FC<RendererProps> = ({ sceneState, onElemen
   }
 
   // X / TWITTER TWEET POST VIEW
-  const post = sceneState.post || {
+  const post: any = sceneState.post || {
     author: {
       name: activeName,
       username: activeHandle,

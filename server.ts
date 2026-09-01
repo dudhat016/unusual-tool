@@ -12,32 +12,110 @@ import {
   SITE_NAME
 } from './src/config/seoRegistry';
 import { getCategoryBySlug } from './src/config/categoryData';
+import { DynamicSitemapService } from './src/services/DynamicSitemapService';
 
 const app = express();
 const PORT = 3000;
 
 app.use(express.json());
 
-// 0. Dynamic SEO Sitemaps and Robots.txt
-app.get('/sitemap.xml', (req, res) => {
-  const xml = generateSitemapXml(SITE_DOMAIN);
-  res.setHeader('Content-Type', 'application/xml');
-  res.setHeader('Cache-Control', 'public, max-age=3600');
-  res.send(xml);
+// 0. Dynamic SEO Sitemaps and Robots.txt (Directly queried from Firestore)
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    const domain = (req.query.domain as string) || (req.headers.host ? `https://${req.headers.host}` : SITE_DOMAIN);
+    const xml = await DynamicSitemapService.generateSitemapXml(domain);
+    res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=1800, s-maxage=3600');
+    res.send(xml);
+  } catch (e) {
+    console.error('Error generating sitemap.xml:', e);
+    const fallbackXml = generateSitemapXml(SITE_DOMAIN);
+    res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+    res.send(fallbackXml);
+  }
 });
 
-app.get('/sitemap-images.xml', (req, res) => {
-  const xml = generateImageSitemapXml(SITE_DOMAIN);
-  res.setHeader('Content-Type', 'application/xml');
-  res.setHeader('Cache-Control', 'public, max-age=3600');
-  res.send(xml);
+app.get('/sitemap-index.xml', async (req, res) => {
+  try {
+    const domain = (req.query.domain as string) || (req.headers.host ? `https://${req.headers.host}` : SITE_DOMAIN);
+    const xml = await DynamicSitemapService.generateSitemapIndexXml(domain);
+    res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=1800, s-maxage=3600');
+    res.send(xml);
+  } catch (e) {
+    console.error('Error generating sitemap-index.xml:', e);
+    res.status(500).send('Error generating sitemap index');
+  }
+});
+
+app.get('/sitemap-tools.xml', async (req, res) => {
+  try {
+    const domain = (req.query.domain as string) || (req.headers.host ? `https://${req.headers.host}` : SITE_DOMAIN);
+    const xml = await DynamicSitemapService.generateToolsSitemapXml(domain);
+    res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=1800, s-maxage=3600');
+    res.send(xml);
+  } catch (e) {
+    console.error('Error generating sitemap-tools.xml:', e);
+    res.status(500).send('Error generating tools sitemap');
+  }
+});
+
+app.get('/sitemap-blog.xml', async (req, res) => {
+  try {
+    const domain = (req.query.domain as string) || (req.headers.host ? `https://${req.headers.host}` : SITE_DOMAIN);
+    const xml = await DynamicSitemapService.generateBlogSitemapXml(domain);
+    res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=1800, s-maxage=3600');
+    res.send(xml);
+  } catch (e) {
+    console.error('Error generating sitemap-blog.xml:', e);
+    res.status(500).send('Error generating blog sitemap');
+  }
+});
+
+app.get('/sitemap-images.xml', async (req, res) => {
+  try {
+    const domain = (req.query.domain as string) || (req.headers.host ? `https://${req.headers.host}` : SITE_DOMAIN);
+    const xml = await DynamicSitemapService.generateImagesSitemapXml(domain);
+    res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=1800, s-maxage=3600');
+    res.send(xml);
+  } catch (e) {
+    console.error('Error generating sitemap-images.xml:', e);
+    const fallbackXml = generateImageSitemapXml(SITE_DOMAIN);
+    res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+    res.send(fallbackXml);
+  }
 });
 
 app.get('/robots.txt', (req, res) => {
-  const robots = generateRobotsTxt(SITE_DOMAIN);
-  res.setHeader('Content-Type', 'text/plain');
+  const domain = req.headers.host ? `https://${req.headers.host}` : SITE_DOMAIN;
+  const robots = DynamicSitemapService.generateRobotsTxt(domain);
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
   res.setHeader('Cache-Control', 'public, max-age=86400');
   res.send(robots);
+});
+
+// Sitemap Telemetry & Ping API
+app.get('/api/sitemap/stats', async (req, res) => {
+  try {
+    const forceFresh = req.query.fresh === 'true';
+    const stats = await DynamicSitemapService.getSitemapStats(SITE_DOMAIN, forceFresh);
+    res.json({ success: true, stats });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e?.message || 'Failed to generate sitemap stats' });
+  }
+});
+
+app.post('/api/sitemap/ping', async (req, res) => {
+  try {
+    const domain = req.body.domain || (req.headers.host ? `https://${req.headers.host}` : SITE_DOMAIN);
+    const result = await DynamicSitemapService.pingSearchEngines(domain);
+    res.json({ success: true, result });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e?.message || 'Failed to ping search engines' });
+  }
 });
 
 // In-memory rate limiting map for YouTube API endpoints

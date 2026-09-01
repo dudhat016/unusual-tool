@@ -10,6 +10,30 @@ export default defineConfig(() => {
       alias: {
         '@': path.resolve(__dirname, '.'),
       },
+      dedupe: ['react', 'react-dom'],
+    },
+    build: {
+      chunkSizeWarningLimit: 1200,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              if (id.includes('pdf-lib') || id.includes('pdfjs-dist') || id.includes('docx')) {
+                return 'vendor-pdf-docx';
+              }
+              if (id.includes('firebase')) {
+                return 'vendor-firebase';
+              }
+              if (id.includes('recharts') || id.includes('d3-')) {
+                return 'vendor-charts';
+              }
+              if (id.includes('lucide-react') || id.includes('motion')) {
+                return 'vendor-ui-motion';
+              }
+            }
+          },
+        },
+      },
     },
     server: {
       port: 3000,
@@ -21,3 +45,4 @@ export default defineConfig(() => {
     },
   };
 });
+

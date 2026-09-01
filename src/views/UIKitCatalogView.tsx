@@ -49,6 +49,7 @@ import {
   DownloadButton,
   Accordion,
   FileUploader,
+  DarkModeToggle,
 } from '../components/ui';
 import { useTranslation } from '../i18n';
 import { useApp } from '../context/AppContext';
@@ -102,6 +103,7 @@ export const UIKitCatalogView: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
+          <DarkModeToggle id="uikit-header-dark-mode-toggle" variant="segmented" showSyncStatus size="sm" />
           <LanguageSwitcher variant="dropdown" />
         </div>
       </div>

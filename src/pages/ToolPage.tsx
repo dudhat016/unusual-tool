@@ -1,17 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { Breadcrumbs } from '../components/common/Breadcrumbs';
-import { ContentRenderer } from '../components/common/ContentRenderer';
-import { DynamicFaqAccordion } from '../components/common/DynamicFaqAccordion';
-import { RelatedTools } from '../components/common/RelatedTools';
-import { SeoStructuredData } from '../components/common/SeoStructuredData';
-import { TableOfContents } from '../components/common/TableOfContents';
-import { ToolHeaderSEO } from '../components/common/ToolHeaderSEO';
-import { getBreadcrumbsForRoute, getSeoForRoute } from '../config/seoRegistry';
-import { ToolContentService } from '../services/ToolContentService';
+import React, { Suspense } from 'react';
+import { CommonToolLayout } from '../components/common/CommonToolLayout';
 import { ToolDefinition } from '../types';
-import { ToolDetailContent } from '../types/toolCms';
+import { getSceneConfigByRoute } from '../config/socialMockup/sceneRegistry';
 
-// Tool Views
+// Direct Tool View Imports
 import { AIToolGenericView } from '../components/tools/AIToolGenericView';
 import { BorderToolView } from '../components/tools/BorderToolView';
 import { ColorPickerToolView } from '../components/tools/ColorPickerToolView';
@@ -28,6 +20,7 @@ import { SocialResizeToolView } from '../components/tools/SocialResizeToolView';
 import { WatermarkToolView } from '../components/tools/WatermarkToolView';
 import { AudioToolView } from '../components/tools/AudioToolView';
 import { OnlineNotepadView } from '../views/OnlineNotepadView';
+import { UniversalSocialMockupEditor } from '../components/socialMockup/UniversalSocialMockupEditor';
 
 // YouTube Suite Components
 import { YouTubeChannelIdFinder } from '../components/youtube/YouTubeChannelIdFinder';
@@ -38,36 +31,41 @@ import { YouTubeThumbnailPreviewer } from '../components/youtube/YouTubeThumbnai
 import { YouTubeTimestampGenerator } from '../components/youtube/YouTubeTimestampGenerator';
 import { YouTubeToolsHub } from '../components/youtube/YouTubeToolsHub';
 
+const ToolLoadingFallback: React.FC = () => (
+  <div className="w-full min-h-[350px] flex flex-col items-center justify-center p-8 rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm shadow-sm space-y-4">
+    <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+    <div className="text-center space-y-1">
+      <p className="text-sm font-bold text-slate-800 dark:text-slate-200">Loading Tool Studio...</p>
+      <p className="text-xs text-slate-500 dark:text-slate-400">Initializing in-browser engine</p>
+    </div>
+  </div>
+);
+
 interface ToolPageProps {
   tool: ToolDefinition;
 }
 
 export const ToolPage: React.FC<ToolPageProps> = ({ tool }) => {
-  const currentLanguage = 'en';
-  const [cmsContent, setCmsContent] = useState<ToolDetailContent | null>(null);
-
-  useEffect(() => {
-    let isMounted = true;
-    const unsub = ToolContentService.subscribeToToolContent(tool.id, currentLanguage || 'en', (data) => {
-      if (isMounted) setCmsContent(data);
-    });
-    return () => {
-      isMounted = false;
-      unsub();
-    };
-  }, [tool.id, currentLanguage]);
-
-  // Check for Online Notepad
-  if (tool.id === 'free-online-notepad' || tool.slug === 'free-online-notepad' || tool.route === '/free-online-notepad' || tool.id === 'online-notepad') {
-    return <OnlineNotepadView />;
-  }
-
-  // Check for YouTube Tools Hub
-  if (tool.id === 'youtube-tools' || tool.slug === 'youtube-tools' || tool.route === '/youtube-tools') {
-    return <YouTubeToolsHub />;
-  }
-
   const renderToolComponent = () => {
+    // Check for Online Notepad
+    if (
+      tool.id === 'free-online-notepad' ||
+      tool.slug === 'free-online-notepad' ||
+      tool.route === '/free-online-notepad' ||
+      tool.id === 'online-notepad'
+    ) {
+      return <OnlineNotepadView embedded />;
+    }
+
+    // Check for YouTube Tools Hub
+    if (
+      tool.id === 'youtube-tools' ||
+      tool.slug === 'youtube-tools' ||
+      tool.route === '/youtube-tools'
+    ) {
+      return <YouTubeToolsHub />;
+    }
+
     // PDF Suite Tools
     if (
       tool.category === 'pdf' ||
@@ -112,19 +110,26 @@ export const ToolPage: React.FC<ToolPageProps> = ({ tool }) => {
       return <YouTubeTagExtractor />;
     }
 
-    // Compression / Target Size Tools
-    if (
-      tool.category === 'compress' ||
-      tool.id === 'compress-image' ||
-      tool.slug === 'compress' ||
-      tool.slug === 'compress-image' ||
-      tool.slug.startsWith('compress-') ||
-      tool.slug.includes('-to-')
-    ) {
-      return <CompressToolView tool={tool} />;
+    // Social Mockup Studio & Fake Post / Chat / Feed Generators
+    const isMockupTool =
+      (tool.category as string) === 'social-mockup' ||
+      (tool.category as string) === 'mockup' ||
+      Boolean((tool as any).platformId) ||
+      Boolean((tool as any).sceneType) ||
+      tool.id.endsWith('-generator') ||
+      tool.slug.endsWith('-generator') ||
+      tool.slug.includes('-mockup') ||
+      tool.id.includes('-mockup') ||
+      Boolean(getSceneConfigByRoute(tool.slug || tool.route || tool.id));
+
+    if (isMockupTool && tool.id !== 'youtube-embed-code-generator' && tool.id !== 'youtube-timestamp-link-generator') {
+      const sceneConfig = getSceneConfigByRoute(tool.slug || tool.route || tool.id);
+      const platformId = (tool as any).platformId || sceneConfig?.platformId || 'instagram';
+      const sceneType = (tool as any).sceneType || sceneConfig?.sceneType || 'post';
+      return <UniversalSocialMockupEditor initialPlatformId={platformId} initialSceneType={sceneType} />;
     }
 
-    // Format Converter
+    // Format Converter Tools
     if (
       tool.category === 'convert' ||
       tool.id === 'convert-image' ||
@@ -132,9 +137,21 @@ export const ToolPage: React.FC<ToolPageProps> = ({ tool }) => {
       tool.slug === 'convert-image' ||
       tool.slug.startsWith('convert-') ||
       tool.slug.startsWith('convert/') ||
+      (tool.route && tool.route.includes('/convert-image-tools/')) ||
       tool.slug.includes('-to-')
     ) {
       return <ConvertToolView tool={tool} />;
+    }
+
+    // Compression / Target Size Tools
+    if (
+      tool.category === 'compress' ||
+      tool.id === 'compress-image' ||
+      tool.slug === 'compress' ||
+      tool.slug === 'compress-image' ||
+      tool.slug.startsWith('compress-')
+    ) {
+      return <CompressToolView tool={tool} />;
     }
 
     // Crop & Cut
@@ -256,52 +273,12 @@ export const ToolPage: React.FC<ToolPageProps> = ({ tool }) => {
     return <ResizeToolView />;
   };
 
-  const rawPath = typeof window !== 'undefined' ? window.location.pathname : (tool.route || `/${tool.slug}`);
-  const routePath = rawPath.replace(/^\/(?:en|es|de|fr|hi|ja|zh|pt|it|ar)(?=\/|$)/i, '') || tool.route || `/${tool.slug}`;
-  const seoData = getSeoForRoute(routePath);
-  const breadcrumbs = getBreadcrumbsForRoute(routePath);
-
-  const isCompressor = tool.category === 'compress' || tool.id.includes('compress');
-  const isConverter = tool.category === 'convert' || tool.id.includes('convert');
-
   return (
-    <div className="space-y-8 py-6 max-w-6xl mx-auto px-4 sm:px-6">
-      {/* Dynamic JSON-LD Structured Data Schema */}
-      {cmsContent && <SeoStructuredData tool={tool} content={cmsContent} />}
-
-      {/* Breadcrumb Navigation */}
-      <Breadcrumbs items={breadcrumbs} />
-
-      {/* SEO Title & Description Header */}
-      <ToolHeaderSEO tool={tool} content={cmsContent} />
-
-      {/* LAYER 1: Main Interactive Tool Workspace */}
-      <div>{renderToolComponent()}</div>
-
-      {/* LAYER 2: SEO/AEO Rich Content Layer */}
-      {cmsContent && cmsContent.status === 'published' && (
-        <div className="pt-6 space-y-8">
-          {/* Table of Contents (Top) */}
-          {cmsContent.tocEnabled && (
-            <div className="w-full">
-              <TableOfContents html={cmsContent.contentHtml} />
-            </div>
-          )}
-
-          {/* Long-Form Rich Content Body (Bottom) */}
-          <div className="w-full">
-            <ContentRenderer html={cmsContent.contentHtml} />
-          </div>
-
-          {/* Dynamic FAQ Accordion */}
-          {cmsContent.faqs && cmsContent.faqs.length > 0 && (
-            <DynamicFaqAccordion faqs={cmsContent.faqs} toolName={tool.name} />
-          )}
-        </div>
-      )}
-
-      {/* Related Tools for Discovery */}
-      <RelatedTools currentToolId={tool.id} category={tool.category} />
-    </div>
+    <CommonToolLayout tool={tool}>
+      <Suspense fallback={<ToolLoadingFallback />}>
+        {renderToolComponent()}
+      </Suspense>
+    </CommonToolLayout>
   );
 };
+

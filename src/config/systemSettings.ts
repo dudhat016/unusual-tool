@@ -27,4 +27,12 @@ export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
   accentColor: 'purple',
   radius: 8,
   sidebarTheme: 'dark',
+  fontFamily: 'Inter',
+  fontDisplay: 'Outfit',
+  fontMono: 'Space Grotesk',
+  fontScale: 100,
+  logoUrl: '',
+  faviconUrl: '',
+  brandTagline: 'Next-Gen Visual Media Intelligence Platform',
+  customCss: '',
 };

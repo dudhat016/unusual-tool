@@ -14,6 +14,7 @@ import {
   Globe,
 } from 'lucide-react';
 import { PRIMARY_COLOR_PRESETS, RADIUS_PRESETS } from '../../utils/themeHelper';
+import { DarkModeToggle } from './DarkModeToggle';
 
 export { PRIMARY_COLOR_PRESETS, RADIUS_PRESETS };
 
@@ -90,34 +91,20 @@ export const CustomizerDrawer: React.FC = () => {
                 
                 {/* 1. Appearance Mode */}
                 <div className="space-y-3">
-                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
-                    Appearance Mode
-                  </span>
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <button
-                      onClick={() => setTheme('light')}
-                      className={`flex items-center justify-center gap-2 py-3 rounded-2xl border-2 text-xs font-bold transition-all cursor-pointer ${
-                        theme === 'light'
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-primary'
-                      }`}
-                    >
-                      <Sun className="w-4 h-4 text-amber-500" />
-                      <span>Light Mode</span>
-                    </button>
-
-                    <button
-                      onClick={() => setTheme('dark')}
-                      className={`flex items-center justify-center gap-2 py-3 rounded-2xl border-2 text-xs font-bold transition-all cursor-pointer ${
-                        theme === 'dark'
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-primary'
-                      }`}
-                    >
-                      <Moon className="w-4 h-4 text-indigo-400" />
-                      <span>Obsidian Dark</span>
-                    </button>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+                      Appearance Mode
+                    </span>
+                    <span className="text-[10px] font-semibold text-slate-400">
+                      Firestore Synced
+                    </span>
                   </div>
+                  <DarkModeToggle
+                    id="customizer-dark-mode-toggle"
+                    variant="segmented"
+                    showSyncStatus
+                    className="w-full"
+                  />
                 </div>
 
                 {/* 2. Primary Color Theme */}

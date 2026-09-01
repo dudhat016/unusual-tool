@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { ToolDefinition, ToolCategory } from '../../types';
-import { TOOL_CATEGORIES } from '../../config/tools';
+import { DynamicCategoryService } from '../../services/DynamicCategoryService';
 import { ToolCard } from './ToolCard';
 import { Input } from '../ui/Input';
 import { Search, Filter, Sparkles, Zap, Layers } from 'lucide-react';
@@ -27,6 +27,31 @@ export const ToolGrid: React.FC<ToolGridProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<ToolCategory>(initialCategory);
   const [searchQuery, setSearchQuery] = useState('');
   const [processingFilter, setProcessingFilter] = useState<'all' | 'browser' | 'ai'>('all');
+  const [categoriesList, setCategoriesList] = useState(() => DynamicCategoryService.getAllCategories());
+
+  useEffect(() => {
+    const unsub = DynamicCategoryService.subscribe((cats) => {
+      setCategoriesList(cats);
+    });
+    return unsub;
+  }, []);
+
+  const renderedCategories = useMemo(() => {
+    const defaultAll = [{ id: 'all', name: 'All Tools', slug: 'tools' }];
+    if (categoriesList && categoriesList.length > 0) {
+      return [...defaultAll, ...categoriesList.map((c) => ({ id: c.id, name: c.name, slug: c.slug }))];
+    }
+    // Deriving from loaded tools if empty
+    const uniqueToolCats = Array.from(new Set(tools.map((t) => t.category))).filter(Boolean);
+    return [
+      ...defaultAll,
+      ...uniqueToolCats.map((cat) => ({
+        id: cat,
+        name: cat.charAt(0).toUpperCase() + cat.slice(1).replace(/-/g, ' '),
+        slug: cat,
+      })),
+    ];
+  }, [categoriesList, tools]);
 
   const filteredTools = useMemo(() => {
     let result = tools;
@@ -136,7 +161,7 @@ export const ToolGrid: React.FC<ToolGridProps> = ({
           {/* Category Chips Carousel */}
           {showFilters && (
             <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar scroll-smooth">
-              {TOOL_CATEGORIES.map((cat) => {
+              {renderedCategories.map((cat) => {
                 const isSelected = selectedCategory === cat.id;
                 return (
                   <button

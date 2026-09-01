@@ -172,16 +172,14 @@ export const BeforeAfterComparisonModal: React.FC<BeforeAfterComparisonModalProp
             </div>
 
             {downloadUrl && (
-              <Button
-                as="a"
+              <a
                 href={downloadUrl}
                 download={resultName || `processed_${originalName}`}
-                variant="primary"
-                size="xs"
-                leftIcon={Download}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold shadow-sm transition-all"
               >
-                Download
-              </Button>
+                <Download className="w-3.5 h-3.5" />
+                <span>Download</span>
+              </a>
             )}
 
             <IconButton

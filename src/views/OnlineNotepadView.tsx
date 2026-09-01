@@ -37,7 +37,11 @@ import { RelatedTools } from '../components/common/RelatedTools';
 
 const MAX_ALLOWED_IMPORT_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
 
-export const OnlineNotepadView: React.FC = () => {
+interface OnlineNotepadViewProps {
+  embedded?: boolean;
+}
+
+export const OnlineNotepadView: React.FC<OnlineNotepadViewProps> = ({ embedded = false }) => {
   const { showToast } = useApp();
 
   // Notes state
@@ -519,8 +523,8 @@ export const OnlineNotepadView: React.FC = () => {
           : ''
       }`}
     >
-      {/* Standard Header (hidden in Focus mode) */}
-      {!isFocusMode && (
+      {/* Standard Header (hidden in Focus mode or when embedded in ToolPage) */}
+      {!isFocusMode && !embedded && (
         <div className="space-y-4">
           <Breadcrumbs
             items={[
@@ -762,8 +766,8 @@ export const OnlineNotepadView: React.FC = () => {
         </div>
       </div>
 
-      {/* SEO & Search Intent Informational Section (Hidden in Focus or Fullscreen mode) */}
-      {!isFocusMode && !isFullscreen && (
+      {/* SEO & Search Intent Informational Section (Hidden in Focus, Fullscreen, or Embedded mode) */}
+      {!isFocusMode && !isFullscreen && !embedded && (
         <div className="space-y-8 pt-6 border-t border-slate-200 dark:border-slate-800">
           {/* Feature Highlights Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

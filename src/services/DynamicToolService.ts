@@ -11,6 +11,7 @@ import {
 import { db } from '../config/firebase';
 import { parseTargetSizeRoute } from '../config/targetSizeTools';
 import { parseConverterRoute } from '../config/converterTools';
+import { parseSocialMockupRoute } from '../config/socialMockup/sceneRegistry';
 import { ToolDefinition } from '../types';
 
 const STORAGE_KEY = 'aetherpix_dynamic_tools_v2';
@@ -154,7 +155,10 @@ export class DynamicToolService {
     );
     if (segmentMatch) return segmentMatch;
 
-    // 3. Dynamic virtual generator fallbacks (target size & format converters)
+    // 3. Dynamic virtual generator fallbacks (social mockups, target sizes & format converters)
+    const socialMockupTool = parseSocialMockupRoute(cleanSlug) || parseSocialMockupRoute(lastSegment);
+    if (socialMockupTool) return socialMockupTool;
+
     const targetSizeTool = parseTargetSizeRoute(cleanSlug) || parseTargetSizeRoute(lastSegment);
     if (targetSizeTool) return targetSizeTool;
 

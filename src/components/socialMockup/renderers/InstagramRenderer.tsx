@@ -19,7 +19,7 @@ export const InstagramRenderer: React.FC<RendererProps> = ({ sceneState, onEleme
 
   // 1. INSTAGRAM STORY VIEW (9:16)
   if (sceneState.sceneType === 'story') {
-    const post = sceneState.post || {
+    const post: any = sceneState.post || {
       author: { name: activeName, username: activeHandle, avatar: activeAvatar, verified: true },
       caption: 'Story update ✨',
       timestamp: '3h',
@@ -71,7 +71,7 @@ export const InstagramRenderer: React.FC<RendererProps> = ({ sceneState, onEleme
 
   // 2. INSTAGRAM REEL VIEW (9:16)
   if (sceneState.sceneType === 'reel') {
-    const post = sceneState.post || {
+    const post: any = sceneState.post || {
       author: { name: activeName, username: activeHandle, avatar: activeAvatar, verified: true },
       caption: 'Creating full social media mockups in seconds! ✨ #reels #design',
       likesCount: 14820,
@@ -287,7 +287,7 @@ export const InstagramRenderer: React.FC<RendererProps> = ({ sceneState, onEleme
   }
 
   // 6. INSTAGRAM STANDARD FEED POST VIEW
-  const post = sceneState.post || {
+  const post: any = sceneState.post || {
     author: { name: activeName, username: activeHandle, avatar: activeAvatar, verified: true },
     location: 'San Francisco',
     caption: 'Creating mockups with AetherPix Studio! 🚀',
