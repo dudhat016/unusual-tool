@@ -1,9 +1,18 @@
 import { db } from '../config/firebase';
 import { collection, doc, setDoc, getDocs } from 'firebase/firestore';
 import { ToolDefinition } from '../types';
+import { ALL_SCENE_ROUTES } from '../config/socialMockup/sceneRegistry';
+import { POPULAR_CONVERTER_PAIRS, createConverterToolDefinition } from '../config/converterTools';
+import {
+  EXACT_TARGET_SIZE_ITEMS,
+  SOCIAL_PRESETS_LIST,
+  PIXEL_DIMENSIONS_LIST,
+  createTargetSizeToolDefinition
+} from '../config/targetSizeTools';
 
-export const ALL_SYSTEM_TOOLS: ToolDefinition[] = [
-  // 1. Developer Tools
+// 1. Base 58 System Tools (Standalone, PDF, AI, YouTube, Developer)
+export const BASE_SYSTEM_TOOLS: ToolDefinition[] = [
+  // Developer Tools
   {
     id: 'ocr-image-to-text',
     slug: 'ocr-image-to-text',
@@ -80,7 +89,7 @@ export const ALL_SYSTEM_TOOLS: ToolDefinition[] = [
     seo: { title: 'Online Image Color Picker & Palette Generator', description: 'Extract HEX/RGB color codes from images.', keywords: ['color picker from image', 'hex color extractor', 'developer color tools'], canonicalSlug: 'color-picker' }
   },
 
-  // 2. AI Smart Tools
+  // AI Smart Tools
   {
     id: 'ai-background-remover',
     slug: 'ai-background-remover',
@@ -212,7 +221,7 @@ export const ALL_SYSTEM_TOOLS: ToolDefinition[] = [
     seo: { title: 'AI Photo Unblur Online', description: 'Unblur photos and sharpen blurred text online.', keywords: ['ai unblur photo', 'fix blurry image online'], canonicalSlug: 'ai-unblur' }
   },
 
-  // 3. Creative Photo Editors
+  // Creative Photo Editors
   {
     id: 'crop-image',
     slug: 'crop-image',
@@ -339,7 +348,7 @@ export const ALL_SYSTEM_TOOLS: ToolDefinition[] = [
     seo: { title: 'Image Effects & Filters Online', description: 'Apply filters to photos online.', keywords: ['image filters', 'photo effects'], canonicalSlug: 'image-effects-filters' }
   },
 
-  // 4. Core Resizer & Converter
+  // Core Resizer & Converter
   {
     id: 'resize-image',
     slug: 'resize-image',
@@ -466,7 +475,7 @@ export const ALL_SYSTEM_TOOLS: ToolDefinition[] = [
     seo: { title: 'Free Online Notepad & Scratchpad', description: 'Simple online notepad with auto-save.', keywords: ['free online notepad', 'browser text editor'], canonicalSlug: 'free-online-notepad' }
   },
 
-  // 5. YouTube Creator Suite
+  // YouTube Creator Suite
   {
     id: 'youtube-thumbnail-downloader',
     slug: 'youtube-thumbnail-downloader',
@@ -669,8 +678,128 @@ export const ALL_SYSTEM_TOOLS: ToolDefinition[] = [
   }
 ];
 
+// 2. Synthesize 27 Social Media Mockup Generator Tools
+export const MOCKUP_GENERATOR_TOOLS: ToolDefinition[] = ALL_SCENE_ROUTES.map((scene) => ({
+  id: scene.route.replace(/^\/+/, ''),
+  slug: scene.route.replace(/^\/+/, ''),
+  name: scene.name,
+  shortDescription: scene.seoDescription || `Generate realistic ${scene.name} graphics in browser RAM.`,
+  fullDescription: `${scene.seoTitle}. Professional ${scene.name} editor with 2x HD PNG export, custom avatars, text formatting, and realistic platform interface design.`,
+  category: 'social',
+  processingType: 'browser',
+  icon: 'Share2',
+  route: scene.route,
+  supportsBatch: false,
+  requiresAuth: false,
+  creditCost: 0,
+  supportedFormats: ['image/png', 'image/jpeg', 'image/webp'],
+  maxFileSizeMB: 50,
+  isPopular: true,
+  features: ['2x High-DPI PNG export', 'Realistic platform UI preview', '100% in-browser privacy'],
+  howToSteps: [
+    { step: 1, title: 'Upload Avatar & Text', description: 'Enter username, avatar photo, and post content.' },
+    { step: 2, title: 'Customize Indicators', description: 'Adjust likes, timestamps, and verified badges.' },
+    { step: 3, title: 'Export PNG', description: 'Download clean 2x HD graphic.' }
+  ],
+  faqs: [{ question: 'Are graphics uploaded to servers?', answer: 'No, rendered 100% locally in browser RAM.' }],
+  seo: {
+    title: scene.seoTitle,
+    description: scene.seoDescription,
+    keywords: [scene.name.toLowerCase(), 'mockup generator'],
+    canonicalSlug: scene.route.replace(/^\/+/, '')
+  }
+}));
+
+// 3. Synthesize Format Converter Tools
+export const FORMAT_CONVERTER_TOOLS: ToolDefinition[] = POPULAR_CONVERTER_PAIRS.map((p) =>
+  createConverterToolDefinition(p.slug, p.fromExt, p.toExt, p.fromFormat, p.toFormat)
+);
+
+// 4. Synthesize Target Size Image & PDF Compressor Tools
+export const TARGET_SIZE_COMPRESSOR_TOOLS: ToolDefinition[] = EXACT_TARGET_SIZE_ITEMS.map((item) =>
+  createTargetSizeToolDefinition(
+    item.slug,
+    item.targetSizeKb,
+    (item.format as any) || 'image/jpeg',
+    item.type
+  )
+);
+
+// 5. Synthesize Preset Resizer Tools
+export const RESIZER_PRESET_TOOLS: ToolDefinition[] = [
+  ...SOCIAL_PRESETS_LIST.map((p) => ({
+    id: p.slug,
+    slug: p.slug,
+    name: `Resize Image for ${p.platform} ${p.name}`,
+    shortDescription: `Resize photos to exact ${p.platform} ${p.name} dimensions (${p.dimensions}).`,
+    fullDescription: `Formatted ${p.platform} graphic resizer preset. Scale photos to ${p.dimensions} with aspect ratio locks and zero distortion.`,
+    category: 'resize' as const,
+    processingType: 'browser' as const,
+    icon: 'Scaling',
+    route: `/${p.slug}`,
+    supportsBatch: true,
+    requiresAuth: false,
+    creditCost: 0,
+    supportedFormats: ['image/jpeg', 'image/png', 'image/webp'],
+    maxFileSizeMB: 50,
+    isPopular: false,
+    features: [`Official ${p.platform} spec (${p.dimensions})`, 'Auto aspect lock', 'High DPI export'],
+    howToSteps: [
+      { step: 1, title: 'Upload Graphic', description: 'Select photo.' },
+      { step: 2, title: 'Apply Preset', description: `Preset sets frame to ${p.dimensions}.` },
+      { step: 3, title: 'Download', description: 'Save formatted social graphic.' }
+    ],
+    faqs: [{ question: 'Does it fit perfectly?', answer: `Yes, matches official ${p.platform} requirements.` }],
+    seo: {
+      title: `Resize Image for ${p.platform} ${p.name} Online`,
+      description: `Resize photo to ${p.dimensions} for ${p.platform}.`,
+      keywords: [p.slug, `resize image for ${p.platform.toLowerCase()}`],
+      canonicalSlug: p.slug
+    }
+  })),
+  ...PIXEL_DIMENSIONS_LIST.map((p) => ({
+    id: p.slug,
+    slug: p.slug,
+    name: `Resize Image to ${p.label}`,
+    shortDescription: `Resize photos to exact ${p.label} pixels (${p.desc}).`,
+    fullDescription: `High-speed pixel resizer. Scale images to exact ${p.label} resolution for ${p.desc}.`,
+    category: 'resize' as const,
+    processingType: 'browser' as const,
+    icon: 'Scaling',
+    route: `/${p.slug}`,
+    supportsBatch: true,
+    requiresAuth: false,
+    creditCost: 0,
+    supportedFormats: ['image/jpeg', 'image/png', 'image/webp'],
+    maxFileSizeMB: 50,
+    isPopular: false,
+    features: [`Exact ${p.label} pixel resolution`, 'Smooth resampling', 'Aspect ratio locking'],
+    howToSteps: [
+      { step: 1, title: 'Upload Photo', description: 'Select photo.' },
+      { step: 2, title: 'Scale', description: `Dimensions set to ${p.label}.` },
+      { step: 3, title: 'Download', description: 'Save resized photo.' }
+    ],
+    faqs: [{ question: 'Can I lock aspect ratio?', answer: 'Yes, toggle aspect ratio lock anytime.' }],
+    seo: {
+      title: `Resize Image to ${p.label} Pixels Online`,
+      description: `Resize photos to ${p.label} pixels online.`,
+      keywords: [p.slug, `resize image to ${p.label}`],
+      canonicalSlug: p.slug
+    }
+  }))
+];
+
+// Combine ALL system tools (140+ Tools)
+export const ALL_SYSTEM_TOOLS: ToolDefinition[] = [
+  ...BASE_SYSTEM_TOOLS,
+  ...MOCKUP_GENERATOR_TOOLS,
+  ...FORMAT_CONVERTER_TOOLS,
+  ...TARGET_SIZE_COMPRESSOR_TOOLS,
+  ...RESIZER_PRESET_TOOLS
+];
+
 /**
- * Seeder utility to populate Firestore with all tools and categories.
+ * Seeder utility to populate Firestore with all 140+ tools.
  */
 export async function seedAllToolsToFirestore(): Promise<{ added: number; updated: number }> {
   try {

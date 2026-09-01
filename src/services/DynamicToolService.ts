@@ -81,6 +81,11 @@ export class DynamicToolService {
             this.toolsCache = tools;
             this.saveToStorage(tools);
             this.notifyListeners();
+
+            // Auto-sync missing catalog tools to Firebase Firestore if count is under 100
+            if (snapshot.docs.length < 100) {
+              seedAllToolsToFirestore().catch((err) => console.warn('Firestore seeding error:', err));
+            }
           } else {
             // Auto-seed Firestore if collection is empty
             seedAllToolsToFirestore().catch((err) => console.warn('Firestore seeding error:', err));
