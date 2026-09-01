@@ -275,6 +275,45 @@ export class DynamicCategoryService {
         indexable: true,
         matchingCategories: ['ai', 'ai-image-tools'],
       },
+      'developer-tools': {
+        id: 'developer-tools',
+        slug: 'developer-tools',
+        name: 'Developer Tools Hub',
+        h1: 'Free Online Developer Image Utilities & OCR Tools',
+        title: 'Developer Tools Online - OCR Text Extraction, EXIF Metadata & Inspection',
+        metaDescription: 'Essential online image utilities for developers. Extract OCR text, inspect EXIF metadata tags, and view image specs with 100% in-browser privacy.',
+        description: 'Essential online image utilities for developers. Extract OCR text, inspect EXIF metadata tags, and view image specs with 100% in-browser privacy.',
+        quickAnswer: 'Extract editable text from images with OCR, inspect EXIF metadata, and extract color palettes directly in your browser.',
+        primaryKeyword: 'developer tools online',
+        secondaryKeywords: ['ocr image to text', 'exif metadata viewer', 'image metadata inspector'],
+        toolSlugs: ['ocr-image-to-text', 'image-metadata-viewer', 'color-picker'],
+        keyWorkflows: ['Extract text from images using in-browser OCR', 'Inspect camera EXIF metadata and GPS tags', 'Extract HEX/RGB color palettes from images'],
+        faq: [
+          { question: 'Are developer tools free to use?', answer: 'Yes, 100% free with zero file uploads to external servers.' },
+          { question: 'Are files stored on servers?', answer: 'No, all OCR, metadata inspection, and color picking processes run 100% locally in your web browser.' }
+        ],
+        indexable: true,
+        matchingCategories: ['developer', 'developer-tools', 'dev', 'ocr', 'metadata'],
+      },
+      'image-editing-tools': {
+        id: 'image-editing-tools',
+        slug: 'image-editing-tools',
+        name: 'Creative Editing Suite',
+        h1: 'Free Online Photo Editor, Crop, Watermark & Border Tools',
+        title: 'Creative Photo Editing Tools - Crop, Watermark, Borders & Filters',
+        metaDescription: 'Edit photos online. Crop images, add text & logo watermarks, design aesthetic frames, apply vintage filters, and make passport photos.',
+        description: 'Edit photos online. Crop images, add text & logo watermarks, design aesthetic frames, apply vintage filters, and make passport photos.',
+        quickAnswer: 'Crop photos, add custom watermarks, borders, and filters in your browser.',
+        primaryKeyword: 'photo editing tools online',
+        secondaryKeywords: ['crop image', 'image watermark', 'image border generator', 'passport photo maker'],
+        toolSlugs: ['crop-image', 'passport-photo-maker', 'image-watermark', 'image-border-generator', 'image-effects-filters'],
+        keyWorkflows: ['Crop photos to custom ratios', 'Add logo watermarks to photography', 'Apply aesthetic borders and frames'],
+        faq: [
+          { question: 'Are photo editing tools free?', answer: 'Yes, 100% free with in-browser privacy.' }
+        ],
+        indexable: true,
+        matchingCategories: ['edit', 'editing', 'crop', 'effects', 'passport', 'image-editing-tools'],
+      },
     };
 
     return synthesizedDefaults[targetId] || {

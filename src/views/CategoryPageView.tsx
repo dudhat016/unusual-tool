@@ -70,19 +70,38 @@ export const CategoryPageView: React.FC<CategoryPageViewProps> = ({ category }) 
   const matchingTools = React.useMemo(() => {
     const toolMap = new Map<string, ToolDefinition>();
 
-    // 1. Base tools from catalog (using dynamic category tags)
+    // Dynamic category stems for fuzzy matching (e.g., 'pdf-tools' -> 'pdf', 'developer-tools' -> 'developer')
+    const catIdLower = (category.id || '').toLowerCase();
+    const catSlugLower = (category.slug || '').toLowerCase();
+    const categoryTags = (category.matchingCategories || [category.id, category.slug]).map((c) => c.toLowerCase());
+
+    const cleanCatId = catIdLower.replace(/^(image-|pdf-)/, '').replace(/-tools$/, '');
+    const cleanCatSlug = catSlugLower.replace(/^(image-|pdf-)/, '').replace(/-tools$/, '');
+
+    // 1. Base tools from catalog (using dynamic category tags from Firebase)
     allTools.forEach((tool) => {
       if (tool.id === category.id || tool.slug === category.slug) return;
       
-      const categoryTags = category.matchingCategories || [category.id, category.slug];
+      const rawToolCat = (tool.category || '').toLowerCase();
+      const cleanToolCat = rawToolCat.replace(/^(image-|pdf-)/, '').replace(/-tools$/, '');
+
       const belongs =
-        category.id === 'image-tools' ||
-        tool.category === category.id ||
-        tool.category === category.slug ||
-        categoryTags.includes(tool.category) ||
-        (category.id === 'ai-image-tools' && tool.isAi) ||
-        (category.id === 'youtube-tools' && tool.id.includes('youtube')) ||
-        (category.id === 'pdf-tools' && (tool.id.includes('pdf') || tool.slug?.includes('pdf')));
+        catIdLower === 'image-tools' ||
+        catIdLower === 'tools' ||
+        catIdLower === 'all' ||
+        rawToolCat === catIdLower ||
+        rawToolCat === catSlugLower ||
+        categoryTags.includes(rawToolCat) ||
+        cleanToolCat === cleanCatId ||
+        cleanToolCat === cleanCatSlug ||
+        (cleanCatId === 'resizer' && (cleanToolCat === 'resize' || cleanToolCat === 'crop')) ||
+        (cleanCatId === 'compressor' && cleanToolCat === 'compress') ||
+        (cleanCatId === 'converter' && cleanToolCat === 'convert') ||
+        (cleanCatId === 'editing' && (cleanToolCat === 'edit' || cleanToolCat === 'crop' || cleanToolCat === 'effects' || cleanToolCat === 'passport')) ||
+        (cleanCatId === 'developer' && (cleanToolCat === 'ocr' || cleanToolCat === 'metadata' || cleanToolCat === 'dev')) ||
+        (catIdLower === 'ai-image-tools' && (tool.isAi || cleanToolCat === 'ai')) ||
+        (catIdLower === 'youtube-tools' && (tool.id.includes('youtube') || tool.slug?.includes('youtube') || cleanToolCat === 'youtube')) ||
+        (catIdLower === 'pdf-tools' && (tool.id.includes('pdf') || tool.slug?.includes('pdf') || cleanToolCat === 'pdf'));
 
       if (belongs) {
         toolMap.set(tool.slug || tool.id, tool);
@@ -97,7 +116,7 @@ export const CategoryPageView: React.FC<CategoryPageViewProps> = ({ category }) 
     });
 
     return Array.from(toolMap.values());
-  }, [allTools, category.id, category.slug, categoryVirtualTools]);
+  }, [allTools, category.id, category.slug, category.matchingCategories, categoryVirtualTools]);
 
   const categorySchema = {
     '@context': 'https://schema.org',

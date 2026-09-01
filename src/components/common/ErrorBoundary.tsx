@@ -1,10 +1,10 @@
-import * as React from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, Home, RotateCcw, ChevronDown, ChevronUp, Copy, Check } from 'lucide-react';
 
 export interface ErrorBoundaryProps {
-  children: React.ReactNode;
-  fallback?: React.ReactNode | ((error: Error, reset: () => void) => React.ReactNode);
-  onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
+  children: ReactNode;
+  fallback?: ReactNode | ((error: Error, reset: () => void) => ReactNode);
+  onError?: (error: Error, errorInfo: ErrorInfo) => void;
   onReset?: () => void;
   resetKeys?: unknown[];
 }
@@ -12,12 +12,12 @@ export interface ErrorBoundaryProps {
 interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
-  errorInfo: React.ErrorInfo | null;
+  errorInfo: ErrorInfo | null;
   showDetails: boolean;
   copied: boolean;
 }
 
-export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = {
@@ -33,7 +33,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     this.setState({ errorInfo });
     console.error('ErrorBoundary caught a runtime rendering error:', error, errorInfo);
 
@@ -92,7 +92,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     this.setState((prev) => ({ showDetails: !prev.showDetails }));
   };
 
-  render(): React.ReactNode {
+  render(): ReactNode {
     const { hasError, error, errorInfo, showDetails, copied } = this.state;
     const { children, fallback } = this.props;
 
